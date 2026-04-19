@@ -15,6 +15,7 @@ export interface SimulationRunnerOptions {
 }
 
 type StateListener = (state: GameState) => void;
+type ChangeListener = () => void;
 
 export class SimulationRunner {
   private readonly clock = new SimulationClock();
@@ -22,8 +23,10 @@ export class SimulationRunner {
   private readonly random: RandomService;
   private readonly commandBus: CommandBus;
   private readonly listeners = new Set<StateListener>();
+  private readonly changeListeners = new Set<ChangeListener>();
   private readonly state: GameState;
   private eventSequence = 0;
+  private revision = 0;
 
   constructor(options: SimulationRunnerOptions = {}) {
     this.random = new RandomService(options.seed);
@@ -73,6 +76,10 @@ export class SimulationRunner {
     return this.state;
   }
 
+  getRevision(): number {
+    return this.revision;
+  }
+
   getCommandBus(): CommandBus {
     return this.commandBus;
   }
@@ -94,6 +101,14 @@ export class SimulationRunner {
     };
   }
 
+  subscribeToChanges(listener: ChangeListener): () => void {
+    this.changeListeners.add(listener);
+
+    return () => {
+      this.changeListeners.delete(listener);
+    };
+  }
+
   private createEvent<TType extends string>(type: TType): DomainEvent<TType> {
     this.eventSequence += 1;
 
@@ -106,8 +121,14 @@ export class SimulationRunner {
   }
 
   private notifyStateChanged(): void {
+    this.revision += 1;
+
     for (const listener of this.listeners) {
       listener(this.state);
+    }
+
+    for (const listener of this.changeListeners) {
+      listener();
     }
   }
 }

@@ -4,7 +4,11 @@ import { ChangeSpeedCommand } from "../../game/simulation/commands/ChangeSpeedCo
 import { GameSpeed } from "../../game/simulation/types/enums";
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
 import { selectCash } from "../../game/simulation/selectors/kpiSelectors";
-import { selectCurrentTick, selectSpeed } from "../../game/simulation/selectors/timeSelectors";
+import {
+  formatCalendarTime,
+  selectCurrentTick,
+  selectSpeed,
+} from "../../game/simulation/selectors/timeSelectors";
 
 describe("SimulationRunner", () => {
   it("advances the simulation clock", () => {
@@ -14,6 +18,17 @@ describe("SimulationRunner", () => {
 
     expect(runner.getState().currentTick).toBe(1);
     expect(runner.getState().calendar.minute).toBe(1);
+  });
+
+  it("advances calendar hours from accumulated minute ticks", () => {
+    const runner = new SimulationRunner();
+
+    for (let index = 0; index < 60; index += 1) {
+      runner.tick();
+    }
+
+    expect(runner.getState().calendar.hour).toBe(9);
+    expect(runner.getState().calendar.minute).toBe(0);
   });
 
   it("starts with a 64x64 warehouse map and dock edges", () => {
@@ -65,11 +80,52 @@ describe("SimulationRunner", () => {
     expect(ticks).toEqual([0, 1]);
   });
 
+  it("increments revision as ticks and commands update state", () => {
+    const runner = new SimulationRunner();
+
+    expect(runner.getRevision()).toBe(0);
+
+    runner.tick();
+    expect(runner.getRevision()).toBe(1);
+
+    runner.dispatch(new ChangeSpeedCommand(GameSpeed.Slow));
+    expect(runner.getRevision()).toBe(2);
+  });
+
+  it("notifies change subscribers without an immediate initial callback", () => {
+    const runner = new SimulationRunner();
+    let changeCount = 0;
+
+    const unsubscribe = runner.subscribeToChanges(() => {
+      changeCount += 1;
+    });
+
+    expect(changeCount).toBe(0);
+
+    runner.tick();
+    unsubscribe();
+    runner.tick();
+
+    expect(changeCount).toBe(1);
+  });
+
   it("exposes baseline state through selectors", () => {
     const runner = new SimulationRunner({ startingCash: 125000 });
     const state = runner.getState();
 
     expect(selectCurrentTick(state)).toBe(0);
     expect(selectCash(state)).toBe(125000);
+  });
+
+  it("formats calendar time for HUD display", () => {
+    expect(
+      formatCalendarTime({
+        year: 1,
+        month: 2,
+        day: 3,
+        hour: 4,
+        minute: 5,
+      }),
+    ).toBe("Year 1, Month 2, Day 3, 04:05");
   });
 });

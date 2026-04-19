@@ -58,6 +58,26 @@ textarea {
   padding: 10px 14px;
 }
 
+.speed-controls {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.speed-controls button {
+  min-height: 32px;
+  border: 1px solid rgba(238, 244, 242, 0.22);
+  border-radius: 8px;
+  color: #eef4f2;
+  background: rgba(94, 163, 198, 0.18);
+  cursor: pointer;
+}
+
+.speed-controls button.active {
+  border-color: #e6b655;
+  background: rgba(230, 182, 85, 0.28);
+}
+
 .left-panel {
   top: 76px;
   left: 12px;

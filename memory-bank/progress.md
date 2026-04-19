@@ -41,3 +41,14 @@ Phase 3: Completed
     - Added Vitest coverage for painting, erasing, dock protection, repainting, storage validation, zone aggregation, and invalidation event metadata.
     - Verification completed: `npm run test` passed with 21 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
     - Local dev server was started and verified at `http://127.0.0.1:5173`.
+
+Phase 4: Completed
+    - Added reactive simulation subscriptions for React through `SimulationRunner` revision tracking and `useSimulationState`.
+    - Added a browser-owned `requestAnimationFrame` simulation loop that runs from `SimulationProvider` and keeps the simulation core manually tickable for tests.
+    - Implemented speed-to-tick-rate handling for paused, slow, medium, and fast simulation speeds.
+    - Added catch-up protection so returning from a paused browser tab cannot run an unbounded number of ticks in one frame.
+    - Wired top HUD speed buttons to `ChangeSpeedCommand` for pause, slow, medium, and fast.
+    - Updated the HUD to show formatted calendar time, cash, current tick, and active speed state.
+    - Added tests for speed tick rates, elapsed-time tick calculation, paused behavior, catch-up capping, runner revision updates, change subscriptions, and HUD time formatting.
+    - Verification completed: `npm run test` passed with 30 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+    - Local dev server was started and verified at `http://127.0.0.1:5173`.
