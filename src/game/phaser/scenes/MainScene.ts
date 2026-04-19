@@ -3,6 +3,7 @@ import type { SimulationRunner } from "../../simulation/core/SimulationRunner";
 import { selectWarehouseMap } from "../../simulation/selectors/mapSelectors";
 import { ISO_TILE_WIDTH } from "../../shared/constants/map";
 import { MapInputController } from "../input/MapInputController";
+import { DoorRenderer } from "../rendering/DoorRenderer";
 import { TileRenderer } from "../rendering/TileRenderer";
 import { ZoneOverlayRenderer } from "../rendering/ZoneOverlayRenderer";
 
@@ -23,9 +24,15 @@ export class MainScene extends Phaser.Scene {
       y: 96,
     });
     const zoneOverlayRenderer = new ZoneOverlayRenderer(this, map, renderer.getOrigin());
+    const doorRenderer = new DoorRenderer(
+      this,
+      this.simulation.getState().freightFlow,
+      renderer.getOrigin(),
+    );
 
     renderer.render();
     zoneOverlayRenderer.render();
+    doorRenderer.render();
     this.configureCamera(renderer);
 
     this.inputController = new MapInputController(this, this.simulation, map, renderer);
@@ -33,6 +40,7 @@ export class MainScene extends Phaser.Scene {
     this.unsubscribeSimulation = this.simulation.subscribe(() => {
       renderer.render();
       zoneOverlayRenderer.render();
+      doorRenderer.render();
       this.inputController?.refreshHighlights();
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {

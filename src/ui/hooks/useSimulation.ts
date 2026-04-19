@@ -11,9 +11,11 @@ export function useSimulationState<TValue>(
 ): TValue {
   const simulation = useSimulationRunner();
 
-  return useSyncExternalStore(
+  useSyncExternalStore(
     (listener) => simulation.subscribeToChanges(listener),
-    () => selector(simulation.getState()),
-    () => selector(simulation.getState()),
+    () => simulation.getRevision(),
+    () => simulation.getRevision(),
   );
+
+  return selector(simulation.getState());
 }

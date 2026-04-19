@@ -52,3 +52,18 @@ Phase 4: Completed
     - Added tests for speed tick rates, elapsed-time tick calculation, paused behavior, catch-up capping, runner revision updates, change subscriptions, and HUD time formatting.
     - Verification completed: `npm run test` passed with 30 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
     - Local dev server was started and verified at `http://127.0.0.1:5173`.
+
+Phase 5: Completed
+    - Added the first inbound freight flow slice: trailers spawn over time, enter the yard, reserve dock doors, switch to doors, unload, and leave freight on the dock.
+    - Added `freightFlow` state with trailers, freight batches, dock doors, queue summaries, dwell metrics, and inbound counters.
+    - Created 8 initial flex dock doors on the north dock edge and marked their map tiles as active doors.
+    - Implemented deterministic inbound trailer generation every 120 ticks using configured freight classes and cubic-foot ranges.
+    - Implemented oldest-yard-trailer door assignment, fixed 8-tick switch movement, and prototype unload processing at 120 cubic feet per tick.
+    - Added queue and metric recalculation for yard, switching, unloading, dock freight, average yard dwell, and average door dwell.
+    - Updated inbound and throughput KPIs when freight unloads to the dock.
+    - Added freight-flow events for trailer arrival, door assignment, trailer arrival at door, and freight unload completion.
+    - Implemented Phaser door/trailer markers for idle, reserved, occupied, and unloading dock-door states.
+    - Updated the bottom KPI bar and right operations panel with live inbound queue, door, dock freight, dwell, and trailer totals.
+    - Added Vitest coverage for door initialization, spawn timing, freight batch generation, door assignment, switch duration, unloading, queue/KPI updates, deterministic generation, and freight-flow events.
+    - Verification completed: `npm run test` passed with 40 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+    - Local dev server was verified at `http://127.0.0.1:5173`.

@@ -8,6 +8,11 @@ import { RandomService } from "./RandomService";
 import { createInitialCalendar, SimulationClock } from "./SimulationClock";
 import type { DomainEvent } from "../events/DomainEvent";
 import { GameSpeed } from "../types/enums";
+import { createInitialFreightFlowState } from "../world/DoorManager";
+import { FreightGenerator } from "../freight/FreightGenerator";
+import { SwitchDriverSystem } from "../labor/SwitchDriverSystem";
+import { UnloadSystem } from "../labor/UnloadSystem";
+import { QueueManager } from "../systems/QueueManager";
 
 export interface SimulationRunnerOptions {
   seed?: number;
@@ -22,6 +27,10 @@ export class SimulationRunner {
   private readonly eventBus = new EventBus();
   private readonly random: RandomService;
   private readonly commandBus: CommandBus;
+  private readonly freightGenerator = new FreightGenerator();
+  private readonly switchDriverSystem = new SwitchDriverSystem();
+  private readonly unloadSystem = new UnloadSystem();
+  private readonly queueManager = new QueueManager();
   private readonly listeners = new Set<StateListener>();
   private readonly changeListeners = new Set<ChangeListener>();
   private readonly state: GameState;
@@ -30,6 +39,7 @@ export class SimulationRunner {
 
   constructor(options: SimulationRunnerOptions = {}) {
     this.random = new RandomService(options.seed);
+    const warehouseMap = new WarehouseMap(MAP_WIDTH, MAP_HEIGHT);
     this.state = {
       currentTick: 0,
       calendar: createInitialCalendar(),
@@ -45,7 +55,8 @@ export class SimulationRunner {
         lastCommandType: null,
         lastEventType: null,
       },
-      warehouseMap: new WarehouseMap(MAP_WIDTH, MAP_HEIGHT),
+      warehouseMap,
+      freightFlow: createInitialFreightFlowState(warehouseMap),
     };
 
     this.commandBus = new CommandBus({
@@ -60,9 +71,25 @@ export class SimulationRunner {
     this.state.currentTick = this.clock.advance();
     this.state.calendar = this.clock.getCalendar();
 
-    const event = this.createEvent("simulation-ticked");
-    this.state.debug.lastEventType = event.type;
-    this.eventBus.emit(event);
+    const events = [
+      ...this.freightGenerator.generateInbound(
+        this.state.freightFlow,
+        this.state.currentTick,
+        this.random,
+        (type) => this.createEvent(type),
+      ),
+      ...this.switchDriverSystem.process(this.state.freightFlow, this.state.currentTick, (type) =>
+        this.createEvent(type),
+      ),
+      ...this.unloadSystem.process(this.state.freightFlow, this.state.currentTick, (type) =>
+        this.createEvent(type),
+      ),
+    ];
+
+    this.queueManager.updateQueues(this.state.freightFlow, this.state.currentTick);
+    this.updateInboundKpis();
+    events.push(this.createEvent("simulation-ticked"));
+    this.emitEvents(events);
     this.notifyStateChanged();
   }
 
@@ -129,6 +156,19 @@ export class SimulationRunner {
 
     for (const listener of this.changeListeners) {
       listener();
+    }
+  }
+
+  private updateInboundKpis(): void {
+    this.state.kpis.inboundCubicFeet = this.state.freightFlow.metrics.totalUnloadedCubicFeet;
+    this.state.kpis.throughputCubicFeet =
+      (this.state.kpis.inboundCubicFeet + this.state.kpis.outboundCubicFeet) / 2;
+  }
+
+  private emitEvents(events: DomainEvent[]): void {
+    for (const event of events) {
+      this.state.debug.lastEventType = event.type;
+      this.eventBus.emit(event);
     }
   }
 }

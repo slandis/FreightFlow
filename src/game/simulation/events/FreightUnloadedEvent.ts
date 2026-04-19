@@ -1,9 +1,8 @@
 import type { DomainEvent } from "./DomainEvent";
 
-export interface TrailerArrivedEvent extends DomainEvent {
-  type: "trailer-arrived";
+export interface FreightUnloadedEvent extends DomainEvent {
+  type: "freight-unloaded";
   trailerId: string;
   freightBatchId: string;
-  freightClassId: string;
   cubicFeet: number;
 }

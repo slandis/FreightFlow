@@ -1,4 +1,5 @@
 import type { WarehouseMap } from "../world/WarehouseMap";
+import type { FreightFlowState } from "../freight/FreightFlowState";
 import { GameSpeed } from "../types/enums";
 
 export interface SimulationCalendar {
@@ -29,4 +30,5 @@ export interface GameState {
   kpis: KpiState;
   debug: DebugState;
   warehouseMap: WarehouseMap;
+  freightFlow: FreightFlowState;
 }

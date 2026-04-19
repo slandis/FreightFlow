@@ -3,4 +3,6 @@ export interface DoorNode {
   x: number;
   y: number;
   mode: "inbound" | "outbound" | "flex";
+  trailerId: string | null;
+  state: "idle" | "reserved" | "occupied" | "unloading";
 }
