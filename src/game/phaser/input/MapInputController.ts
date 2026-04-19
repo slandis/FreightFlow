@@ -1,5 +1,8 @@
 import Phaser from "phaser";
-import { useUiStore } from "../../../ui/store/uiStore";
+import { useUiStore, type TileSummary } from "../../../ui/store/uiStore";
+import { PaintZoneCommand } from "../../simulation/commands/PaintZoneCommand";
+import type { SimulationRunner } from "../../simulation/core/SimulationRunner";
+import { TileZoneType } from "../../simulation/types/enums";
 import type { WarehouseMap } from "../../simulation/world/WarehouseMap";
 import type { Tile } from "../../simulation/world/Tile";
 import { screenToTile } from "../rendering/isometric";
@@ -13,12 +16,16 @@ export class MapInputController {
   private hoveredTile: Tile | null = null;
   private selectedTile: Tile | null = null;
   private isPanning = false;
+  private isPainting = false;
   private hasDragged = false;
   private lastPointerX = 0;
   private lastPointerY = 0;
+  private lastPaintedTile: Tile | null = null;
+  private readonly paintedTileKeys = new Set<string>();
 
   constructor(
     private readonly scene: Phaser.Scene,
+    private readonly simulation: SimulationRunner,
     private readonly map: WarehouseMap,
     private readonly renderer: TileRenderer,
   ) {}
@@ -43,8 +50,16 @@ export class MapInputController {
     this.lastPointerY = pointer.y;
     this.hasDragged = false;
     this.isPanning = pointer.rightButtonDown() || pointer.middleButtonDown();
+    this.isPainting = false;
+    this.lastPaintedTile = null;
+    this.paintedTileKeys.clear();
 
     this.updateHoveredTile(pointer);
+
+    if (!this.isPanning && this.getPointerButton(pointer) === 0 && this.isPaintToolActive()) {
+      this.isPainting = true;
+      this.paintHoveredTile();
+    }
   }
 
   private handlePointerMove(pointer: Phaser.Input.Pointer): void {
@@ -64,6 +79,10 @@ export class MapInputController {
     this.lastPointerX = pointer.x;
     this.lastPointerY = pointer.y;
     this.updateHoveredTile(pointer);
+
+    if (this.isPainting && pointer.leftButtonDown()) {
+      this.paintHoveredTile();
+    }
   }
 
   private handlePointerUp(pointer: Phaser.Input.Pointer): void {
@@ -74,18 +93,20 @@ export class MapInputController {
       return;
     }
 
+    if (this.isPainting) {
+      this.isPainting = false;
+      this.lastPaintedTile = null;
+      this.paintedTileKeys.clear();
+      return;
+    }
+
     if (button !== 0 || this.hasDragged || !this.hoveredTile) {
       return;
     }
 
     this.selectedTile = this.hoveredTile;
     this.renderer.highlightSelection(this.selectedTile);
-    useUiStore.getState().setSelectedTile({
-      x: this.selectedTile.x,
-      y: this.selectedTile.y,
-      zoneType: this.selectedTile.zoneType,
-      isDockEdge: this.selectedTile.isDockEdge,
-    });
+    useUiStore.getState().setSelectedTile(this.createTileSummary(this.selectedTile));
   }
 
   private handleWheel(
@@ -125,15 +146,98 @@ export class MapInputController {
     this.hoveredTile = nextTile;
     this.renderer.highlightHover(this.hoveredTile);
     useUiStore.getState().setHoveredTile(
-      this.hoveredTile
-        ? {
-            x: this.hoveredTile.x,
-            y: this.hoveredTile.y,
-            zoneType: this.hoveredTile.zoneType,
-            isDockEdge: this.hoveredTile.isDockEdge,
-          }
-        : null,
+      this.hoveredTile ? this.createTileSummary(this.hoveredTile) : null,
     );
+  }
+
+  refreshHighlights(): void {
+    this.renderer.highlightHover(this.hoveredTile);
+    this.renderer.highlightSelection(this.selectedTile);
+    useUiStore.getState().setHoveredTile(
+      this.hoveredTile ? this.createTileSummary(this.hoveredTile) : null,
+    );
+    useUiStore.getState().setSelectedTile(
+      this.selectedTile ? this.createTileSummary(this.selectedTile) : null,
+    );
+  }
+
+  private paintHoveredTile(): void {
+    const zoneType = this.getActivePaintZoneType();
+
+    if (!this.hoveredTile || !zoneType) {
+      return;
+    }
+
+    const tilesToPaint = this.lastPaintedTile
+      ? this.interpolateTiles(this.lastPaintedTile, this.hoveredTile)
+      : [this.hoveredTile];
+
+    for (const tile of tilesToPaint) {
+      const key = `${tile.x},${tile.y}`;
+
+      if (this.paintedTileKeys.has(key)) {
+        continue;
+      }
+
+      this.paintedTileKeys.add(key);
+      this.simulation.dispatch(new PaintZoneCommand(tile.x, tile.y, zoneType));
+    }
+
+    this.lastPaintedTile = this.hoveredTile;
+  }
+
+  private interpolateTiles(startTile: Tile, endTile: Tile): Tile[] {
+    const tiles: Tile[] = [];
+    const deltaX = endTile.x - startTile.x;
+    const deltaY = endTile.y - startTile.y;
+    const steps = Math.max(Math.abs(deltaX), Math.abs(deltaY));
+
+    if (steps === 0) {
+      return [endTile];
+    }
+
+    for (let step = 0; step <= steps; step += 1) {
+      const x = Math.round(startTile.x + (deltaX * step) / steps);
+      const y = Math.round(startTile.y + (deltaY * step) / steps);
+      const tile = this.map.getTile(x, y);
+
+      if (tile) {
+        tiles.push(tile);
+      }
+    }
+
+    return tiles;
+  }
+
+  private isPaintToolActive(): boolean {
+    return this.getActivePaintZoneType() !== null;
+  }
+
+  private getActivePaintZoneType(): TileZoneType | null {
+    const activeTool = useUiStore.getState().activeTool;
+
+    if (activeTool === "select") {
+      return null;
+    }
+
+    if (activeTool === "erase") {
+      return TileZoneType.Unassigned;
+    }
+
+    return activeTool;
+  }
+
+  private createTileSummary(tile: Tile): TileSummary {
+    return {
+      x: tile.x,
+      y: tile.y,
+      zoneType: tile.zoneType,
+      zoneId: tile.zoneId,
+      isDockEdge: tile.isDockEdge,
+      validForStorage: tile.validForStorage,
+      invalidReason: tile.invalidReason,
+      nearestTravelDistance: tile.nearestTravelDistance,
+    };
   }
 
   private getPointerButton(pointer: Phaser.Input.Pointer): number {

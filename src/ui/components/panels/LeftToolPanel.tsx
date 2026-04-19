@@ -1,6 +1,49 @@
+import { TileZoneType } from "../../../game/simulation/types/enums";
+import type { ActiveTool } from "../../store/uiStore";
 import { useUiStore } from "../../store/uiStore";
 
-const tools = ["select", "travel", "standard-storage", "bulk-storage", "erase"];
+const tools: Array<{ id: ActiveTool; label: string; description: string }> = [
+  {
+    id: "select",
+    label: "Select",
+    description: "Inspect tiles and zones",
+  },
+  {
+    id: TileZoneType.Travel,
+    label: "Travel",
+    description: "Operational access lanes",
+  },
+  {
+    id: TileZoneType.StandardStorage,
+    label: "Standard Storage",
+    description: "General freight",
+  },
+  {
+    id: TileZoneType.BulkStorage,
+    label: "Bulk Storage",
+    description: "High-volume freight",
+  },
+  {
+    id: TileZoneType.FastTurnStorage,
+    label: "Fast-Turn Storage",
+    description: "Small quick-moving freight",
+  },
+  {
+    id: TileZoneType.OversizeStorage,
+    label: "Oversize Storage",
+    description: "Irregular freight",
+  },
+  {
+    id: TileZoneType.SpecialHandlingStorage,
+    label: "Special Handling",
+    description: "Care-sensitive freight",
+  },
+  {
+    id: "erase",
+    label: "Erase",
+    description: "Return tiles to unassigned",
+  },
+];
 
 export function LeftToolPanel() {
   const activeTool = useUiStore((state) => state.activeTool);
@@ -11,12 +54,13 @@ export function LeftToolPanel() {
       <strong>Tools</strong>
       {tools.map((tool) => (
         <button
-          className={tool === activeTool ? "active" : ""}
-          key={tool}
-          onClick={() => setActiveTool(tool)}
+          className={tool.id === activeTool ? "active" : ""}
+          key={tool.id}
+          onClick={() => setActiveTool(tool.id)}
           type="button"
         >
-          {tool}
+          <span>{tool.label}</span>
+          <small>{tool.description}</small>
         </button>
       ))}
     </aside>

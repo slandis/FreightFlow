@@ -1,10 +1,14 @@
 import { TileZoneType } from "../types/enums";
 import type { Tile } from "./Tile";
+import type { Zone } from "./Zone";
+import { ZoneManager } from "./ZoneManager";
 
 export class WarehouseMap {
   readonly width: number;
   readonly height: number;
   readonly tiles: Tile[];
+  zones: Zone[] = [];
+  private readonly zoneManager = new ZoneManager();
 
   constructor(width: number, height: number) {
     this.width = width;
@@ -19,11 +23,17 @@ export class WarehouseMap {
           x,
           y,
           zoneType: isDockEdge ? TileZoneType.Dock : TileZoneType.Unassigned,
+          zoneId: null,
           isDockEdge,
           isActiveDoor: false,
+          validForStorage: false,
+          invalidReason: null,
+          nearestTravelDistance: null,
         });
       }
     }
+
+    this.rebuildZones();
   }
 
   getTileIndex(x: number, y: number): number {
@@ -36,5 +46,26 @@ export class WarehouseMap {
     }
 
     return this.tiles[this.getTileIndex(x, y)];
+  }
+
+  paintTile(x: number, y: number, zoneType: TileZoneType): boolean {
+    const tile = this.getTile(x, y);
+
+    if (!tile || tile.isDockEdge) {
+      return false;
+    }
+
+    if (tile.zoneType === zoneType) {
+      return false;
+    }
+
+    tile.zoneType = zoneType;
+    this.rebuildZones();
+
+    return true;
+  }
+
+  rebuildZones(): void {
+    this.zones = this.zoneManager.rebuildZones(this);
   }
 }

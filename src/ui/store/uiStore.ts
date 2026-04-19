@@ -1,18 +1,27 @@
 import { create } from "zustand";
-import type { TileZoneType } from "../../game/simulation/types/enums";
+import { TileZoneType } from "../../game/simulation/types/enums";
 
-interface TileSummary {
+export type ActiveTool =
+  | "select"
+  | "erase"
+  | Exclude<TileZoneType, TileZoneType.Dock | TileZoneType.Unassigned>;
+
+export interface TileSummary {
   x: number;
   y: number;
   zoneType: TileZoneType;
+  zoneId: string | null;
   isDockEdge: boolean;
+  validForStorage: boolean;
+  invalidReason: string | null;
+  nearestTravelDistance: number | null;
 }
 
 interface UiState {
-  activeTool: string;
+  activeTool: ActiveTool;
   hoveredTile: TileSummary | null;
   selectedTile: TileSummary | null;
-  setActiveTool: (tool: string) => void;
+  setActiveTool: (tool: ActiveTool) => void;
   setHoveredTile: (tile: TileSummary | null) => void;
   setSelectedTile: (tile: TileSummary | null) => void;
 }

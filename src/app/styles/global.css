@@ -78,6 +78,17 @@ textarea {
   text-align: left;
 }
 
+.left-panel button span,
+.left-panel button small {
+  display: block;
+}
+
+.left-panel button small {
+  margin-top: 2px;
+  color: rgba(238, 244, 242, 0.68);
+  font-size: 12px;
+}
+
 .left-panel button.active {
   border-color: #e6b655;
   background: rgba(230, 182, 85, 0.28);

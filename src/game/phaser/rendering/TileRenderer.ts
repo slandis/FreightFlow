@@ -29,6 +29,9 @@ export class TileRenderer {
     this.baseLayer = scene.add.graphics();
     this.hoverLayer = scene.add.graphics();
     this.selectionLayer = scene.add.graphics();
+    this.baseLayer.setDepth(0);
+    this.hoverLayer.setDepth(20);
+    this.selectionLayer.setDepth(30);
   }
 
   render(): void {

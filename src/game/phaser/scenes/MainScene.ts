@@ -4,9 +4,11 @@ import { selectWarehouseMap } from "../../simulation/selectors/mapSelectors";
 import { ISO_TILE_WIDTH } from "../../shared/constants/map";
 import { MapInputController } from "../input/MapInputController";
 import { TileRenderer } from "../rendering/TileRenderer";
+import { ZoneOverlayRenderer } from "../rendering/ZoneOverlayRenderer";
 
 export class MainScene extends Phaser.Scene {
   private inputController: MapInputController | null = null;
+  private unsubscribeSimulation: (() => void) | null = null;
 
   constructor(private readonly simulation: SimulationRunner) {
     super("MainScene");
@@ -20,12 +22,23 @@ export class MainScene extends Phaser.Scene {
       x: (map.height * ISO_TILE_WIDTH) / 2 + 96,
       y: 96,
     });
+    const zoneOverlayRenderer = new ZoneOverlayRenderer(this, map, renderer.getOrigin());
 
     renderer.render();
+    zoneOverlayRenderer.render();
     this.configureCamera(renderer);
 
-    this.inputController = new MapInputController(this, map, renderer);
+    this.inputController = new MapInputController(this, this.simulation, map, renderer);
     this.inputController.attach();
+    this.unsubscribeSimulation = this.simulation.subscribe(() => {
+      renderer.render();
+      zoneOverlayRenderer.render();
+      this.inputController?.refreshHighlights();
+    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.unsubscribeSimulation?.();
+      this.unsubscribeSimulation = null;
+    });
   }
 
   update(_time: number, _delta: number): void {

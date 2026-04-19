@@ -25,3 +25,19 @@ Phase 2: Completed
     - Added Vitest coverage for the isometric coordinate helpers.
     - Verification completed: `npm run test` passed with 12 tests, and `npm run build` passed. The build emits a large bundle warning because Phaser is bundled directly, which is expected for now.
     - Local dev server was started and verified at `http://127.0.0.1:5173`.
+
+Phase 3: Completed
+    - Implemented authoritative zone painting through `PaintZoneCommand` for travel, all modeled storage zones, and erase/unassign behavior.
+    - Protected dock-edge tiles from repainting while allowing interior tiles to be reassigned repeatedly.
+    - Extended tile state with zone id, storage validity, invalid reason, and nearest travel distance.
+    - Implemented full zone rebuilding after paint actions, including contiguous same-type zone aggregation and capacity from `zoneTypes.json`.
+    - Added immediate storage validation using Manhattan distance: storage within 3 tiles of travel is valid; storage with no travel access or farther access is marked invalid.
+    - Emitted `zone-invalidated` events for invalid storage zones after paint updates.
+    - Wired Phaser left-click/drag painting to simulation commands, including interpolated drag painting so fast pointer movement fills skipped tiles.
+    - Preserved select-to-inspect behavior, right/middle drag camera panning, and pointer-centered wheel zoom.
+    - Implemented invalid storage hatching/outline through `ZoneOverlayRenderer` and refreshed map/overlay layers from simulation state changes.
+    - Expanded the left tool panel to include all Phase 3 tools with readable labels and descriptions.
+    - Expanded the right operations panel to show selected/hovered tile zone id, validity, invalid reason, nearest travel distance, and dock protection status.
+    - Added Vitest coverage for painting, erasing, dock protection, repainting, storage validation, zone aggregation, and invalidation event metadata.
+    - Verification completed: `npm run test` passed with 21 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+    - Local dev server was started and verified at `http://127.0.0.1:5173`.
