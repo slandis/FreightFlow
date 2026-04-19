@@ -1,0 +1,37 @@
+[
+  {
+    "id": "switch-driver",
+    "name": "Switch Driver",
+    "baseRate": 1
+  },
+  {
+    "id": "unload",
+    "name": "Inbound Unloading",
+    "baseRate": 1
+  },
+  {
+    "id": "storage",
+    "name": "Inbound Storage",
+    "baseRate": 1
+  },
+  {
+    "id": "pick",
+    "name": "Outbound Picking",
+    "baseRate": 1
+  },
+  {
+    "id": "load",
+    "name": "Outbound Loading",
+    "baseRate": 1
+  },
+  {
+    "id": "sanitation",
+    "name": "Sanitation",
+    "baseRate": 1
+  },
+  {
+    "id": "management",
+    "name": "Management",
+    "baseRate": 1
+  }
+]

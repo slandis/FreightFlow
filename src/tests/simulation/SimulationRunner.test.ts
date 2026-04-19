@@ -1,0 +1,75 @@
+import { describe, expect, it } from "vitest";
+import { TileZoneType } from "../../game/simulation/types/enums";
+import { ChangeSpeedCommand } from "../../game/simulation/commands/ChangeSpeedCommand";
+import { GameSpeed } from "../../game/simulation/types/enums";
+import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
+import { selectCash } from "../../game/simulation/selectors/kpiSelectors";
+import { selectCurrentTick, selectSpeed } from "../../game/simulation/selectors/timeSelectors";
+
+describe("SimulationRunner", () => {
+  it("advances the simulation clock", () => {
+    const runner = new SimulationRunner();
+
+    runner.tick();
+
+    expect(runner.getState().currentTick).toBe(1);
+    expect(runner.getState().calendar.minute).toBe(1);
+  });
+
+  it("starts with a 64x64 warehouse map and dock edges", () => {
+    const runner = new SimulationRunner();
+    const map = runner.getState().warehouseMap;
+
+    expect(map.width).toBe(64);
+    expect(map.height).toBe(64);
+    expect(map.tiles).toHaveLength(4096);
+    expect(map.getTile(0, 0)?.zoneType).toBe(TileZoneType.Dock);
+    expect(map.getTile(1, 1)?.zoneType).toBe(TileZoneType.Unassigned);
+  });
+
+  it("dispatches commands against the authoritative state", () => {
+    const runner = new SimulationRunner();
+
+    const result = runner.dispatch(new ChangeSpeedCommand(GameSpeed.Fast));
+
+    expect(result.success).toBe(true);
+    expect(selectSpeed(runner.getState())).toBe(GameSpeed.Fast);
+    expect(runner.getState().debug.lastCommandType).toBe("change-speed");
+  });
+
+  it("emits command events through the shared event bus", () => {
+    const runner = new SimulationRunner();
+    const receivedTypes: string[] = [];
+
+    runner.getEventBus().subscribe("speed-changed", (event) => {
+      receivedTypes.push(event.type);
+    });
+
+    runner.dispatch(new ChangeSpeedCommand(GameSpeed.Slow));
+
+    expect(receivedTypes).toEqual(["speed-changed"]);
+    expect(runner.getState().debug.lastEventType).toBe("speed-changed");
+  });
+
+  it("notifies subscribers when state changes", () => {
+    const runner = new SimulationRunner();
+    const ticks: number[] = [];
+    const unsubscribe = runner.subscribe((state) => {
+      ticks.push(state.currentTick);
+    });
+
+    runner.tick();
+    unsubscribe();
+    runner.tick();
+
+    expect(ticks).toEqual([0, 1]);
+  });
+
+  it("exposes baseline state through selectors", () => {
+    const runner = new SimulationRunner({ startingCash: 125000 });
+    const state = runner.getState();
+
+    expect(selectCurrentTick(state)).toBe(0);
+    expect(selectCash(state)).toBe(125000);
+  });
+});

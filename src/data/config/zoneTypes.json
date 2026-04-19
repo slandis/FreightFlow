@@ -1,0 +1,32 @@
+[
+  {
+    "id": "travel",
+    "name": "Travel",
+    "capacityPerTile": 0
+  },
+  {
+    "id": "standard-storage",
+    "name": "Standard Storage",
+    "capacityPerTile": 500
+  },
+  {
+    "id": "bulk-storage",
+    "name": "Bulk Storage",
+    "capacityPerTile": 800
+  },
+  {
+    "id": "fast-turn-storage",
+    "name": "Fast-Turn Storage",
+    "capacityPerTile": 350
+  },
+  {
+    "id": "oversize-storage",
+    "name": "Oversize Storage",
+    "capacityPerTile": 650
+  },
+  {
+    "id": "special-handling-storage",
+    "name": "Special Handling Storage",
+    "capacityPerTile": 300
+  }
+]

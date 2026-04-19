@@ -1,0 +1,30 @@
+[
+  {
+    "id": "amateur",
+    "name": "Amateur",
+    "startingCash": 250000,
+    "forecastAccuracy": 0.9,
+    "demandVolatility": 0.12
+  },
+  {
+    "id": "seasoned",
+    "name": "Seasoned",
+    "startingCash": 175000,
+    "forecastAccuracy": 0.75,
+    "demandVolatility": 0.22
+  },
+  {
+    "id": "pro",
+    "name": "Pro",
+    "startingCash": 125000,
+    "forecastAccuracy": 0.6,
+    "demandVolatility": 0.36
+  },
+  {
+    "id": "god",
+    "name": "God",
+    "startingCash": 90000,
+    "forecastAccuracy": 0.45,
+    "demandVolatility": 0.5
+  }
+]

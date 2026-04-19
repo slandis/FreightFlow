@@ -1,0 +1,32 @@
+[
+  {
+    "id": "standard",
+    "name": "Standard Freight",
+    "baseRevenuePerCubicFoot": 0.3,
+    "compatibleZoneTypes": ["standard-storage", "fast-turn-storage"]
+  },
+  {
+    "id": "fast-turn",
+    "name": "Small / Fast-Turn Freight",
+    "baseRevenuePerCubicFoot": 0.38,
+    "compatibleZoneTypes": ["fast-turn-storage", "standard-storage"]
+  },
+  {
+    "id": "bulk",
+    "name": "Bulk Freight",
+    "baseRevenuePerCubicFoot": 0.24,
+    "compatibleZoneTypes": ["bulk-storage"]
+  },
+  {
+    "id": "oversize",
+    "name": "Oversize / Irregular Freight",
+    "baseRevenuePerCubicFoot": 0.42,
+    "compatibleZoneTypes": ["oversize-storage"]
+  },
+  {
+    "id": "special-handling",
+    "name": "Special Handling Freight",
+    "baseRevenuePerCubicFoot": 0.5,
+    "compatibleZoneTypes": ["special-handling-storage"]
+  }
+]

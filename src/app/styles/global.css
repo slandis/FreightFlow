@@ -1,0 +1,108 @@
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #eef4f2;
+  background: #182126;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.game-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.phaser-surface {
+  width: 100%;
+  height: 100%;
+}
+
+.top-hud,
+.left-panel,
+.right-panel,
+.bottom-kpi-bar,
+.alerts-center {
+  position: absolute;
+  z-index: 10;
+  border: 1px solid rgba(238, 244, 242, 0.18);
+  border-radius: 8px;
+  background: rgba(24, 33, 38, 0.86);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+}
+
+.top-hud {
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  min-height: 48px;
+  padding: 10px 14px;
+}
+
+.left-panel {
+  top: 76px;
+  left: 12px;
+  display: flex;
+  width: 220px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+
+.left-panel button {
+  min-height: 36px;
+  border: 1px solid rgba(238, 244, 242, 0.22);
+  border-radius: 8px;
+  color: #eef4f2;
+  background: rgba(94, 163, 198, 0.18);
+  cursor: pointer;
+  text-align: left;
+}
+
+.left-panel button.active {
+  border-color: #e6b655;
+  background: rgba(230, 182, 85, 0.28);
+}
+
+.right-panel {
+  top: 76px;
+  right: 12px;
+  width: 280px;
+  padding: 12px;
+}
+
+.bottom-kpi-bar {
+  right: 12px;
+  bottom: 12px;
+  left: 12px;
+  display: flex;
+  gap: 18px;
+  min-height: 48px;
+  align-items: center;
+  padding: 10px 14px;
+}
+
+.alerts-center {
+  right: 12px;
+  bottom: 76px;
+  padding: 10px 12px;
+}

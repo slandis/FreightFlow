@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="FreightFlow">
+  <rect width="64" height="64" rx="8" fill="#25313a" />
+  <path d="M12 38h28v10H12z" fill="#7fb069" />
+  <path d="M40 30h12l6 8v10H40z" fill="#e6b655" />
+  <path d="M16 24h20v12H16z" fill="#5ea3c6" />
+  <circle cx="22" cy="50" r="4" fill="#f4f7f7" />
+  <circle cx="48" cy="50" r="4" fill="#f4f7f7" />
+</svg>
