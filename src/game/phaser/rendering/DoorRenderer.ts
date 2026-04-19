@@ -8,6 +8,7 @@ const doorColors: Record<DoorNode["state"], number> = {
   reserved: 0xe6b655,
   occupied: 0x5ea3c6,
   unloading: 0x6aa076,
+  loading: 0x8d70a8,
 };
 
 export class DoorRenderer {

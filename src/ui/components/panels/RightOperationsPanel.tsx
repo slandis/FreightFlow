@@ -5,6 +5,11 @@ import {
   selectDockFreightCubicFeet,
   selectInboundQueueSummary,
   selectInboundTrailerCount,
+  selectOutboundQueueSummary,
+  selectOutboundShippedCubicFeet,
+  selectStorageCapacitySummary,
+  selectStorageQueueCubicFeet,
+  selectTotalStoredCubicFeet,
 } from "../../../game/simulation/selectors/queueSelectors";
 import { useSimulationState } from "../../hooks/useSimulation";
 import { useUiStore } from "../../store/uiStore";
@@ -19,6 +24,11 @@ export function RightOperationsPanel() {
   const inboundTrailerCount = useSimulationState(selectInboundTrailerCount);
   const averageYardDwell = useSimulationState(selectAverageYardDwell);
   const averageDoorDwell = useSimulationState(selectAverageDoorDwell);
+  const storedCubicFeet = useSimulationState(selectTotalStoredCubicFeet);
+  const storageCapacity = useSimulationState(selectStorageCapacitySummary);
+  const storageQueueCubicFeet = useSimulationState(selectStorageQueueCubicFeet);
+  const outboundQueues = useSimulationState(selectOutboundQueueSummary);
+  const outboundShippedCubicFeet = useSimulationState(selectOutboundShippedCubicFeet);
 
   return (
     <aside className="right-panel" aria-label="Operations">
@@ -36,6 +46,8 @@ export function RightOperationsPanel() {
           <dd>{doors.reservedDoors}</dd>
           <dt>Unloading</dt>
           <dd>{doors.unloadingDoors}</dd>
+          <dt>Loading</dt>
+          <dd>{doors.loadingDoors}</dd>
           <dt>Yard queue</dt>
           <dd>{queues.yardTrailers}</dd>
           <dt>Switching</dt>
@@ -48,6 +60,29 @@ export function RightOperationsPanel() {
           <dd>{averageYardDwell.toFixed(1)} ticks</dd>
           <dt>Avg door dwell</dt>
           <dd>{averageDoorDwell.toFixed(1)} ticks</dd>
+          <dt>Stored</dt>
+          <dd>{storedCubicFeet.toLocaleString()} cu ft</dd>
+          <dt>Storage cap</dt>
+          <dd>
+            {storageCapacity.usedCubicFeet.toLocaleString()} /{" "}
+            {storageCapacity.capacityCubicFeet.toLocaleString()} cu ft
+          </dd>
+          <dt>Blocked dock</dt>
+          <dd>{storageQueueCubicFeet.toLocaleString()} cu ft</dd>
+          <dt>Open orders</dt>
+          <dd>{outboundQueues.openOrders}</dd>
+          <dt>Picked orders</dt>
+          <dd>{outboundQueues.pickedOrders}</dd>
+          <dt>Loading orders</dt>
+          <dd>{outboundQueues.loadingOrders}</dd>
+          <dt>Blocked orders</dt>
+          <dd>{outboundQueues.blockedOrders}</dd>
+          <dt>Pick queue</dt>
+          <dd>{outboundQueues.pickQueueCubicFeet.toLocaleString()} cu ft</dd>
+          <dt>Load queue</dt>
+          <dd>{outboundQueues.loadQueueCubicFeet.toLocaleString()} cu ft</dd>
+          <dt>Outbound shipped</dt>
+          <dd>{outboundShippedCubicFeet.toLocaleString()} cu ft</dd>
         </dl>
       </section>
       <p>{selectedTile ? "Selected tile" : "Hover tile"}</p>

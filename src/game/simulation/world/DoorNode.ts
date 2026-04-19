@@ -4,5 +4,5 @@ export interface DoorNode {
   y: number;
   mode: "inbound" | "outbound" | "flex";
   trailerId: string | null;
-  state: "idle" | "reserved" | "occupied" | "unloading";
+  state: "idle" | "reserved" | "occupied" | "unloading" | "loading";
 }

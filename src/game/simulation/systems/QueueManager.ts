@@ -1,7 +1,12 @@
 import type { FreightFlowState } from "../freight/FreightFlowState";
+import type { WarehouseMap } from "../world/WarehouseMap";
 
 export class QueueManager {
-  updateQueues(freightFlow: FreightFlowState, currentTick: number): void {
+  updateQueues(
+    freightFlow: FreightFlowState,
+    currentTick: number,
+    warehouseMap?: WarehouseMap,
+  ): void {
     const yardTrailers = freightFlow.trailers.filter((trailer) => trailer.state === "yard");
     const switchingTrailers = freightFlow.trailers.filter(
       (trailer) => trailer.state === "switching-to-door",
@@ -12,6 +17,13 @@ export class QueueManager {
     const dockFreightCubicFeet = freightFlow.freightBatches
       .filter((batch) => batch.state === "on-dock")
       .reduce((total, batch) => total + batch.cubicFeet, 0);
+    const storageQueueCubicFeet = dockFreightCubicFeet;
+    const pickQueueCubicFeet = freightFlow.outboundOrders
+      .filter((order) => order.state === "open" || order.state === "picking")
+      .reduce((total, order) => total + order.remainingPickCubicFeet, 0);
+    const loadQueueCubicFeet = freightFlow.outboundOrders
+      .filter((order) => order.state === "picked" || order.state === "loading")
+      .reduce((total, order) => total + order.remainingLoadCubicFeet, 0);
     const yardDwellSamples = freightFlow.trailers
       .filter((trailer) => trailer.state === "yard")
       .map((trailer) => currentTick - trailer.arrivalTick);
@@ -24,9 +36,18 @@ export class QueueManager {
       switchingTrailers: switchingTrailers.length,
       unloadTrailers: unloadTrailers.length,
       dockFreightCubicFeet,
+      storageQueueCubicFeet,
+      pickQueueCubicFeet,
+      loadQueueCubicFeet,
       averageYardDwellTicks: average(yardDwellSamples),
       averageDoorDwellTicks: average(doorDwellSamples),
     };
+
+    freightFlow.inventoryByFreightClass = calculateInventoryByFreightClass(freightFlow);
+
+    if (warehouseMap) {
+      recalculateZoneUsage(freightFlow, warehouseMap);
+    }
   }
 }
 
@@ -36,4 +57,36 @@ function average(values: number[]): number {
   }
 
   return values.reduce((total, value) => total + value, 0) / values.length;
+}
+
+function calculateInventoryByFreightClass(freightFlow: FreightFlowState): Record<string, number> {
+  const inventory: Record<string, number> = {};
+
+  for (const batch of freightFlow.freightBatches) {
+    if (batch.state !== "in-storage" || batch.outboundOrderId !== null) {
+      continue;
+    }
+
+    inventory[batch.freightClassId] = (inventory[batch.freightClassId] ?? 0) + batch.cubicFeet;
+  }
+
+  return inventory;
+}
+
+function recalculateZoneUsage(freightFlow: FreightFlowState, warehouseMap: WarehouseMap): void {
+  for (const zone of warehouseMap.zones) {
+    zone.usedCubicFeet = 0;
+  }
+
+  for (const batch of freightFlow.freightBatches) {
+    if (batch.state !== "in-storage" || !batch.storageZoneId) {
+      continue;
+    }
+
+    const zone = warehouseMap.zones.find((candidateZone) => candidateZone.id === batch.storageZoneId);
+
+    if (zone) {
+      zone.usedCubicFeet += batch.cubicFeet;
+    }
+  }
 }

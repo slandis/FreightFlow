@@ -118,6 +118,8 @@ textarea {
   top: 76px;
   right: 12px;
   width: 280px;
+  max-height: calc(100% - 160px);
+  overflow: auto;
   padding: 12px;
 }
 
@@ -141,6 +143,7 @@ textarea {
   bottom: 12px;
   left: 12px;
   display: flex;
+  flex-wrap: wrap;
   gap: 18px;
   min-height: 48px;
   align-items: center;

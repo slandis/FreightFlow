@@ -10,6 +10,10 @@ import type { DomainEvent } from "../events/DomainEvent";
 import { GameSpeed } from "../types/enums";
 import { createInitialFreightFlowState } from "../world/DoorManager";
 import { FreightGenerator } from "../freight/FreightGenerator";
+import { OrderGenerator } from "../freight/OrderGenerator";
+import { LoadSystem } from "../labor/LoadSystem";
+import { PickSystem } from "../labor/PickSystem";
+import { StorageSystem } from "../labor/StorageSystem";
 import { SwitchDriverSystem } from "../labor/SwitchDriverSystem";
 import { UnloadSystem } from "../labor/UnloadSystem";
 import { QueueManager } from "../systems/QueueManager";
@@ -28,8 +32,12 @@ export class SimulationRunner {
   private readonly random: RandomService;
   private readonly commandBus: CommandBus;
   private readonly freightGenerator = new FreightGenerator();
+  private readonly orderGenerator = new OrderGenerator();
   private readonly switchDriverSystem = new SwitchDriverSystem();
   private readonly unloadSystem = new UnloadSystem();
+  private readonly storageSystem = new StorageSystem();
+  private readonly pickSystem = new PickSystem();
+  private readonly loadSystem = new LoadSystem();
   private readonly queueManager = new QueueManager();
   private readonly listeners = new Set<StateListener>();
   private readonly changeListeners = new Set<ChangeListener>();
@@ -84,10 +92,32 @@ export class SimulationRunner {
       ...this.unloadSystem.process(this.state.freightFlow, this.state.currentTick, (type) =>
         this.createEvent(type),
       ),
+      ...this.storageSystem.process(
+        this.state.freightFlow,
+        this.state.warehouseMap,
+        this.state.currentTick,
+        (type) => this.createEvent(type),
+      ),
+      ...this.orderGenerator.generateOutbound(
+        this.state.freightFlow,
+        this.state.currentTick,
+        this.random,
+        (type) => this.createEvent(type),
+      ),
+      ...this.pickSystem.process(this.state.freightFlow, this.state.currentTick, (type) =>
+        this.createEvent(type),
+      ),
+      ...this.loadSystem.process(this.state.freightFlow, this.state.currentTick, (type) =>
+        this.createEvent(type),
+      ),
     ];
 
-    this.queueManager.updateQueues(this.state.freightFlow, this.state.currentTick);
-    this.updateInboundKpis();
+    this.queueManager.updateQueues(
+      this.state.freightFlow,
+      this.state.currentTick,
+      this.state.warehouseMap,
+    );
+    this.updateFreightKpis();
     events.push(this.createEvent("simulation-ticked"));
     this.emitEvents(events);
     this.notifyStateChanged();
@@ -159,8 +189,10 @@ export class SimulationRunner {
     }
   }
 
-  private updateInboundKpis(): void {
+  private updateFreightKpis(): void {
     this.state.kpis.inboundCubicFeet = this.state.freightFlow.metrics.totalUnloadedCubicFeet;
+    this.state.kpis.outboundCubicFeet =
+      this.state.freightFlow.metrics.totalOutboundCubicFeetShipped;
     this.state.kpis.throughputCubicFeet =
       (this.state.kpis.inboundCubicFeet + this.state.kpis.outboundCubicFeet) / 2;
   }

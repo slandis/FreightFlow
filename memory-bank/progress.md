@@ -67,3 +67,17 @@ Phase 5: Completed
     - Added Vitest coverage for door initialization, spawn timing, freight batch generation, door assignment, switch duration, unloading, queue/KPI updates, deterministic generation, and freight-flow events.
     - Verification completed: `npm run test` passed with 40 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
     - Local dev server was verified at `http://127.0.0.1:5173`.
+
+Phase 6: Completed
+    - Saved the implementation plan to `memory-bank/phase-6-plan.md`.
+    - Extended freight batches, outbound orders, trailers, and freight-flow state to support storage, inventory, picking, loading, and shipment completion.
+    - Implemented dock-to-storage movement for whole freight batches using valid compatible storage zones, zone capacity, and freight-class compatibility from config.
+    - Added stored inventory tracking by freight class and zone used-capacity recalculation.
+    - Implemented outbound order generation from stored inventory, including deterministic seeded order selection and requested cubic-foot sizing.
+    - Implemented pick processing for outbound orders, including whole-batch reservation and graceful blocked-order handling when inventory is unavailable.
+    - Implemented outbound trailer loading through available flex/outbound doors and shipment completion.
+    - Updated outbound and throughput KPIs after completed shipments.
+    - Added storage/outbound selectors and expanded the bottom KPI bar and right operations panel with stored freight, capacity, dock blockage, order counts, pick/load queues, loading doors, and shipped freight.
+    - Added freight-flow events for freight storage, outbound order creation, blocked orders, picked orders, outbound trailer loading, and shipment completion.
+    - Added Vitest coverage for storage compatibility/capacity, inventory tracking, outbound generation, blocked orders, picking, loading, KPI updates, and the full dock-to-shipment lifecycle.
+    - Verification completed: `npm run test` passed with 49 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.

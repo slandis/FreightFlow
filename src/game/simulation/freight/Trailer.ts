@@ -17,4 +17,5 @@ export interface Trailer {
   completedTick: number | null;
   remainingSwitchTicks: number;
   remainingUnloadCubicFeet: number;
+  remainingLoadCubicFeet: number;
 }

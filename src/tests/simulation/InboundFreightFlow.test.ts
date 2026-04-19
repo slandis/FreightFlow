@@ -23,6 +23,7 @@ function createYardTrailer(id: string, arrivalTick: number): Trailer {
     completedTick: null,
     remainingSwitchTicks: 0,
     remainingUnloadCubicFeet: 1000,
+    remainingLoadCubicFeet: 0,
   };
 }
 

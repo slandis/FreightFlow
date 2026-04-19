@@ -1,6 +1,14 @@
 export interface OutboundOrder {
   id: string;
   freightClassId: string;
-  cubicFeet: number;
+  requestedCubicFeet: number;
+  fulfilledCubicFeet: number;
+  state: "open" | "picking" | "picked" | "loading" | "complete" | "blocked";
+  createdTick: number;
   dueTick: number;
+  freightBatchIds: string[];
+  outboundTrailerId: string | null;
+  blockedReason: string | null;
+  remainingPickCubicFeet: number;
+  remainingLoadCubicFeet: number;
 }
