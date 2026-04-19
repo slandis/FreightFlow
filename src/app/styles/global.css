@@ -90,6 +90,21 @@ textarea {
   padding: 12px;
 }
 
+.right-panel dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 12px;
+  margin: 8px 0 12px;
+}
+
+.right-panel dt {
+  color: rgba(238, 244, 242, 0.72);
+}
+
+.right-panel dd {
+  margin: 0;
+}
+
 .bottom-kpi-bar {
   right: 12px;
   bottom: 12px;
