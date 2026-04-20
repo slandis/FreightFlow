@@ -78,6 +78,11 @@ textarea {
   background: rgba(230, 182, 85, 0.28);
 }
 
+.speed-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .left-panel {
   top: 76px;
   left: 12px;
@@ -351,4 +356,149 @@ textarea {
   gap: 6px;
   align-items: center;
   text-align: center;
+}
+
+.monthly-planning-dialog {
+  width: min(980px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  border: 1px solid rgba(238, 244, 242, 0.22);
+  border-radius: 8px;
+  padding: 18px;
+  color: #eef4f2;
+  background: rgba(24, 33, 38, 0.96);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.36);
+}
+
+.monthly-planning-dialog header,
+.planning-summary-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.monthly-planning-dialog header p,
+.planning-note,
+.budget-control p,
+.planning-role p {
+  margin: 4px 0 0;
+  color: rgba(238, 244, 242, 0.7);
+}
+
+.monthly-planning-dialog header button,
+.planning-nav button,
+.planning-stepper button {
+  min-height: 34px;
+  border: 1px solid rgba(238, 244, 242, 0.22);
+  border-radius: 8px;
+  color: #eef4f2;
+  background: rgba(94, 163, 198, 0.18);
+  cursor: pointer;
+}
+
+.planning-layout {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 16px;
+  margin: 18px 0;
+}
+
+.planning-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.planning-nav button {
+  text-align: left;
+}
+
+.planning-nav button.active {
+  border-color: #e6b655;
+  background: rgba(230, 182, 85, 0.22);
+}
+
+.planning-page {
+  min-height: 440px;
+}
+
+.planning-page h2 {
+  margin: 0 0 12px;
+}
+
+.planning-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.planning-stats div,
+.budget-control,
+.planning-role {
+  border: 1px solid rgba(238, 244, 242, 0.14);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(238, 244, 242, 0.05);
+}
+
+.planning-stats dt {
+  color: rgba(238, 244, 242, 0.68);
+  font-size: 12px;
+}
+
+.planning-stats dd {
+  margin: 4px 0 0;
+  font-weight: 700;
+}
+
+.budget-control-list,
+.planning-role-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.budget-control,
+.planning-role {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.planning-stepper {
+  display: grid;
+  grid-template-columns: 34px 42px 34px;
+  gap: 6px;
+  align-items: center;
+  text-align: center;
+}
+
+.planning-summary-bar {
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(238, 244, 242, 0.16);
+  padding-top: 12px;
+  color: rgba(238, 244, 242, 0.82);
+}
+
+.planning-error {
+  border-left: 3px solid #d96c5f;
+  padding-left: 8px;
+  color: #ffd5cf;
+}
+
+@media (max-width: 760px) {
+  .planning-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .planning-nav {
+    flex-flow: row wrap;
+  }
+
+  .planning-stats {
+    grid-template-columns: 1fr;
+  }
 }

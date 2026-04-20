@@ -1,4 +1,5 @@
 import type { GameState, ScoreDriver } from "../core/GameState";
+import { getMaintenanceSupport } from "../planning/BudgetPlan";
 import { updateScore } from "./ScoreUtils";
 
 export class ConditionSystem {
@@ -19,6 +20,12 @@ export class ConditionSystem {
       state.freightFlow.queues.loadQueueCubicFeet / 3000;
     const drivers: ScoreDriver[] = [];
     let delta = 0;
+    const maintenanceSupport = getMaintenanceSupport(state.planning.currentPlan.budget);
+
+    if (maintenanceSupport > 0) {
+      drivers.push({ label: "Maintenance budget", impact: maintenanceSupport });
+      delta += maintenanceSupport;
+    }
 
     if (state.labor.modifiers.sanitationPressure === "healthy") {
       drivers.push({ label: "Sanitation coverage", impact: 0.08 });

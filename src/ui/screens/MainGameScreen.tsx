@@ -3,16 +3,19 @@ import { useSimulationRunner } from "../../app/providers/SimulationProvider";
 import { createGame } from "../../game/phaser/GameBootstrap";
 import { AlertsCenter } from "../components/alerts/AlertsCenter";
 import { LaborDialog } from "../components/dialogs/LaborDialog";
+import { MonthlyPlanningDialog } from "../components/dialogs/MonthlyPlanningDialog";
 import { TopHud } from "../components/hud/TopHud";
 import { BottomKpiBar } from "../components/panels/BottomKpiBar";
 import { LeftToolPanel } from "../components/panels/LeftToolPanel";
 import { RightOperationsPanel } from "../components/panels/RightOperationsPanel";
+import { useSimulationState } from "../hooks/useSimulation";
 import { useUiStore } from "../store/uiStore";
 
 export function MainGameScreen() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const simulation = useSimulationRunner();
   const isLaborDialogOpen = useUiStore((state) => state.isLaborDialogOpen);
+  const isPlanningActive = useSimulationState((state) => state.planning.isPlanningActive);
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -35,6 +38,7 @@ export function MainGameScreen() {
       <BottomKpiBar />
       <AlertsCenter />
       {isLaborDialogOpen ? <LaborDialog /> : null}
+      {isPlanningActive ? <MonthlyPlanningDialog /> : null}
     </main>
   );
 }

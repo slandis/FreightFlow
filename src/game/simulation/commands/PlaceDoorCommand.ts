@@ -14,6 +14,10 @@ export class PlaceDoorCommand implements Command<"place-door"> {
   ) {}
 
   execute(context: CommandContext) {
+    if (context.state.planning.isPlanningActive) {
+      return commandFailed("Door editing is locked during monthly planning");
+    }
+
     if (!validDoorModes.has(this.mode)) {
       return commandFailed(`Invalid door mode: ${this.mode}`);
     }

@@ -139,3 +139,19 @@ Door Placement Polish: Completed
     - Updated `memory-bank/implementation-plan.md` so the Phase 5 door workflow includes player-facing door placement/removal.
     - Expanded the Phase 5 plan notes with the supported door tools, dock-edge validation rules, idle-only removal behavior, and assignment expectations.
     - Verification completed: `npm run test` passed with 75 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+
+Phase 9: Completed
+    - Saved the finalized Phase 9 plan to `memory-bank/phase-9-plan.md`.
+    - Added authoritative monthly planning state to `GameState`, including active/pending/current plan data, budget allocations, labor assignment plans, month keys, and planning snapshots.
+    - Implemented `PlanningSystem` month-boundary detection so a new month opens planning once, shifts speed to slow, records the opened month, creates a snapshot, and resets current-month economy counters for the next period.
+    - Replaced the stub budget and confirmation commands with real `ApplyBudgetPlanCommand` and `ConfirmMonthlyPlanCommand` behavior, including validation, event emission, pending-plan updates, labor assignment commits, and plan finalization.
+    - Added `AssignPlannedLaborCommand` for planning-time labor assignment changes with total-headcount validation.
+    - Added planning budget effects: maintenance supports condition, safety supports safety, training can improve productive labor after the default baseline, operations support reduces support pressure, and budget allocations increase operating cost.
+    - Locked simulation speed, zone painting, door editing, and live labor assignment commands while monthly planning is active.
+    - Replaced the monthly planning dialog stub with a multi-page React modal for Forecast, Workforce, Warehouse Condition, Satisfaction, Budgeting, and Productivity/Labor.
+    - Added planning selectors, planning UI store state, top-HUD planning status, speed-control locking, and planning dialog styling.
+    - Added monthly planning events for planning opened, budget updated, planned labor updated, and plan confirmed.
+    - Updated inbound freight tests to match the current 60-tick freight generator interval and 2,500 cubic-foot maximum.
+    - Added Vitest coverage for month rollover, one-time planning opening, slow-speed shift, budget validation, pending budget updates, planned labor validation, confirmation commits, budget effects, and planning-time command gating.
+    - Verification completed: `npm run test` passed with 82 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+    - Local dev server was verified at `http://127.0.0.1:5173`.

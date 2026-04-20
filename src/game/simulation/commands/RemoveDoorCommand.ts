@@ -10,6 +10,10 @@ export class RemoveDoorCommand implements Command<"remove-door"> {
   ) {}
 
   execute(context: CommandContext) {
+    if (context.state.planning.isPlanningActive) {
+      return commandFailed("Door editing is locked during monthly planning");
+    }
+
     const doorIndex = context.state.freightFlow.doors.findIndex(
       (door) => door.x === this.x && door.y === this.y,
     );

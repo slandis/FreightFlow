@@ -12,6 +12,7 @@ import {
   selectCriticalAlertCount,
   selectKpis,
 } from "../../../game/simulation/selectors/kpiSelectors";
+import { selectIsPlanningActive } from "../../../game/simulation/selectors/planningSelectors";
 import { useSimulationState } from "../../hooks/useSimulation";
 
 const speedButtons: Array<{ speed: GameSpeed; label: string }> = [
@@ -29,6 +30,7 @@ export function TopHud() {
   const kpis = useSimulationState(selectKpis);
   const criticalAlertCount = useSimulationState(selectCriticalAlertCount);
   const currentTick = useSimulationState(selectCurrentTick);
+  const isPlanningActive = useSimulationState(selectIsPlanningActive);
 
   return (
     <header className="top-hud">
@@ -38,12 +40,14 @@ export function TopHud() {
       <span>Safety: {kpis.safetyScore.toFixed(0)}</span>
       <span>Condition: {kpis.conditionScore.toFixed(0)}</span>
       <span>Critical alerts: {criticalAlertCount}</span>
+      {isPlanningActive ? <span>Planning active</span> : null}
       <span>Tick: {currentTick}</span>
       <div className="speed-controls" aria-label="Simulation speed">
         {speedButtons.map((button) => (
           <button
             aria-pressed={button.speed === speed}
             className={button.speed === speed ? "active" : ""}
+            disabled={isPlanningActive}
             key={button.speed}
             onClick={() => simulation.dispatch(new ChangeSpeedCommand(button.speed))}
             type="button"

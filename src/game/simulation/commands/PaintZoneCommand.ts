@@ -13,6 +13,10 @@ export class PaintZoneCommand implements Command<"paint-zone"> {
   ) {}
 
   execute(context: CommandContext) {
+    if (context.state.planning.isPlanningActive) {
+      return commandFailed("Zone editing is locked during monthly planning");
+    }
+
     if (!Object.values(TileZoneType).includes(this.zoneType)) {
       return commandFailed(`Invalid zone type: ${this.zoneType}`);
     }

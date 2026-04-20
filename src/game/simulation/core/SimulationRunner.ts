@@ -8,10 +8,12 @@ import {
   createInitialAlertState,
   createInitialContractState,
   createInitialEconomyState,
+  createInitialPlanningState,
   createInitialScoreState,
+  type SimulationCalendar,
 } from "./GameState";
 import { RandomService } from "./RandomService";
-import { createInitialCalendar, SimulationClock } from "./SimulationClock";
+import { SimulationClock } from "./SimulationClock";
 import type { DomainEvent } from "../events/DomainEvent";
 import { GameSpeed, LaborRole } from "../types/enums";
 import { createInitialFreightFlowState } from "../world/DoorManager";
@@ -30,19 +32,21 @@ import { ContractSystem } from "../systems/ContractSystem";
 import { FinanceSystem } from "../systems/FinanceSystem";
 import { KPIService } from "../systems/KPIService";
 import { MoraleSystem } from "../systems/MoraleSystem";
+import { PlanningSystem } from "../systems/PlanningSystem";
 import { SafetySystem } from "../systems/SafetySystem";
 import { SatisfactionSystem } from "../systems/SatisfactionSystem";
 
 export interface SimulationRunnerOptions {
   seed?: number;
   startingCash?: number;
+  initialCalendar?: SimulationCalendar;
 }
 
 type StateListener = (state: GameState) => void;
 type ChangeListener = () => void;
 
 export class SimulationRunner {
-  private readonly clock = new SimulationClock();
+  private readonly clock: SimulationClock;
   private readonly eventBus = new EventBus();
   private readonly random: RandomService;
   private readonly commandBus: CommandBus;
@@ -59,6 +63,7 @@ export class SimulationRunner {
   private readonly moraleSystem = new MoraleSystem();
   private readonly safetySystem = new SafetySystem();
   private readonly satisfactionSystem = new SatisfactionSystem();
+  private readonly planningSystem = new PlanningSystem();
   private readonly contractSystem = new ContractSystem();
   private readonly financeSystem = new FinanceSystem();
   private readonly kpiService = new KPIService();
@@ -70,11 +75,14 @@ export class SimulationRunner {
   private revision = 0;
 
   constructor(options: SimulationRunnerOptions = {}) {
+    this.clock = new SimulationClock(options.initialCalendar);
     this.random = new RandomService(options.seed);
     const warehouseMap = new WarehouseMap(MAP_WIDTH, MAP_HEIGHT);
+    const labor = this.laborManager.createInitialLaborState();
+    const calendar = this.clock.getCalendar();
     this.state = {
       currentTick: 0,
-      calendar: createInitialCalendar(),
+      calendar,
       speed: GameSpeed.Paused,
       cash: options.startingCash ?? 100000,
       kpis: {
@@ -97,11 +105,12 @@ export class SimulationRunner {
       },
       warehouseMap,
       freightFlow: createInitialFreightFlowState(warehouseMap),
-      labor: this.laborManager.createInitialLaborState(),
+      labor,
       economy: createInitialEconomyState(),
       scores: createInitialScoreState(),
       contracts: createInitialContractState(),
       alerts: createInitialAlertState(),
+      planning: createInitialPlanningState(calendar, labor),
     };
 
     this.commandBus = new CommandBus({
@@ -115,12 +124,17 @@ export class SimulationRunner {
   tick(): void {
     this.state.currentTick = this.clock.advance();
     this.state.calendar = this.clock.getCalendar();
+    const planningEvents = this.planningSystem.update(this.state, (type) =>
+      this.createEvent(type),
+    );
     this.laborManager.recalculate(
       this.state.labor,
       this.laborManager.calculateWorkloads(this.state.freightFlow),
+      this.state.planning.currentPlan.budget,
     );
 
     const events = [
+      ...planningEvents,
       ...this.freightGenerator.generateInbound(
         this.state.freightFlow,
         this.state.currentTick,
@@ -174,6 +188,7 @@ export class SimulationRunner {
     this.laborManager.recalculate(
       this.state.labor,
       this.laborManager.calculateWorkloads(this.state.freightFlow),
+      this.state.planning.currentPlan.budget,
     );
     this.conditionSystem.update(this.state);
     this.moraleSystem.update(this.state);

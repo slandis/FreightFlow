@@ -40,19 +40,19 @@ describe("inbound freight flow", () => {
     }
   });
 
-  it("does not spawn inbound trailers before tick 120", () => {
+  it("does not spawn inbound trailers before tick 60", () => {
     const runner = new SimulationRunner();
 
-    runTicks(runner, 119);
+    runTicks(runner, 59);
 
     expect(runner.getState().freightFlow.trailers).toHaveLength(0);
   });
 
-  it("spawns an inbound trailer and freight batch at tick 120", () => {
+  it("spawns an inbound trailer and freight batch at tick 60", () => {
     const runner = new SimulationRunner({ seed: 42 });
     const freightClassIds = freightClasses.map((freightClass) => freightClass.id);
 
-    runTicks(runner, 120);
+    runTicks(runner, 60);
 
     const { trailers, freightBatches, metrics } = runner.getState().freightFlow;
     expect(trailers).toHaveLength(1);
@@ -62,7 +62,7 @@ describe("inbound freight flow", () => {
     expect(trailers[0].freightBatchIds).toEqual([freightBatches[0].id]);
     expect(freightClassIds).toContain(freightBatches[0].freightClassId);
     expect(freightBatches[0].cubicFeet).toBeGreaterThanOrEqual(800);
-    expect(freightBatches[0].cubicFeet).toBeLessThanOrEqual(1800);
+    expect(freightBatches[0].cubicFeet).toBeLessThanOrEqual(2500);
   });
 
   it("assigns the oldest yard trailers to available doors only", () => {
@@ -110,7 +110,7 @@ describe("inbound freight flow", () => {
   it("switch movement takes eight ticks after door assignment", () => {
     const runner = new SimulationRunner();
 
-    runTicks(runner, 120);
+    runTicks(runner, 60);
     const trailer = runner.getState().freightFlow.trailers[0];
 
     expect(trailer.state).toBe("switching-to-door");
@@ -128,7 +128,7 @@ describe("inbound freight flow", () => {
   it("unloading reduces remaining cubic feet and completes freight to dock", () => {
     const runner = new SimulationRunner();
 
-    runTicks(runner, 128);
+    runTicks(runner, 68);
     const freightFlow = runner.getState().freightFlow;
     const trailer = freightFlow.trailers[0];
     const batch = freightFlow.freightBatches[0];
@@ -152,7 +152,7 @@ describe("inbound freight flow", () => {
   it("recalculates queues, dwell, and inbound KPIs as freight completes", () => {
     const runner = new SimulationRunner();
 
-    runTicks(runner, 120);
+    runTicks(runner, 60);
     expect(runner.getState().freightFlow.queues.switchingTrailers).toBe(1);
     expect(runner.getState().freightFlow.queues.averageDoorDwellTicks).toBe(0);
 
@@ -174,8 +174,8 @@ describe("inbound freight flow", () => {
     const first = new SimulationRunner({ seed: 7 });
     const second = new SimulationRunner({ seed: 7 });
 
-    runTicks(first, 120);
-    runTicks(second, 120);
+    runTicks(first, 60);
+    runTicks(second, 60);
 
     expect(snapshotFirstTrailer(first.getState().freightFlow)).toEqual(
       snapshotFirstTrailer(second.getState().freightFlow),
@@ -197,7 +197,7 @@ describe("inbound freight flow", () => {
       }
     });
 
-    runTicks(runner, 120);
+    runTicks(runner, 60);
     runUntilDockFreightExists(runner, runner.getState().freightFlow);
 
     expect(eventTypes).toContain("trailer-arrived");

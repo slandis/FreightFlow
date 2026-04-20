@@ -18,6 +18,8 @@ export interface LaborModifiers {
   coordinationMultiplier: number;
   congestionPenalty: number;
   conditionPressure: number;
+  trainingProductivityBonus: number;
+  operationsSupport: number;
   sanitationPressure: LaborPressure;
   managementPressure: LaborPressure;
 }

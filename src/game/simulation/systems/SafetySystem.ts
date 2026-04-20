@@ -1,4 +1,5 @@
 import type { GameState, ScoreDriver } from "../core/GameState";
+import { getSafetySupport } from "../planning/BudgetPlan";
 import { updateScore } from "./ScoreUtils";
 
 export class SafetySystem {
@@ -14,6 +15,12 @@ export class SafetySystem {
       state.freightFlow.queues.loadQueueCubicFeet / 5000;
     const drivers: ScoreDriver[] = [];
     let delta = 0;
+    const safetySupport = getSafetySupport(state.planning.currentPlan.budget);
+
+    if (safetySupport > 0) {
+      drivers.push({ label: "Safety budget", impact: safetySupport });
+      delta += safetySupport;
+    }
 
     if (state.labor.modifiers.managementPressure === "healthy") {
       drivers.push({ label: "Management coordination", impact: 0.05 });

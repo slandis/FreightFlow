@@ -1,7 +1,8 @@
 import type { WarehouseMap } from "../world/WarehouseMap";
 import type { FreightFlowState } from "../freight/FreightFlowState";
 import type { LaborState } from "../labor/LaborPool";
-import { GameSpeed } from "../types/enums";
+import { GameSpeed, LaborRole } from "../types/enums";
+import { createDefaultBudgetPlan } from "../planning/BudgetPlan";
 
 export interface SimulationCalendar {
   year: number;
@@ -47,6 +48,69 @@ export interface EconomyState {
   laborCostPerTick: number;
   operatingCostPerTick: number;
   lastRevenueTick: number | null;
+}
+
+export interface BudgetPlan {
+  maintenance: number;
+  training: number;
+  safety: number;
+  operationsSupport: number;
+  contingency: number;
+}
+
+export type LaborAssignmentPlan = Record<LaborRole, number>;
+
+export interface MonthlyPlan {
+  monthKey: string;
+  budget: BudgetPlan;
+  laborAssignments: LaborAssignmentPlan;
+}
+
+export interface PlanningSnapshot {
+  monthKey: string;
+  year: number;
+  month: number;
+  openedTick: number;
+  cash: number;
+  currentMonthRevenue: number;
+  currentMonthLaborCost: number;
+  currentMonthOperatingCost: number;
+  currentMonthNet: number;
+  inboundCubicFeet: number;
+  outboundCubicFeet: number;
+  throughputCubicFeet: number;
+  yardTrailers: number;
+  dockFreightCubicFeet: number;
+  storageQueueCubicFeet: number;
+  pickQueueCubicFeet: number;
+  loadQueueCubicFeet: number;
+  moraleScore: number;
+  conditionScore: number;
+  safetyScore: number;
+  clientSatisfactionScore: number;
+  customerSatisfactionScore: number;
+  serviceLevel: number;
+  contractHealth: ContractSummary["health"];
+  totalHeadcount: number;
+  unassignedHeadcount: number;
+  topBottleneckLabel: string | null;
+  topBottleneckPressure: string | null;
+  storageUsedCubicFeet: number;
+  storageCapacityCubicFeet: number;
+  dockStorageNeedCount: number;
+  activeAlertCount: number;
+  criticalAlertCount: number;
+  projectedBudgetCostPerTick: number;
+}
+
+export interface PlanningState {
+  isPlanningActive: boolean;
+  activePlanId: string | null;
+  lastOpenedMonthKey: string | null;
+  lastConfirmedMonthKey: string | null;
+  pendingPlan: MonthlyPlan | null;
+  currentPlan: MonthlyPlan;
+  latestSnapshot: PlanningSnapshot | null;
 }
 
 export interface ScoreDriver {
@@ -112,6 +176,7 @@ export interface GameState {
   scores: ScoreState;
   contracts: ContractState;
   alerts: AlertState;
+  planning: PlanningState;
 }
 
 export function createInitialEconomyState(): EconomyState {
@@ -163,6 +228,41 @@ export function createInitialAlertState(): AlertState {
     alerts: [],
     nextAlertSequence: 1,
   };
+}
+
+export function createInitialPlanningState(
+  calendar: SimulationCalendar,
+  labor: LaborState,
+): PlanningState {
+  const monthKey = getMonthKey(calendar);
+  const currentPlan = {
+    monthKey,
+    budget: createDefaultBudgetPlan(),
+    laborAssignments: createLaborAssignmentPlan(labor),
+  };
+
+  return {
+    isPlanningActive: false,
+    activePlanId: null,
+    lastOpenedMonthKey: monthKey,
+    lastConfirmedMonthKey: monthKey,
+    pendingPlan: null,
+    currentPlan,
+    latestSnapshot: null,
+  };
+}
+
+export function getMonthKey(calendar: SimulationCalendar): string {
+  return `Y${calendar.year}-M${calendar.month}`;
+}
+
+export function createLaborAssignmentPlan(labor: LaborState): LaborAssignmentPlan {
+  return Object.values(LaborRole).reduce((assignments, roleId) => {
+    const pool = labor.pools.find((candidatePool) => candidatePool.roleId === roleId);
+
+    assignments[roleId] = pool?.assignedHeadcount ?? 0;
+    return assignments;
+  }, {} as LaborAssignmentPlan);
 }
 
 function createScoreMetric(value: number): ScoreMetric {

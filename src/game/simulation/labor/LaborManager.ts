@@ -1,5 +1,11 @@
 import laborRoles from "../../../data/config/laborRoles.json";
+import type { BudgetPlan } from "../core/GameState";
 import type { FreightFlowState } from "../freight/FreightFlowState";
+import {
+  createDefaultBudgetPlan,
+  getOperationsSupport,
+  getTrainingProductivityBonus,
+} from "../planning/BudgetPlan";
 import { LaborRole } from "../types/enums";
 import type {
   LaborBottleneck,
@@ -52,7 +58,7 @@ export class LaborManager {
       totalHeadcount: DEFAULT_TOTAL_HEADCOUNT,
       unassignedHeadcount: 0,
       pools,
-      modifiers: this.calculateModifiers(pools),
+      modifiers: this.calculateModifiers(pools, createDefaultBudgetPlan()),
       pressure: {
         bottlenecks: [],
         criticalCount: 0,
@@ -69,6 +75,7 @@ export class LaborManager {
     labor: LaborState,
     roleId: string,
     headcount: number,
+    budget: BudgetPlan = createDefaultBudgetPlan(),
   ): { success: true } | { success: false; error: string } {
     if (!Object.values(LaborRole).includes(roleId as LaborRole)) {
       return { success: false, error: `Unknown labor role: ${roleId}` };
@@ -94,7 +101,7 @@ export class LaborManager {
 
     pool.assignedHeadcount = headcount;
     pool.availableHeadcount = headcount;
-    this.recalculate(labor);
+    this.recalculate(labor, {}, budget);
 
     return { success: true };
   }
@@ -102,13 +109,14 @@ export class LaborManager {
   recalculate(
     labor: LaborState,
     workloads: Partial<Record<LaborRole, number>> = {},
+    budget: BudgetPlan = createDefaultBudgetPlan(),
   ): void {
     labor.unassignedHeadcount = Math.max(
       0,
       labor.totalHeadcount -
         labor.pools.reduce((total, pool) => total + pool.assignedHeadcount, 0),
     );
-    labor.modifiers = this.calculateModifiers(labor.pools);
+    labor.modifiers = this.calculateModifiers(labor.pools, budget);
 
     for (const pool of labor.pools) {
       const activeWorkload = workloads[pool.roleId] ?? 0;
@@ -167,7 +175,7 @@ export class LaborManager {
     return roleLabels.get(roleId) ?? roleId;
   }
 
-  private calculateModifiers(pools: LaborPool[]): LaborModifiers {
+  private calculateModifiers(pools: LaborPool[], budget: BudgetPlan): LaborModifiers {
     const sanitationHeadcount =
       pools.find((pool) => pool.roleId === LaborRole.Sanitation)?.assignedHeadcount ?? 0;
     const managementHeadcount =
@@ -178,20 +186,35 @@ export class LaborManager {
       managementHeadcount === 0
         ? 0.85
         : Math.min(1.1, 0.9 + Math.min(1.5, managementCoverage) * 0.1);
+    const trainingProductivityBonus = getTrainingProductivityBonus(budget);
+    const operationsSupport = getOperationsSupport(budget);
     const congestionPenalty =
       sanitationHeadcount >= SUPPORT_TARGET_HEADCOUNT
         ? 0
-        : Math.min(0.25, (SUPPORT_TARGET_HEADCOUNT - sanitationHeadcount) * 0.12);
+        : Math.max(
+            0,
+            Math.min(0.25, (SUPPORT_TARGET_HEADCOUNT - sanitationHeadcount) * 0.12) -
+              operationsSupport,
+          );
     const conditionPressure =
       sanitationHeadcount >= SUPPORT_TARGET_HEADCOUNT
         ? 0
-        : Math.min(100, (SUPPORT_TARGET_HEADCOUNT - sanitationHeadcount) * 35);
+        : Math.max(
+            0,
+            Math.min(100, (SUPPORT_TARGET_HEADCOUNT - sanitationHeadcount) * 35) -
+              operationsSupport * 100,
+          );
 
     return {
-      productivityMultiplier: Math.max(0.5, coordinationMultiplier - congestionPenalty),
+      productivityMultiplier: Math.max(
+        0.5,
+        coordinationMultiplier - congestionPenalty + trainingProductivityBonus,
+      ),
       coordinationMultiplier,
       congestionPenalty,
       conditionPressure,
+      trainingProductivityBonus,
+      operationsSupport,
       sanitationPressure: supportPressure(sanitationHeadcount),
       managementPressure: supportPressure(managementHeadcount),
     };

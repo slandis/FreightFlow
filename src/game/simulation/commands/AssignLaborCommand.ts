@@ -14,7 +14,16 @@ export class AssignLaborCommand implements Command<"assign-labor"> {
   ) {}
 
   execute(context: CommandContext) {
-    const result = laborManager.assignLabor(context.state.labor, this.roleId, this.headcount);
+    if (context.state.planning.isPlanningActive) {
+      return commandFailed("Labor assignments are locked during monthly planning");
+    }
+
+    const result = laborManager.assignLabor(
+      context.state.labor,
+      this.roleId,
+      this.headcount,
+      context.state.planning.currentPlan.budget,
+    );
 
     if (!result.success) {
       return commandFailed(result.error);

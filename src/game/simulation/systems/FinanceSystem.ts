@@ -1,6 +1,7 @@
 import freightClasses from "../../../data/config/freightClasses.json";
 import type { GameState } from "../core/GameState";
 import type { DomainEvent } from "../events/DomainEvent";
+import { getBudgetCostPerTick } from "../planning/BudgetPlan";
 
 const LABOR_COST_PER_WORKER_PER_TICK = 2;
 const BASE_OPERATING_COST_PER_TICK = 20;
@@ -25,6 +26,7 @@ export class FinanceSystem {
     const laborCost = assignedHeadcount * LABOR_COST_PER_WORKER_PER_TICK;
     const operatingCost =
       BASE_OPERATING_COST_PER_TICK +
+      getBudgetCostPerTick(state.planning.currentPlan.budget) +
       state.labor.modifiers.conditionPressure * 0.1 +
       Math.max(0, 100 - state.scores.condition.value) * 0.05 +
       Math.max(0, 100 - state.scores.safety.value) * 0.05;

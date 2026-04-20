@@ -10,6 +10,14 @@ export type ActiveTool =
   | "door-remove"
   | Exclude<TileZoneType, TileZoneType.Dock | TileZoneType.Unassigned>;
 
+export type PlanningPage =
+  | "forecast"
+  | "workforce"
+  | "condition"
+  | "satisfaction"
+  | "budgeting"
+  | "productivity";
+
 export interface TileSummary {
   x: number;
   y: number;
@@ -30,10 +38,12 @@ interface UiState {
   hoveredTile: TileSummary | null;
   selectedTile: TileSummary | null;
   isLaborDialogOpen: boolean;
+  activePlanningPage: PlanningPage;
   setActiveTool: (tool: ActiveTool) => void;
   setHoveredTile: (tile: TileSummary | null) => void;
   setSelectedTile: (tile: TileSummary | null) => void;
   setLaborDialogOpen: (isOpen: boolean) => void;
+  setActivePlanningPage: (page: PlanningPage) => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -41,8 +51,10 @@ export const useUiStore = create<UiState>((set) => ({
   hoveredTile: null,
   selectedTile: null,
   isLaborDialogOpen: false,
+  activePlanningPage: "forecast",
   setActiveTool: (tool) => set({ activeTool: tool }),
   setHoveredTile: (tile) => set({ hoveredTile: tile }),
   setSelectedTile: (tile) => set({ selectedTile: tile }),
   setLaborDialogOpen: (isOpen) => set({ isLaborDialogOpen: isOpen }),
+  setActivePlanningPage: (page) => set({ activePlanningPage: page }),
 }));
