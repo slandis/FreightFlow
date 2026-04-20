@@ -164,3 +164,10 @@ Hyper Speed Polish: Completed
     - Updated the simulation loop to stop remaining same-frame ticks when monthly planning opens, preventing Hyper from overshooting the month boundary after planning activates.
     - Added timing coverage for Hyper speed and the 5-10 second month target.
     - Verification completed: `npm run test` passed with 83 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+
+Monthly Planning Startup Fix: Completed
+    - Fixed live game startup so the first monthly planning dialog opens immediately instead of waiting for the first month rollover.
+    - Added an `openInitialPlanning` option to `SimulationRunner` and enabled it from the React `SimulationProvider`, keeping non-UI simulation tests free to start without planning command locks.
+    - Added regression coverage for the initial planning dialog state.
+    - Tuned Hyper timing to use a higher cap only for Hyper speed while preserving the normal catch-up cap for paused, slow, medium, and fast speeds.
+    - Verification completed: `npm run test` passed with 84 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.

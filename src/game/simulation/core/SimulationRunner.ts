@@ -40,6 +40,7 @@ export interface SimulationRunnerOptions {
   seed?: number;
   startingCash?: number;
   initialCalendar?: SimulationCalendar;
+  openInitialPlanning?: boolean;
 }
 
 type StateListener = (state: GameState) => void;
@@ -119,6 +120,14 @@ export class SimulationRunner {
       random: this.random,
       createEvent: (type) => this.createEvent(type),
     });
+
+    if (options.openInitialPlanning) {
+      this.planningSystem.openMonthlyPlanning(
+        this.state,
+        this.state.planning.currentPlan.monthKey,
+        (type) => this.createEvent(type),
+      );
+    }
   }
 
   tick(): void {

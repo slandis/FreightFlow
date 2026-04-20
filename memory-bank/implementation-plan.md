@@ -436,17 +436,20 @@ Implement the strategic month boundary and business-planning loop.
 - add Budgeting page
 - add Productivity/Labor page
 - implement “confirm plan” flow
+- open the first monthly planning dialog when a new live game starts
 - auto-shift speed to slow at month start
 - pause or gate simulation-changing actions while planning is active
 
 ### Deliverables
 - beginning of each month triggers planning flow
+- new live games begin with the planning dialog visible
 - player can review business pages
 - budget and labor changes are applied on confirmation
 - simulation resumes after planning completion
 
 ### Validation Checklist
 - planning opens exactly once per month boundary
+- first-run planning opens without requiring the player to wait through an entire month
 - values shown in planning reflect recent simulation state
 - confirmed changes affect the next month of play
 - cancel/confirm behavior is consistent and safe

@@ -5,7 +5,7 @@ import { useSimulationLoop } from "../../ui/hooks/useSimulationLoop";
 const SimulationContext = createContext<SimulationRunner | null>(null);
 
 export function SimulationProvider({ children }: PropsWithChildren) {
-  const simulation = useMemo(() => new SimulationRunner(), []);
+  const simulation = useMemo(() => new SimulationRunner({ openInitialPlanning: true }), []);
   useSimulationLoop(simulation);
 
   return <SimulationContext.Provider value={simulation}>{children}</SimulationContext.Provider>;

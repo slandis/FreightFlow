@@ -1,6 +1,7 @@
 import { GameSpeed } from "../types/enums";
 
-export const MAX_TICKS_PER_FRAME = 120;
+export const MAX_TICKS_PER_FRAME = 30;
+export const MAX_HYPER_TICKS_PER_FRAME = 2000;
 export const TICKS_PER_MONTH = 30 * 24 * 60;
 export const HYPER_TARGET_SECONDS_PER_MONTH = 6;
 export const HYPER_TICKS_PER_SECOND = TICKS_PER_MONTH / HYPER_TARGET_SECONDS_PER_MONTH;
@@ -37,11 +38,13 @@ export function calculateTicksForElapsed(
   }
 
   const tickIntervalMs = 1000 / ticksPerSecond;
+  const maxTicksPerFrame =
+    speed === GameSpeed.Hyper ? MAX_HYPER_TICKS_PER_FRAME : MAX_TICKS_PER_FRAME;
   const totalElapsedMs = Math.max(0, elapsedMs) + accumulatedMs;
   const uncappedTicksToRun = Math.floor(totalElapsedMs / tickIntervalMs);
-  const ticksToRun = Math.min(uncappedTicksToRun, MAX_TICKS_PER_FRAME);
+  const ticksToRun = Math.min(uncappedTicksToRun, maxTicksPerFrame);
   const nextAccumulatedMs =
-    uncappedTicksToRun > MAX_TICKS_PER_FRAME
+    uncappedTicksToRun > maxTicksPerFrame
       ? 0
       : totalElapsedMs - ticksToRun * tickIntervalMs;
 

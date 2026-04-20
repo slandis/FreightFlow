@@ -26,6 +26,16 @@ function openPlanning(runner: SimulationRunner) {
 }
 
 describe("monthly planning", () => {
+  it("can open the first monthly planning dialog on a new game start", () => {
+    const runner = new SimulationRunner({ openInitialPlanning: true });
+    const state = runner.getState();
+
+    expect(state.planning.isPlanningActive).toBe(true);
+    expect(state.planning.pendingPlan?.monthKey).toBe("Y1-M1");
+    expect(state.planning.latestSnapshot?.monthKey).toBe("Y1-M1");
+    expect(state.speed).toBe(GameSpeed.Slow);
+  });
+
   it("opens planning once at the month boundary and shifts speed to slow", () => {
     const runner = createRunnerAtMonthEnd();
     const openedEvents: DomainEvent[] = [];

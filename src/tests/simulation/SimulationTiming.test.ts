@@ -4,6 +4,7 @@ import {
   HYPER_TARGET_SECONDS_PER_MONTH,
   HYPER_TICKS_PER_SECOND,
   getTicksPerSecondForSpeed,
+  MAX_HYPER_TICKS_PER_FRAME,
   MAX_TICKS_PER_FRAME,
   TICKS_PER_MONTH,
 } from "../../game/simulation/core/SimulationTiming";
@@ -30,7 +31,7 @@ describe("SimulationTiming", () => {
     expect(calculateTicksForElapsed(1000, GameSpeed.Medium, 0).ticksToRun).toBe(4);
     expect(calculateTicksForElapsed(1000, GameSpeed.Fast, 0).ticksToRun).toBe(12);
     expect(calculateTicksForElapsed(1000, GameSpeed.Hyper, 0).ticksToRun).toBe(
-      MAX_TICKS_PER_FRAME,
+      MAX_HYPER_TICKS_PER_FRAME,
     );
   });
 
