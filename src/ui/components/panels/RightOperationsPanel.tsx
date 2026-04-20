@@ -1,3 +1,9 @@
+import { Fragment } from "react";
+import {
+  selectBottleneckSummary,
+  selectLaborRoleDetails,
+  selectLaborSummary,
+} from "../../../game/simulation/selectors/laborSelectors";
 import {
   selectAverageDoorDwell,
   selectAverageYardDwell,
@@ -18,6 +24,7 @@ import { useUiStore } from "../../store/uiStore";
 export function RightOperationsPanel() {
   const hoveredTile = useUiStore((state) => state.hoveredTile);
   const selectedTile = useUiStore((state) => state.selectedTile);
+  const setLaborDialogOpen = useUiStore((state) => state.setLaborDialogOpen);
   const inspectedTile = selectedTile ?? hoveredTile;
   const queues = useSimulationState(selectInboundQueueSummary);
   const doors = useSimulationState(selectDoorSummary);
@@ -31,6 +38,9 @@ export function RightOperationsPanel() {
   const storageQueueCubicFeet = useSimulationState(selectStorageQueueCubicFeet);
   const outboundQueues = useSimulationState(selectOutboundQueueSummary);
   const outboundShippedCubicFeet = useSimulationState(selectOutboundShippedCubicFeet);
+  const laborSummary = useSimulationState(selectLaborSummary);
+  const laborRoles = useSimulationState(selectLaborRoleDetails);
+  const topBottleneck = useSimulationState(selectBottleneckSummary);
 
   return (
     <aside className="right-panel" aria-label="Operations">
@@ -85,6 +95,33 @@ export function RightOperationsPanel() {
           <dd>{outboundQueues.loadQueueCubicFeet.toLocaleString()} cu ft</dd>
           <dt>Outbound shipped</dt>
           <dd>{outboundShippedCubicFeet.toLocaleString()} cu ft</dd>
+        </dl>
+      </section>
+      <section className="labor-summary">
+        <div className="panel-section-heading">
+          <strong>Labor</strong>
+          <button type="button" onClick={() => setLaborDialogOpen(true)}>
+            Assign
+          </button>
+        </div>
+        <p>
+          {laborSummary.totalHeadcount} total; {laborSummary.unassignedHeadcount} unassigned.
+        </p>
+        <p>
+          Top bottleneck:{" "}
+          {topBottleneck
+            ? `${topBottleneck.label} ${topBottleneck.pressure}`
+            : "none"}
+        </p>
+        <dl>
+          {laborRoles.map((pool) => (
+            <Fragment key={pool.roleId}>
+              <dt>{formatLaborRole(pool.roleId)}</dt>
+              <dd>
+                {pool.assignedHeadcount} / {pool.pressure}
+              </dd>
+            </Fragment>
+          ))}
         </dl>
       </section>
       <section className="dock-storage-needs">
@@ -157,4 +194,11 @@ function formatZoneNames(zoneNames: string[]): string {
   }
 
   return `${zoneNames.slice(0, -1).join(", ")} or ${zoneNames[zoneNames.length - 1]}`;
+}
+
+function formatLaborRole(roleId: string): string {
+  return roleId
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }

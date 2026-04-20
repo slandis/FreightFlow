@@ -2,8 +2,6 @@ import type { DomainEvent } from "../events/DomainEvent";
 import type { FreightFlowState } from "../freight/FreightFlowState";
 import { createId } from "../types/ids";
 
-const LOAD_CUBIC_FEET_PER_TICK = 120;
-
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
 
 export class LoadSystem {
@@ -11,11 +9,13 @@ export class LoadSystem {
     freightFlow: FreightFlowState,
     currentTick: number,
     createEvent: EventFactory,
+    loadCapacityCubicFeet: number,
   ): DomainEvent[] {
     const events: DomainEvent[] = [];
+    let remainingCapacity = loadCapacityCubicFeet;
 
     for (const order of freightFlow.outboundOrders) {
-      if (order.state === "picked") {
+      if (order.state === "picked" && loadCapacityCubicFeet > 0) {
         const door = freightFlow.doors.find(
           (candidateDoor) =>
             candidateDoor.state === "idle" &&
@@ -78,9 +78,15 @@ export class LoadSystem {
         continue;
       }
 
+      if (remainingCapacity <= 0) {
+        break;
+      }
+
+      const processedCubicFeet = Math.min(remainingCapacity, order.remainingLoadCubicFeet);
+      remainingCapacity -= processedCubicFeet;
       order.remainingLoadCubicFeet = Math.max(
         0,
-        order.remainingLoadCubicFeet - LOAD_CUBIC_FEET_PER_TICK,
+        order.remainingLoadCubicFeet - processedCubicFeet,
       );
       trailer.remainingLoadCubicFeet = order.remainingLoadCubicFeet;
 

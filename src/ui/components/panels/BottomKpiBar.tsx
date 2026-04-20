@@ -1,4 +1,5 @@
 import { selectKpis } from "../../../game/simulation/selectors/kpiSelectors";
+import { selectLaborSummary } from "../../../game/simulation/selectors/laborSelectors";
 import {
   selectInboundQueueSummary,
   selectOpenOutboundOrderCount,
@@ -13,6 +14,7 @@ export function BottomKpiBar() {
   const storedCubicFeet = useSimulationState(selectTotalStoredCubicFeet);
   const openOutboundOrders = useSimulationState(selectOpenOutboundOrderCount);
   const outboundShippedCubicFeet = useSimulationState(selectOutboundShippedCubicFeet);
+  const laborSummary = useSimulationState(selectLaborSummary);
 
   return (
     <footer className="bottom-kpi-bar">
@@ -22,6 +24,13 @@ export function BottomKpiBar() {
       <span>Stored: {storedCubicFeet.toLocaleString()} cu ft</span>
       <span>Open Orders: {openOutboundOrders}</span>
       <span>Shipped: {outboundShippedCubicFeet.toLocaleString()} cu ft</span>
+      <span>
+        Labor: {laborSummary.totalHeadcount - laborSummary.unassignedHeadcount}/
+        {laborSummary.totalHeadcount}
+      </span>
+      <span>
+        Bottleneck: {laborSummary.topBottleneck ? laborSummary.topBottleneck.label : "none"}
+      </span>
       <span>Yard: {queues.yardTrailers}</span>
       <span>Switching: {queues.switchingTrailers}</span>
       <span>Unload: {queues.unloadTrailers}</span>

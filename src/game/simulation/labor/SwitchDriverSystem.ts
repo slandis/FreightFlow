@@ -10,10 +10,20 @@ export class SwitchDriverSystem {
     freightFlow: FreightFlowState,
     currentTick: number,
     createEvent: EventFactory,
+    assignedHeadcount: number,
   ): DomainEvent[] {
+    if (assignedHeadcount <= 0) {
+      return [];
+    }
+
     return [
-      ...this.assignYardTrailersToDoors(freightFlow, currentTick, createEvent),
-      ...this.processSwitchMovements(freightFlow, currentTick, createEvent),
+      ...this.assignYardTrailersToDoors(
+        freightFlow,
+        currentTick,
+        createEvent,
+        assignedHeadcount,
+      ),
+      ...this.processSwitchMovements(freightFlow, currentTick, createEvent, assignedHeadcount),
     ];
   }
 
@@ -21,13 +31,21 @@ export class SwitchDriverSystem {
     freightFlow: FreightFlowState,
     currentTick: number,
     createEvent: EventFactory,
+    assignedHeadcount: number,
   ): DomainEvent[] {
     const events: DomainEvent[] = [];
+    let availableSwitchSlots =
+      assignedHeadcount -
+      freightFlow.trailers.filter((trailer) => trailer.state === "switching-to-door").length;
     const waitingTrailers = freightFlow.trailers
       .filter((trailer) => trailer.direction === "inbound" && trailer.state === "yard")
       .sort((first, second) => first.arrivalTick - second.arrivalTick);
 
     for (const trailer of waitingTrailers) {
+      if (availableSwitchSlots <= 0) {
+        break;
+      }
+
       const door = freightFlow.doors.find(
         (candidateDoor) =>
           candidateDoor.state === "idle" &&
@@ -52,6 +70,7 @@ export class SwitchDriverSystem {
       };
 
       events.push(event);
+      availableSwitchSlots -= 1;
     }
 
     return events;
@@ -61,14 +80,25 @@ export class SwitchDriverSystem {
     freightFlow: FreightFlowState,
     currentTick: number,
     createEvent: EventFactory,
+    assignedHeadcount: number,
   ): DomainEvent[] {
     const events: DomainEvent[] = [];
+    let remainingDriverCapacity = assignedHeadcount;
 
-    for (const trailer of freightFlow.trailers) {
+    const switchingTrailers = freightFlow.trailers
+      .filter((trailer) => trailer.state === "switching-to-door")
+      .sort((first, second) => (first.doorAssignedTick ?? 0) - (second.doorAssignedTick ?? 0));
+
+    for (const trailer of switchingTrailers) {
+      if (remainingDriverCapacity <= 0) {
+        break;
+      }
+
       if (trailer.state !== "switching-to-door" || trailer.doorAssignedTick === currentTick) {
         continue;
       }
 
+      remainingDriverCapacity -= 1;
       trailer.remainingSwitchTicks = Math.max(0, trailer.remainingSwitchTicks - 1);
 
       if (trailer.remainingSwitchTicks > 0) {

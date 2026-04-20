@@ -17,7 +17,9 @@ export class QueueManager {
     const dockFreightCubicFeet = freightFlow.freightBatches
       .filter((batch) => batch.state === "on-dock")
       .reduce((total, batch) => total + batch.cubicFeet, 0);
-    const storageQueueCubicFeet = dockFreightCubicFeet;
+    const storageQueueCubicFeet = freightFlow.freightBatches
+      .filter((batch) => batch.state === "on-dock" || batch.state === "storing")
+      .reduce((total, batch) => total + (batch.remainingStorageCubicFeet ?? batch.cubicFeet), 0);
     const pickQueueCubicFeet = freightFlow.outboundOrders
       .filter((order) => order.state === "open" || order.state === "picking")
       .reduce((total, order) => total + order.remainingPickCubicFeet, 0);
@@ -79,7 +81,7 @@ function recalculateZoneUsage(freightFlow: FreightFlowState, warehouseMap: Wareh
   }
 
   for (const batch of freightFlow.freightBatches) {
-    if (batch.state !== "in-storage" || !batch.storageZoneId) {
+    if ((batch.state !== "in-storage" && batch.state !== "storing") || !batch.storageZoneId) {
       continue;
     }
 

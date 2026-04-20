@@ -1,8 +1,6 @@
 import type { DomainEvent } from "../events/DomainEvent";
 import type { FreightFlowState } from "../freight/FreightFlowState";
 
-const UNLOAD_CUBIC_FEET_PER_TICK = 120;
-
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
 
 export class UnloadSystem {
@@ -10,11 +8,13 @@ export class UnloadSystem {
     freightFlow: FreightFlowState,
     currentTick: number,
     createEvent: EventFactory,
+    unloadCapacityCubicFeet: number,
   ): DomainEvent[] {
     const events: DomainEvent[] = [];
+    let remainingCapacity = unloadCapacityCubicFeet;
 
     for (const trailer of freightFlow.trailers) {
-      if (trailer.state === "at-door") {
+      if (trailer.state === "at-door" && unloadCapacityCubicFeet > 0) {
         trailer.state = "unloading";
         trailer.unloadStartedTick = currentTick;
 
@@ -29,9 +29,15 @@ export class UnloadSystem {
         continue;
       }
 
+      if (remainingCapacity <= 0) {
+        break;
+      }
+
+      const processedCubicFeet = Math.min(remainingCapacity, trailer.remainingUnloadCubicFeet);
+      remainingCapacity -= processedCubicFeet;
       trailer.remainingUnloadCubicFeet = Math.max(
         0,
-        trailer.remainingUnloadCubicFeet - UNLOAD_CUBIC_FEET_PER_TICK,
+        trailer.remainingUnloadCubicFeet - processedCubicFeet,
       );
 
       if (trailer.remainingUnloadCubicFeet > 0) {

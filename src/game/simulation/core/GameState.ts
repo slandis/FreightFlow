@@ -1,5 +1,6 @@
 import type { WarehouseMap } from "../world/WarehouseMap";
 import type { FreightFlowState } from "../freight/FreightFlowState";
+import type { LaborState } from "../labor/LaborPool";
 import { GameSpeed } from "../types/enums";
 
 export interface SimulationCalendar {
@@ -31,4 +32,5 @@ export interface GameState {
   debug: DebugState;
   warehouseMap: WarehouseMap;
   freightFlow: FreightFlowState;
+  labor: LaborState;
 }

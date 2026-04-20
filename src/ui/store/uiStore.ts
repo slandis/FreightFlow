@@ -21,16 +21,20 @@ interface UiState {
   activeTool: ActiveTool;
   hoveredTile: TileSummary | null;
   selectedTile: TileSummary | null;
+  isLaborDialogOpen: boolean;
   setActiveTool: (tool: ActiveTool) => void;
   setHoveredTile: (tile: TileSummary | null) => void;
   setSelectedTile: (tile: TileSummary | null) => void;
+  setLaborDialogOpen: (isOpen: boolean) => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
   activeTool: "select",
   hoveredTile: null,
   selectedTile: null,
+  isLaborDialogOpen: false,
   setActiveTool: (tool) => set({ activeTool: tool }),
   setHoveredTile: (tile) => set({ hoveredTile: tile }),
   setSelectedTile: (tile) => set({ selectedTile: tile }),
+  setLaborDialogOpen: (isOpen) => set({ isLaborDialogOpen: isOpen }),
 }));

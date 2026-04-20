@@ -89,3 +89,19 @@ Phase 6 Polish: Completed
     - Added focused Vitest coverage for missing compatible storage, invalid compatible storage, whole-batch capacity mismatch, and ready compatible storage.
     - Updated `memory-bank/implementation-plan.md` so Phase 6 now includes dock storage-needs diagnostics in tasks, deliverables, validation, and implementation notes.
     - Verification completed: `npm run test` passed with 53 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+
+Phase 7: Completed
+    - Saved the finalized Phase 7 plan to `memory-bank/phase-7-plan.md`.
+    - Added authoritative `labor` state with 18 default headcount across switch-driver, unload, storage, pick, load, sanitation, and management roles.
+    - Expanded labor pools with effective rates, utilization, pressure labels, modifiers, support-role penalties, and bottleneck summaries.
+    - Implemented `AssignLaborCommand` with real-time role assignment, loud failures for invalid or over-total assignments, debug metadata, and `labor-assigned` events.
+    - Refactored switch, unload, storage, pick, and load systems to consume labor capacity instead of fixed processing assumptions.
+    - Added storage putaway progress so storage labor can become an actual dock bottleneck while preserving compatibility, validity, capacity, and whole-batch rules.
+    - Added sanitation and management support modifiers that create visible condition, congestion, and coordination pressure when understaffed.
+    - Added labor selectors for summaries, role details, critical warnings, queue pressure, and top bottleneck.
+    - Added a real-time labor dialog with per-role assignment controls and failure feedback.
+    - Updated the right operations panel and bottom KPI bar with labor totals, role pressure, critical warnings, and top bottleneck visibility.
+    - Added Vitest coverage for default staffing, live assignment, assignment failures, labor events, switch-driver stoppage, unload scaling, storage bottlenecks, pick/load stoppage, and support-role penalties.
+    - Updated existing freight-flow tests for labor-scaled unload and storage putaway timing.
+    - Verification completed: `npm run test` passed with 62 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+    - Local dev server was verified at `http://127.0.0.1:5173`.

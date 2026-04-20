@@ -138,6 +138,26 @@ textarea {
   margin: 0;
 }
 
+.panel-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.panel-section-heading button {
+  min-height: 28px;
+  border: 1px solid rgba(238, 244, 242, 0.22);
+  border-radius: 8px;
+  color: #eef4f2;
+  background: rgba(94, 163, 198, 0.18);
+  cursor: pointer;
+}
+
+.labor-summary {
+  margin: 14px 0;
+}
+
 .dock-storage-needs {
   margin: 14px 0;
 }
@@ -183,4 +203,95 @@ textarea {
   right: 12px;
   bottom: 76px;
   padding: 10px 12px;
+}
+
+.modal-backdrop {
+  position: absolute;
+  z-index: 30;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(12, 16, 18, 0.54);
+}
+
+.labor-dialog {
+  width: min(720px, 100%);
+  max-height: min(720px, calc(100% - 48px));
+  overflow: auto;
+  border: 1px solid rgba(238, 244, 242, 0.2);
+  border-radius: 8px;
+  padding: 16px;
+  color: #eef4f2;
+  background: rgba(24, 33, 38, 0.96);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.36);
+}
+
+.labor-dialog header,
+.labor-role {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.labor-dialog header p,
+.labor-role p {
+  margin: 4px 0;
+  color: rgba(238, 244, 242, 0.72);
+}
+
+.labor-dialog button,
+.labor-stepper button {
+  min-height: 32px;
+  border: 1px solid rgba(238, 244, 242, 0.22);
+  border-radius: 8px;
+  color: #eef4f2;
+  background: rgba(94, 163, 198, 0.18);
+  cursor: pointer;
+}
+
+.labor-dialog button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.labor-error {
+  border-left: 3px solid #d96c5f;
+  padding-left: 8px;
+  color: #ffd5cf;
+}
+
+.labor-role-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.labor-role {
+  border-left: 3px solid #5fbf8f;
+  padding: 8px 0 8px 10px;
+}
+
+.labor-role.busy {
+  border-left-color: #e6b655;
+}
+
+.labor-role.strained,
+.labor-role.critical {
+  border-left-color: #d96c5f;
+}
+
+.labor-role small {
+  color: rgba(238, 244, 242, 0.72);
+}
+
+.labor-stepper {
+  display: grid;
+  grid-template-columns: 34px 34px 34px;
+  gap: 6px;
+  align-items: center;
+  text-align: center;
 }

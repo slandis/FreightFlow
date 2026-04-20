@@ -7,6 +7,7 @@ export interface FreightBatch {
     | "in-yard"
     | "at-door"
     | "on-dock"
+    | "storing"
     | "in-storage"
     | "picking"
     | "picked"
@@ -18,6 +19,7 @@ export interface FreightBatch {
   storageZoneId: string | null;
   outboundOrderId: string | null;
   storedTick: number | null;
+  remainingStorageCubicFeet: number | null;
   pickedTick: number | null;
   loadedTick: number | null;
 }

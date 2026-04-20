@@ -1,7 +1,6 @@
 import type { DomainEvent } from "../events/DomainEvent";
 import type { FreightFlowState } from "../freight/FreightFlowState";
 
-const PICK_CUBIC_FEET_PER_TICK = 120;
 const INVENTORY_UNAVAILABLE_REASON = "Inventory unavailable";
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
@@ -11,11 +10,13 @@ export class PickSystem {
     freightFlow: FreightFlowState,
     currentTick: number,
     createEvent: EventFactory,
+    pickCapacityCubicFeet: number,
   ): DomainEvent[] {
     const events: DomainEvent[] = [];
+    let remainingCapacity = pickCapacityCubicFeet;
 
     for (const order of freightFlow.outboundOrders) {
-      if (order.state === "open") {
+      if (order.state === "open" && pickCapacityCubicFeet > 0) {
         const matchingBatches = freightFlow.freightBatches
           .filter(
             (batch) =>
@@ -69,9 +70,15 @@ export class PickSystem {
         continue;
       }
 
+      if (remainingCapacity <= 0) {
+        break;
+      }
+
+      const processedCubicFeet = Math.min(remainingCapacity, order.remainingPickCubicFeet);
+      remainingCapacity -= processedCubicFeet;
       order.remainingPickCubicFeet = Math.max(
         0,
-        order.remainingPickCubicFeet - PICK_CUBIC_FEET_PER_TICK,
+        order.remainingPickCubicFeet - processedCubicFeet,
       );
 
       if (order.remainingPickCubicFeet > 0) {

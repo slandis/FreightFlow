@@ -20,13 +20,15 @@ export class StorageSystem {
     warehouseMap: WarehouseMap,
     currentTick: number,
     createEvent: EventFactory,
+    storageCapacityCubicFeet: number,
   ): DomainEvent[] {
     const events: DomainEvent[] = [];
+    let remainingCapacity = storageCapacityCubicFeet;
 
     this.recalculateZoneUsage(freightFlow, warehouseMap);
 
     for (const batch of freightFlow.freightBatches) {
-      if (batch.state !== "on-dock") {
+      if (batch.state !== "on-dock" || storageCapacityCubicFeet <= 0) {
         continue;
       }
 
@@ -36,16 +38,35 @@ export class StorageSystem {
         continue;
       }
 
-      batch.state = "in-storage";
+      batch.state = "storing";
       batch.storageZoneId = zone.id;
-      batch.storedTick = currentTick;
+      batch.remainingStorageCubicFeet = batch.cubicFeet;
       zone.usedCubicFeet += batch.cubicFeet;
+    }
+
+    for (const batch of freightFlow.freightBatches) {
+      if (batch.state !== "storing" || remainingCapacity <= 0) {
+        continue;
+      }
+
+      const remainingStorageCubicFeet = batch.remainingStorageCubicFeet ?? batch.cubicFeet;
+      const processedCubicFeet = Math.min(remainingCapacity, remainingStorageCubicFeet);
+      remainingCapacity -= processedCubicFeet;
+      batch.remainingStorageCubicFeet = Math.max(0, remainingStorageCubicFeet - processedCubicFeet);
+
+      if (batch.remainingStorageCubicFeet > 0) {
+        continue;
+      }
+
+      batch.state = "in-storage";
+      batch.storedTick = currentTick;
+      batch.remainingStorageCubicFeet = null;
 
       const event = {
         ...createEvent("freight-stored"),
         freightBatchId: batch.id,
         freightClassId: batch.freightClassId,
-        zoneId: zone.id,
+        zoneId: batch.storageZoneId,
         cubicFeet: batch.cubicFeet,
       };
 
@@ -89,7 +110,10 @@ export class StorageSystem {
     }
 
     for (const batch of freightFlow.freightBatches) {
-      if (batch.state !== "in-storage" || !batch.storageZoneId) {
+      if (
+        (batch.state !== "in-storage" && batch.state !== "storing") ||
+        !batch.storageZoneId
+      ) {
         continue;
       }
 

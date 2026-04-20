@@ -53,6 +53,7 @@ export class FreightGenerator {
       storageZoneId: null,
       outboundOrderId: null,
       storedTick: null,
+      remainingStorageCubicFeet: null,
       pickedTick: null,
       loadedTick: null,
     });

@@ -24,6 +24,7 @@ function createBatch(overrides: Partial<FreightBatch> = {}): FreightBatch {
     storageZoneId: null,
     outboundOrderId: null,
     storedTick: null,
+    remainingStorageCubicFeet: null,
     pickedTick: null,
     loadedTick: null,
     ...overrides,
@@ -62,13 +63,13 @@ describe("storage and outbound freight flow", () => {
     paintStandardStorage(runner);
     state.freightFlow.freightBatches.push(createBatch());
 
-    runner.tick();
+    runTicks(runner, 3);
 
     const batch = state.freightFlow.freightBatches[0];
     const zone = state.warehouseMap.zones.find((candidateZone) => candidateZone.id === batch.storageZoneId);
 
     expect(batch.state).toBe("in-storage");
-    expect(batch.storedTick).toBe(1);
+    expect(batch.storedTick).toBe(3);
     expect(zone?.usedCubicFeet).toBe(900);
     expect(state.freightFlow.inventoryByFreightClass.standard).toBe(900);
   });
@@ -290,10 +291,10 @@ describe("storage and outbound freight flow", () => {
     paintStandardStorage(runner);
     state.freightFlow.freightBatches.push(createBatch());
 
-    runner.tick();
+    runTicks(runner, 3);
     expect(state.freightFlow.freightBatches[0].state).toBe("in-storage");
 
-    runTicks(runner, 179);
+    runTicks(runner, 177);
     expect(state.freightFlow.outboundOrders).toHaveLength(1);
 
     runUntilShipmentCompletes(runner);

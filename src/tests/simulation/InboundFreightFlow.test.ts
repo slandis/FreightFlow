@@ -137,7 +137,7 @@ describe("inbound freight flow", () => {
     runner.tick();
 
     expect(trailer.remainingUnloadCubicFeet).toBe(
-      Math.max(0, startingRemainingCubicFeet - 120),
+      Math.max(0, startingRemainingCubicFeet - 360),
     );
 
     runUntilDockFreightExists(runner, freightFlow);

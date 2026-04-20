@@ -7,10 +7,11 @@ import type { GameState } from "./GameState";
 import { RandomService } from "./RandomService";
 import { createInitialCalendar, SimulationClock } from "./SimulationClock";
 import type { DomainEvent } from "../events/DomainEvent";
-import { GameSpeed } from "../types/enums";
+import { GameSpeed, LaborRole } from "../types/enums";
 import { createInitialFreightFlowState } from "../world/DoorManager";
 import { FreightGenerator } from "../freight/FreightGenerator";
 import { OrderGenerator } from "../freight/OrderGenerator";
+import { LaborManager } from "../labor/LaborManager";
 import { LoadSystem } from "../labor/LoadSystem";
 import { PickSystem } from "../labor/PickSystem";
 import { StorageSystem } from "../labor/StorageSystem";
@@ -38,6 +39,7 @@ export class SimulationRunner {
   private readonly storageSystem = new StorageSystem();
   private readonly pickSystem = new PickSystem();
   private readonly loadSystem = new LoadSystem();
+  private readonly laborManager = new LaborManager();
   private readonly queueManager = new QueueManager();
   private readonly listeners = new Set<StateListener>();
   private readonly changeListeners = new Set<ChangeListener>();
@@ -65,6 +67,7 @@ export class SimulationRunner {
       },
       warehouseMap,
       freightFlow: createInitialFreightFlowState(warehouseMap),
+      labor: this.laborManager.createInitialLaborState(),
     };
 
     this.commandBus = new CommandBus({
@@ -78,6 +81,10 @@ export class SimulationRunner {
   tick(): void {
     this.state.currentTick = this.clock.advance();
     this.state.calendar = this.clock.getCalendar();
+    this.laborManager.recalculate(
+      this.state.labor,
+      this.laborManager.calculateWorkloads(this.state.freightFlow),
+    );
 
     const events = [
       ...this.freightGenerator.generateInbound(
@@ -86,17 +93,24 @@ export class SimulationRunner {
         this.random,
         (type) => this.createEvent(type),
       ),
-      ...this.switchDriverSystem.process(this.state.freightFlow, this.state.currentTick, (type) =>
-        this.createEvent(type),
+      ...this.switchDriverSystem.process(
+        this.state.freightFlow,
+        this.state.currentTick,
+        (type) => this.createEvent(type),
+        this.laborManager.getAssignedHeadcount(this.state.labor, LaborRole.SwitchDriver),
       ),
-      ...this.unloadSystem.process(this.state.freightFlow, this.state.currentTick, (type) =>
-        this.createEvent(type),
+      ...this.unloadSystem.process(
+        this.state.freightFlow,
+        this.state.currentTick,
+        (type) => this.createEvent(type),
+        this.laborManager.getProcessingCapacity(this.state.labor, LaborRole.Unload),
       ),
       ...this.storageSystem.process(
         this.state.freightFlow,
         this.state.warehouseMap,
         this.state.currentTick,
         (type) => this.createEvent(type),
+        this.laborManager.getProcessingCapacity(this.state.labor, LaborRole.Storage),
       ),
       ...this.orderGenerator.generateOutbound(
         this.state.freightFlow,
@@ -104,11 +118,17 @@ export class SimulationRunner {
         this.random,
         (type) => this.createEvent(type),
       ),
-      ...this.pickSystem.process(this.state.freightFlow, this.state.currentTick, (type) =>
-        this.createEvent(type),
+      ...this.pickSystem.process(
+        this.state.freightFlow,
+        this.state.currentTick,
+        (type) => this.createEvent(type),
+        this.laborManager.getProcessingCapacity(this.state.labor, LaborRole.Pick),
       ),
-      ...this.loadSystem.process(this.state.freightFlow, this.state.currentTick, (type) =>
-        this.createEvent(type),
+      ...this.loadSystem.process(
+        this.state.freightFlow,
+        this.state.currentTick,
+        (type) => this.createEvent(type),
+        this.laborManager.getProcessingCapacity(this.state.labor, LaborRole.Load),
       ),
     ];
 
@@ -116,6 +136,10 @@ export class SimulationRunner {
       this.state.freightFlow,
       this.state.currentTick,
       this.state.warehouseMap,
+    );
+    this.laborManager.recalculate(
+      this.state.labor,
+      this.laborManager.calculateWorkloads(this.state.freightFlow),
     );
     this.updateFreightKpis();
     events.push(this.createEvent("simulation-ticked"));
