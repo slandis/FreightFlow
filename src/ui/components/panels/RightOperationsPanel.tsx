@@ -3,6 +3,7 @@ import {
   selectAverageYardDwell,
   selectDoorSummary,
   selectDockFreightCubicFeet,
+  selectDockStorageNeeds,
   selectInboundQueueSummary,
   selectInboundTrailerCount,
   selectOutboundQueueSummary,
@@ -21,6 +22,7 @@ export function RightOperationsPanel() {
   const queues = useSimulationState(selectInboundQueueSummary);
   const doors = useSimulationState(selectDoorSummary);
   const dockFreightCubicFeet = useSimulationState(selectDockFreightCubicFeet);
+  const dockStorageNeeds = useSimulationState(selectDockStorageNeeds);
   const inboundTrailerCount = useSimulationState(selectInboundTrailerCount);
   const averageYardDwell = useSimulationState(selectAverageYardDwell);
   const averageDoorDwell = useSimulationState(selectAverageDoorDwell);
@@ -85,6 +87,29 @@ export function RightOperationsPanel() {
           <dd>{outboundShippedCubicFeet.toLocaleString()} cu ft</dd>
         </dl>
       </section>
+      <section className="dock-storage-needs">
+        <strong>Dock storage needs</strong>
+        {dockStorageNeeds.length > 0 ? (
+          <ul>
+            {dockStorageNeeds.map((need) => (
+              <li key={need.freightClassId} className={need.ready ? "ready" : "blocked"}>
+                <span>{need.freightClassName}</span>
+                <small>
+                  {need.cubicFeetOnDock.toLocaleString()} cu ft on dock; needs{" "}
+                  {formatZoneNames(need.compatibleZoneNames)}
+                </small>
+                <small>
+                  {need.reason}. {need.validCompatibleCapacityCubicFeet.toLocaleString()} cu ft
+                  ready, largest opening{" "}
+                  {need.largestCompatibleAvailableCubicFeet.toLocaleString()} cu ft.
+                </small>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>Dock is clear.</p>
+        )}
+      </section>
       <p>{selectedTile ? "Selected tile" : "Hover tile"}</p>
       {inspectedTile ? (
         <dl>
@@ -120,4 +145,16 @@ export function RightOperationsPanel() {
       </p>
     </aside>
   );
+}
+
+function formatZoneNames(zoneNames: string[]): string {
+  if (zoneNames.length === 0) {
+    return "unknown storage";
+  }
+
+  if (zoneNames.length === 1) {
+    return zoneNames[0];
+  }
+
+  return `${zoneNames.slice(0, -1).join(", ")} or ${zoneNames[zoneNames.length - 1]}`;
 }

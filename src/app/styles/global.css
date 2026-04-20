@@ -138,6 +138,35 @@ textarea {
   margin: 0;
 }
 
+.dock-storage-needs {
+  margin: 14px 0;
+}
+
+.dock-storage-needs ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.dock-storage-needs li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-left: 3px solid #e6b655;
+  padding: 0 0 0 8px;
+}
+
+.dock-storage-needs li.ready {
+  border-left-color: #5fbf8f;
+}
+
+.dock-storage-needs small {
+  color: rgba(238, 244, 242, 0.72);
+}
+
 .bottom-kpi-bar {
   right: 12px;
   bottom: 12px;

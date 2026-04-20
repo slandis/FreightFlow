@@ -306,18 +306,23 @@ Complete the freight lifecycle from dock to storage to outbound shipment.
 - implement pick queue and load queue
 - implement outbound trailers and shipment completion
 - add throughput measurement
+- add dock storage-needs diagnostics for freight waiting on the dock
+- report compatible storage types, usable capacity, largest available compatible opening, and blocked reason
 
 ### Deliverables
 - inbound freight can be stored
 - stored freight can generate outbound demand
 - outbound demand can be picked and loaded
 - completed shipments update throughput KPIs
+- operations panel identifies which storage zone types are needed for blocked dock freight
+- diagnostics distinguish missing storage, invalid storage, insufficient capacity, and whole-batch fit problems
 
 ### Validation Checklist
 - freight only stores in compatible valid zones
 - zones respect capacity limits
 - outbound orders fail gracefully if inventory is unavailable
 - throughput changes as work completes
+- dock storage-needs diagnostics match the same compatibility, validity, capacity, and whole-batch rules used by storage processing
 
 ### Dependencies
 - zone validation and capacity logic
@@ -325,6 +330,7 @@ Complete the freight lifecycle from dock to storage to outbound shipment.
 
 ### Implementation Notes
 Start with only 1–2 freight classes if needed, then expand after the loop works.
+Dock storage diagnostics should remain selector-driven and read-only. They should explain why freight is stranded without letting React own any storage rules.
 
 ---
 

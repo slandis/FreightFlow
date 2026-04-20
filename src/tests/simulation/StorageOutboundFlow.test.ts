@@ -3,6 +3,7 @@ import { PaintZoneCommand } from "../../game/simulation/commands/PaintZoneComman
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
 import type { FreightBatch } from "../../game/simulation/freight/FreightBatch";
 import type { OutboundOrder } from "../../game/simulation/freight/OutboundOrder";
+import { selectDockStorageNeeds } from "../../game/simulation/selectors/queueSelectors";
 import { TileZoneType } from "../../game/simulation/types/enums";
 
 function runTicks(runner: SimulationRunner, ticks: number): void {
@@ -84,6 +85,84 @@ describe("storage and outbound freight flow", () => {
 
     expect(state.freightFlow.freightBatches[0].state).toBe("on-dock");
     expect(state.freightFlow.queues.storageQueueCubicFeet).toBe(900);
+  });
+
+  it("reports the compatible storage needed for dock freight", () => {
+    const runner = new SimulationRunner();
+    const state = runner.getState();
+
+    state.freightFlow.freightBatches.push(createBatch({ cubicFeet: 700 }));
+
+    const needs = selectDockStorageNeeds(state);
+
+    expect(needs).toHaveLength(1);
+    expect(needs[0]).toMatchObject({
+      freightClassId: "standard",
+      freightClassName: "Standard Freight",
+      cubicFeetOnDock: 700,
+      largestBatchCubicFeet: 700,
+      compatibleZoneNames: ["Standard Storage", "Fast-Turn Storage"],
+      matchingZoneCount: 0,
+      reason: "No compatible storage zone assigned",
+      ready: false,
+    });
+  });
+
+  it("reports invalid compatible storage for dock freight", () => {
+    const runner = new SimulationRunner();
+    const state = runner.getState();
+
+    runner.dispatch(new PaintZoneCommand(6, 5, TileZoneType.StandardStorage));
+    state.freightFlow.freightBatches.push(createBatch({ cubicFeet: 500 }));
+
+    const needs = selectDockStorageNeeds(state);
+
+    expect(needs[0]).toMatchObject({
+      matchingZoneCount: 1,
+      validMatchingZoneCount: 0,
+      invalidMatchingZoneCount: 1,
+      reason: "Compatible storage is invalid",
+      ready: false,
+    });
+  });
+
+  it("reports when no single compatible zone can fit a whole dock batch", () => {
+    const runner = new SimulationRunner();
+    const state = runner.getState();
+
+    runner.dispatch(new PaintZoneCommand(5, 5, TileZoneType.Travel));
+    runner.dispatch(new PaintZoneCommand(6, 5, TileZoneType.StandardStorage));
+    runner.dispatch(new PaintZoneCommand(8, 5, TileZoneType.StandardStorage));
+    state.freightFlow.freightBatches.push(createBatch({ cubicFeet: 900 }));
+
+    const needs = selectDockStorageNeeds(state);
+
+    expect(needs[0]).toMatchObject({
+      cubicFeetOnDock: 900,
+      validCompatibleCapacityCubicFeet: 1000,
+      largestCompatibleAvailableCubicFeet: 500,
+      missingCubicFeet: 0,
+      reason: "No compatible zone can fit largest dock batch",
+      ready: false,
+    });
+  });
+
+  it("reports ready dock freight when compatible storage can receive it", () => {
+    const runner = new SimulationRunner();
+    const state = runner.getState();
+
+    paintStandardStorage(runner);
+    state.freightFlow.freightBatches.push(createBatch({ cubicFeet: 900 }));
+
+    const needs = selectDockStorageNeeds(state);
+
+    expect(needs[0]).toMatchObject({
+      validCompatibleCapacityCubicFeet: 1000,
+      largestCompatibleAvailableCubicFeet: 1000,
+      missingCubicFeet: 0,
+      reason: "Ready for storage",
+      ready: true,
+    });
   });
 
   it("leaves freight on the dock when storage is invalid or full", () => {

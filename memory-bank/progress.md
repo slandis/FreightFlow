@@ -81,3 +81,11 @@ Phase 6: Completed
     - Added freight-flow events for freight storage, outbound order creation, blocked orders, picked orders, outbound trailer loading, and shipment completion.
     - Added Vitest coverage for storage compatibility/capacity, inventory tracking, outbound generation, blocked orders, picking, loading, KPI updates, and the full dock-to-shipment lifecycle.
     - Verification completed: `npm run test` passed with 49 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+
+Phase 6 Polish: Completed
+    - Added a dock storage-needs diagnostic selector that groups on-dock freight by freight class and reports compatible storage zone types, valid compatible capacity, largest available compatible opening, missing cubic feet, readiness, and the blocking reason.
+    - Accounted for whole-batch storage constraints so the diagnostic can flag freight when total capacity exists but no single compatible zone can fit the largest dock batch.
+    - Added the dock storage-needs readout to the right operations panel, including readable zone names and immediate “Dock is clear” feedback when no freight is waiting.
+    - Added focused Vitest coverage for missing compatible storage, invalid compatible storage, whole-batch capacity mismatch, and ready compatible storage.
+    - Updated `memory-bank/implementation-plan.md` so Phase 6 now includes dock storage-needs diagnostics in tasks, deliverables, validation, and implementation notes.
+    - Verification completed: `npm run test` passed with 53 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
