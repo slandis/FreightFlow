@@ -23,6 +23,10 @@ textarea {
   font: inherit;
 }
 
+button {
+  border-radius: 8px;
+}
+
 .game-shell {
   position: relative;
   width: 100%;
@@ -52,10 +56,18 @@ textarea {
   left: 12px;
   right: 12px;
   display: flex;
+  flex-wrap: wrap;
   gap: 20px;
   align-items: center;
   min-height: 48px;
   padding: 10px 14px;
+}
+
+.hud-badge {
+  border: 1px solid rgba(238, 244, 242, 0.16);
+  border-radius: 8px;
+  padding: 4px 8px;
+  background: rgba(238, 244, 242, 0.08);
 }
 
 .speed-controls {
@@ -93,7 +105,20 @@ textarea {
   padding: 12px;
 }
 
+.tool-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.overlay-control-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
 .left-panel button {
+  width: 100%;
   min-height: 36px;
   border: 1px solid rgba(238, 244, 242, 0.22);
   border-radius: 8px;
@@ -119,6 +144,11 @@ textarea {
   background: rgba(230, 182, 85, 0.28);
 }
 
+.overlay-control-grid button {
+  min-height: 34px;
+  text-align: center;
+}
+
 .right-panel {
   top: 76px;
   right: 12px;
@@ -141,6 +171,39 @@ textarea {
 
 .right-panel dd {
   margin: 0;
+}
+
+.issue-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 10px;
+  border-left: 3px solid #5fbf8f;
+  padding: 8px 0 8px 10px;
+}
+
+.issue-summary.warning {
+  border-left-color: #e6b655;
+}
+
+.issue-summary.critical {
+  border-left-color: #d96c5f;
+}
+
+.issue-summary span,
+.issue-summary small {
+  color: rgba(238, 244, 242, 0.72);
+}
+
+.issue-summary button,
+.dock-storage-needs button,
+.alerts-center button {
+  align-self: flex-start;
+  min-height: 28px;
+  border: 1px solid rgba(238, 244, 242, 0.22);
+  color: #eef4f2;
+  background: rgba(94, 163, 198, 0.18);
+  cursor: pointer;
 }
 
 .panel-collapsible {
@@ -205,7 +268,7 @@ textarea {
   margin: 0;
 }
 
-.dock-storage-needs ul {
+.dock-storage-needs {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -230,6 +293,10 @@ textarea {
   color: rgba(238, 244, 242, 0.72);
 }
 
+.dock-storage-needs button {
+  margin-top: 2px;
+}
+
 .bottom-kpi-bar {
   right: 12px;
   bottom: 12px;
@@ -242,14 +309,53 @@ textarea {
   padding: 10px 14px;
 }
 
+.kpi-pill {
+  display: grid;
+  min-width: 84px;
+  min-height: 38px;
+  border: 1px solid rgba(238, 244, 242, 0.18);
+  color: #eef4f2;
+  background: rgba(238, 244, 242, 0.07);
+  cursor: pointer;
+  text-align: left;
+}
+
+.kpi-pill:disabled {
+  cursor: default;
+}
+
+.kpi-pill span {
+  color: rgba(238, 244, 242, 0.68);
+  font-size: 11px;
+}
+
+.kpi-pill strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .alerts-center {
   right: 12px;
   bottom: 76px;
   padding: 10px 12px;
-  max-width: 360px;
+  width: 380px;
+  max-width: calc(100% - 24px);
 }
 
-.alerts-center ul {
+.alerts-center header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.alerts-center header span,
+.alerts-center small {
+  color: rgba(238, 244, 242, 0.72);
+}
+
+.alerts-center ul,
+.issue-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -258,13 +364,76 @@ textarea {
   list-style: none;
 }
 
-.alerts-center li {
+.alerts-center li,
+.issue-list li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
   border-left: 3px solid #e6b655;
   padding-left: 8px;
 }
 
-.alerts-center li.critical {
+.alerts-center li.critical,
+.issue-list li.critical {
   border-left-color: #d96c5f;
+}
+
+.issue-list li.info {
+  border-left-color: #5fbf8f;
+}
+
+.issue-list li div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metric-tooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.left-panel .metric-tooltip,
+.bottom-kpi-bar .metric-tooltip {
+  display: block;
+}
+
+.metric-tooltip-content {
+  position: absolute;
+  z-index: 40;
+  bottom: calc(100% + 8px);
+  left: 0;
+  display: none;
+  width: max-content;
+  max-width: 240px;
+  border: 1px solid rgba(238, 244, 242, 0.18);
+  border-radius: 8px;
+  padding: 8px;
+  color: #eef4f2;
+  background: rgba(12, 16, 18, 0.96);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+.metric-tooltip-content strong,
+.metric-tooltip-content span {
+  display: block;
+}
+
+.metric-tooltip-content span {
+  color: rgba(238, 244, 242, 0.78);
+}
+
+.top-hud .metric-tooltip-content,
+.left-panel .metric-tooltip-content {
+  top: calc(100% + 8px);
+  bottom: auto;
+}
+
+.metric-tooltip:hover .metric-tooltip-content,
+.metric-tooltip:focus-within .metric-tooltip-content {
+  display: block;
 }
 
 .modal-backdrop {

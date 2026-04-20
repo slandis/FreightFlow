@@ -469,7 +469,7 @@ Make the game understandable during normal play without heavy developer interpre
 
 ### Tasks
 - expand top HUD metrics
-n- implement bottom KPI bar interactions
+- implement bottom KPI bar interactions
 - implement right operations panel tabs
 - make right operations panel sections collapsible so growing diagnostics stay readable
 - implement left tool palette with zone descriptions
@@ -478,6 +478,8 @@ n- implement bottom KPI bar interactions
 - add overlays: invalid zones, congestion, path distance, door utilization
 - add click-to-focus from alerts/KPIs to map areas
 - improve map readability and visual hierarchy
+- add selector-driven operational issues so alerts and panels share the same simulation-authored diagnosis
+- add UI-only overlay and focus state for React-to-Phaser map diagnosis
 
 ### Deliverables
 - main screen supports most player decisions
@@ -485,6 +487,8 @@ n- implement bottom KPI bar interactions
 - alerts are actionable and specific
 - key systems are understandable without opening debug tools
 - dense operational diagnostics can be expanded only when needed
+- map overlays can be switched between storage, zone, travel, capacity, door, and queue views
+- alerts and urgent panel issues can focus relevant map tiles when a location exists
 
 ### Validation Checklist
 - player can identify a broken area quickly
@@ -492,12 +496,15 @@ n- implement bottom KPI bar interactions
 - long panels remain usable without constant scrolling
 - overlays are useful but not required for basic comprehension
 - warnings correspond to real simulation conditions
+- diagnostic selectors have focused unit coverage
+- production build and local browser smoke check pass
 
 ### Dependencies
 - underlying systems must already exist
 
 ### Implementation Notes
 This phase is critical. A good simulation with poor readability will test badly.
+Diagnostic rendering should remain mode-aware and disposable: Phaser redraws from the latest simulation snapshot and UI overlay mode, while React only requests overlays or map focus.
 
 ---
 

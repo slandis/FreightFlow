@@ -1,5 +1,6 @@
 import { useSimulationRunner } from "../../../app/providers/SimulationProvider";
 import { ChangeSpeedCommand } from "../../../game/simulation/commands/ChangeSpeedCommand";
+import { selectMostSevereIssue } from "../../../game/simulation/selectors/diagnosticSelectors";
 import { GameSpeed } from "../../../game/simulation/types/enums";
 import {
   formatCalendarTime,
@@ -14,6 +15,8 @@ import {
 } from "../../../game/simulation/selectors/kpiSelectors";
 import { selectIsPlanningActive } from "../../../game/simulation/selectors/planningSelectors";
 import { useSimulationState } from "../../hooks/useSimulation";
+import { useUiStore } from "../../store/uiStore";
+import { MetricTooltip } from "../tooltips/MetricTooltip";
 
 const speedButtons: Array<{ speed: GameSpeed; label: string }> = [
   { speed: GameSpeed.Paused, label: "Pause" },
@@ -32,16 +35,34 @@ export function TopHud() {
   const criticalAlertCount = useSimulationState(selectCriticalAlertCount);
   const currentTick = useSimulationState(selectCurrentTick);
   const isPlanningActive = useSimulationState(selectIsPlanningActive);
+  const mostSevereIssue = useSimulationState(selectMostSevereIssue);
+  const activeOverlayMode = useUiStore((state) => state.activeOverlayMode);
 
   return (
     <header className="top-hud">
-      <span>{formatCalendarTime(calendar)}</span>
-      <span>Cash: ${cash.toLocaleString()}</span>
-      <span>Morale: {kpis.moraleScore.toFixed(0)}</span>
-      <span>Safety: {kpis.safetyScore.toFixed(0)}</span>
-      <span>Condition: {kpis.conditionScore.toFixed(0)}</span>
-      <span>Critical alerts: {criticalAlertCount}</span>
-      {isPlanningActive ? <span>Planning active</span> : null}
+      <MetricTooltip content="Current in-game calendar time.">
+        <span>{formatCalendarTime(calendar)}</span>
+      </MetricTooltip>
+      <MetricTooltip content="Available cash after current month operating movement.">
+        <span>Cash: ${cash.toLocaleString()}</span>
+      </MetricTooltip>
+      <MetricTooltip content="Labor morale score affected by pressure and support staffing.">
+        <span>Morale: {kpis.moraleScore.toFixed(0)}</span>
+      </MetricTooltip>
+      <MetricTooltip content="Safety score affected by congestion, pressure, and support staffing.">
+        <span>Safety: {kpis.safetyScore.toFixed(0)}</span>
+      </MetricTooltip>
+      <MetricTooltip content="Warehouse condition score affected by sanitation and operating stress.">
+        <span>Condition: {kpis.conditionScore.toFixed(0)}</span>
+      </MetricTooltip>
+      <MetricTooltip content={mostSevereIssue?.recommendedAction ?? "No critical issues active."}>
+        <span>
+          Critical alerts: {criticalAlertCount}
+          {mostSevereIssue ? ` (${mostSevereIssue.severity})` : ""}
+        </span>
+      </MetricTooltip>
+      {isPlanningActive ? <span className="hud-badge">Planning active</span> : null}
+      <span className="hud-badge">Overlay: {formatOverlay(activeOverlayMode)}</span>
       <span>Tick: {currentTick}</span>
       <div className="speed-controls" aria-label="Simulation speed">
         {speedButtons.map((button) => (
@@ -59,4 +80,11 @@ export function TopHud() {
       </div>
     </header>
   );
+}
+
+function formatOverlay(mode: string): string {
+  return mode
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }

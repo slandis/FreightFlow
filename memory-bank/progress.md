@@ -171,3 +171,19 @@ Monthly Planning Startup Fix: Completed
     - Added regression coverage for the initial planning dialog state.
     - Tuned Hyper timing to use a higher cap only for Hyper speed while preserving the normal catch-up cap for paused, slow, medium, and fast speeds.
     - Verification completed: `npm run test` passed with 84 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+
+Phase 10: Completed
+    - Saved the finalized Phase 10 plan to `memory-bank/phase-10-plan.md`.
+    - Added UI overlay and map-focus state so React diagnostics can request Phaser camera focus without owning simulation rules.
+    - Added selector-driven operational diagnostics for invalid storage, blocked dock storage needs, labor bottlenecks, door readiness, outbound blockage, negative net, door utilization, queue pressure, and focusable issue targets.
+    - Expanded `ZoneOverlayRenderer` into a mode-aware diagnostic renderer for invalid storage, zone types, travel network, storage capacity, door utilization, queue pressure, and hidden overlays.
+    - Wired Phaser to rerender overlays on simulation/UI state changes and pan/zoom the camera to focus requests from alerts and operations panels.
+    - Added overlay controls to the left tool panel while keeping zone and door tools grouped with readable tooltips.
+    - Reworked the alerts center into actionable operational issues with severity counts, recommendations, and focus buttons when a map target exists.
+    - Converted the bottom KPI strip into compact interactive pills with tooltips and overlay shortcuts for queue, storage, and dock diagnostics.
+    - Expanded top-HUD context with metric tooltips, active overlay status, and most-severe issue guidance.
+    - Added a right-panel urgent issue summary and focus controls for blocked dock storage needs while preserving collapsible diagnostic sections.
+    - Added reusable `MetricTooltip` behavior and Phase 10 UI styling for tooltips, issue summaries, KPI pills, overlay controls, and action buttons.
+    - Added Vitest coverage for diagnostic selector issues, severity ordering, door utilization, and queue pressure.
+    - Verification completed: `npm run test` passed with 87 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+    - Local dev server was verified at `http://127.0.0.1:5173` with HTTP 200.

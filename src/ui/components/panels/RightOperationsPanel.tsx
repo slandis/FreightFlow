@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode, useState } from "react";
+import { selectMostSevereIssue } from "../../../game/simulation/selectors/diagnosticSelectors";
 import {
   selectEconomySummary,
   selectScoreSummary,
@@ -30,7 +31,9 @@ export function RightOperationsPanel() {
   const hoveredTile = useUiStore((state) => state.hoveredTile);
   const selectedTile = useUiStore((state) => state.selectedTile);
   const setLaborDialogOpen = useUiStore((state) => state.setLaborDialogOpen);
+  const requestMapFocus = useUiStore((state) => state.requestMapFocus);
   const inspectedTile = selectedTile ?? hoveredTile;
+  const mostSevereIssue = useSimulationState(selectMostSevereIssue);
   const queues = useSimulationState(selectInboundQueueSummary);
   const doors = useSimulationState(selectDoorSummary);
   const dockFreightCubicFeet = useSimulationState(selectDockFreightCubicFeet);
@@ -53,6 +56,34 @@ export function RightOperationsPanel() {
   return (
     <aside className="right-panel" aria-label="Operations">
       <strong>Operations</strong>
+      {mostSevereIssue ? (
+        <section className={`issue-summary ${mostSevereIssue.severity}`}>
+          <span>{mostSevereIssue.severity}</span>
+          <strong>{mostSevereIssue.title}</strong>
+          <small>{mostSevereIssue.recommendedAction}</small>
+          {mostSevereIssue.focusTarget ? (
+            <button
+              onClick={() =>
+                requestMapFocus({
+                  reason: mostSevereIssue.focusTarget?.label ?? mostSevereIssue.title,
+                  x: mostSevereIssue.focusTarget?.x ?? 0,
+                  y: mostSevereIssue.focusTarget?.y ?? 0,
+                  zoom: 0.94,
+                })
+              }
+              type="button"
+            >
+              Focus
+            </button>
+          ) : null}
+        </section>
+      ) : (
+        <section className="issue-summary stable">
+          <span>stable</span>
+          <strong>No urgent issues</strong>
+          <small>Keep an eye on flow, storage, labor, and service.</small>
+        </section>
+      )}
       <CollapsibleSection defaultOpen title="Flow">
         <p>Inbound flow is active when time is running.</p>
         <dl>
@@ -164,7 +195,7 @@ export function RightOperationsPanel() {
       </CollapsibleSection>
       <CollapsibleSection title="Dock Storage Needs">
         {dockStorageNeeds.length > 0 ? (
-          <ul>
+          <ul className="dock-storage-needs">
             {dockStorageNeeds.map((need) => (
               <li key={need.freightClassId} className={need.ready ? "ready" : "blocked"}>
                 <span>{need.freightClassName}</span>
@@ -177,6 +208,21 @@ export function RightOperationsPanel() {
                   ready, largest opening{" "}
                   {need.largestCompatibleAvailableCubicFeet.toLocaleString()} cu ft.
                 </small>
+                {!need.ready ? (
+                  <button
+                    onClick={() =>
+                      requestMapFocus({
+                        reason: `${need.freightClassName} dock need`,
+                        x: 32,
+                        y: 0,
+                        zoom: 0.94,
+                      })
+                    }
+                    type="button"
+                  >
+                    Focus dock
+                  </button>
+                ) : null}
               </li>
             ))}
           </ul>

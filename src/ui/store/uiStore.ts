@@ -18,6 +18,23 @@ export type PlanningPage =
   | "budgeting"
   | "productivity";
 
+export type OverlayMode =
+  | "invalid-storage"
+  | "zone-types"
+  | "travel-network"
+  | "storage-capacity"
+  | "door-utilization"
+  | "queue-pressure"
+  | "none";
+
+export interface MapFocusRequest {
+  id: string;
+  reason: string;
+  x: number;
+  y: number;
+  zoom?: number;
+}
+
 export interface TileSummary {
   x: number;
   y: number;
@@ -39,11 +56,16 @@ interface UiState {
   selectedTile: TileSummary | null;
   isLaborDialogOpen: boolean;
   activePlanningPage: PlanningPage;
+  activeOverlayMode: OverlayMode;
+  mapFocusRequest: MapFocusRequest | null;
   setActiveTool: (tool: ActiveTool) => void;
   setHoveredTile: (tile: TileSummary | null) => void;
   setSelectedTile: (tile: TileSummary | null) => void;
   setLaborDialogOpen: (isOpen: boolean) => void;
   setActivePlanningPage: (page: PlanningPage) => void;
+  setActiveOverlayMode: (mode: OverlayMode) => void;
+  requestMapFocus: (request: Omit<MapFocusRequest, "id">) => void;
+  clearMapFocusRequest: (id: string) => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -52,9 +74,23 @@ export const useUiStore = create<UiState>((set) => ({
   selectedTile: null,
   isLaborDialogOpen: false,
   activePlanningPage: "forecast",
+  activeOverlayMode: "invalid-storage",
+  mapFocusRequest: null,
   setActiveTool: (tool) => set({ activeTool: tool }),
   setHoveredTile: (tile) => set({ hoveredTile: tile }),
   setSelectedTile: (tile) => set({ selectedTile: tile }),
   setLaborDialogOpen: (isOpen) => set({ isLaborDialogOpen: isOpen }),
   setActivePlanningPage: (page) => set({ activePlanningPage: page }),
+  setActiveOverlayMode: (mode) => set({ activeOverlayMode: mode }),
+  requestMapFocus: (request) =>
+    set({
+      mapFocusRequest: {
+        ...request,
+        id: `focus-${Date.now()}-${request.x}-${request.y}`,
+      },
+    }),
+  clearMapFocusRequest: (id) =>
+    set((state) => ({
+      mapFocusRequest: state.mapFocusRequest?.id === id ? null : state.mapFocusRequest,
+    })),
 }));
