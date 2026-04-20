@@ -4,9 +4,12 @@ import type { FreightFlowState } from "./FreightFlowState";
 import type { RandomService } from "../core/RandomService";
 import { createId } from "../types/ids";
 
-const INBOUND_SPAWN_INTERVAL_TICKS = 120;
+//const INBOUND_SPAWN_INTERVAL_TICKS = 120;
+//const MIN_INBOUND_CUBIC_FEET = 800;
+//const MAX_INBOUND_CUBIC_FEET = 1800;
+const INBOUND_SPAWN_INTERVAL_TICKS = 60;
 const MIN_INBOUND_CUBIC_FEET = 800;
-const MAX_INBOUND_CUBIC_FEET = 1800;
+const MAX_INBOUND_CUBIC_FEET = 2500;
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
 
