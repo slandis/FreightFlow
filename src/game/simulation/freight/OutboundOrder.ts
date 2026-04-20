@@ -11,4 +11,6 @@ export interface OutboundOrder {
   blockedReason: string | null;
   remainingPickCubicFeet: number;
   remainingLoadCubicFeet: number;
+  revenueRecognizedTick: number | null;
+  recognizedRevenue: number;
 }

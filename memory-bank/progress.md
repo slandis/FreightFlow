@@ -105,3 +105,25 @@ Phase 7: Completed
     - Updated existing freight-flow tests for labor-scaled unload and storage putaway timing.
     - Verification completed: `npm run test` passed with 62 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
     - Local dev server was verified at `http://127.0.0.1:5173`.
+
+Phase 8: Completed
+    - Saved the finalized Phase 8 plan to `memory-bank/phase-8-plan.md`.
+    - Added economy, score, contract, and alert state branches to authoritative `GameState`.
+    - Expanded KPIs with revenue, labor cost, operating cost, net operating result, morale, condition, safety, client satisfaction, and customer satisfaction.
+    - Implemented `FinanceSystem` with one-time outbound shipment revenue recognition, freight-class revenue rates, satisfaction multipliers, recurring labor costs, operating costs, cash updates, and monthly/lifetime totals.
+    - Added revenue recognition fields to outbound orders so completed shipments cannot be paid twice.
+    - Implemented `KPIService` as the centralized source for freight, economy, and score KPI updates.
+    - Implemented `ConditionSystem`, `MoraleSystem`, `SafetySystem`, and `SatisfactionSystem` with simple driver-based score movement from labor pressure, sanitation, management, queue pressure, condition, safety, blocked orders, and service level.
+    - Implemented a baseline `ContractSystem` with one default general freight contract, service-level tracking, missed demand, fulfilled demand, and contract health.
+    - Implemented `AlertSystem` with stable alert keys, severity, active/resolved state, low-cash and low-score warnings, contract service alerts, and de-duplicated alert events.
+    - Added economy, score, contract, alert, and finance breakdown selectors.
+    - Updated the top HUD, bottom KPI bar, right operations panel, and alerts center to expose Phase 8 business health, scores, service level, and active alerts.
+    - Added Vitest coverage for one-time revenue recognition, freight-class revenue rates, recurring costs, KPI updates, condition pressure, morale/safety pressure, satisfaction pressure, baseline contract service level, and alert de-duplication.
+    - Verification completed: `npm run test` passed with 70 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+
+Phase 8 UI Polish: Completed
+    - Converted the right operations panel into collapsible sections for Flow, Business, Scores, Labor, Dock Storage Needs, and Selected/Hover Tile details.
+    - Kept Flow and Selected/Hover Tile open by default while starting heavier diagnostic sections collapsed for readability.
+    - Added accordion styling for compact scanning without moving simulation state into UI presentation controls.
+    - Updated `memory-bank/implementation-plan.md` so the Phase 10 readability pass explicitly includes collapsible right-panel diagnostics.
+    - Verification completed: `npm run build` passed and the local dev server responded at `http://127.0.0.1:5173`. The build still emits the expected Phaser bundle-size warning.

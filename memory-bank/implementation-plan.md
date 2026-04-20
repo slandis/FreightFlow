@@ -458,6 +458,7 @@ Make the game understandable during normal play without heavy developer interpre
 - expand top HUD metrics
 n- implement bottom KPI bar interactions
 - implement right operations panel tabs
+- make right operations panel sections collapsible so growing diagnostics stay readable
 - implement left tool palette with zone descriptions
 - implement alerts center
 - add contextual tooltips
@@ -470,10 +471,12 @@ n- implement bottom KPI bar interactions
 - bottlenecks can be diagnosed visually
 - alerts are actionable and specific
 - key systems are understandable without opening debug tools
+- dense operational diagnostics can be expanded only when needed
 
 ### Validation Checklist
 - player can identify a broken area quickly
 - UI does not obscure important map regions excessively
+- long panels remain usable without constant scrolling
 - overlays are useful but not required for basic comprehension
 - warnings correspond to real simulation conditions
 

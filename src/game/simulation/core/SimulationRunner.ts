@@ -4,6 +4,12 @@ import { CommandBus } from "./CommandBus";
 import { EventBus } from "./EventBus";
 import { WarehouseMap } from "../world/WarehouseMap";
 import type { GameState } from "./GameState";
+import {
+  createInitialAlertState,
+  createInitialContractState,
+  createInitialEconomyState,
+  createInitialScoreState,
+} from "./GameState";
 import { RandomService } from "./RandomService";
 import { createInitialCalendar, SimulationClock } from "./SimulationClock";
 import type { DomainEvent } from "../events/DomainEvent";
@@ -18,6 +24,14 @@ import { StorageSystem } from "../labor/StorageSystem";
 import { SwitchDriverSystem } from "../labor/SwitchDriverSystem";
 import { UnloadSystem } from "../labor/UnloadSystem";
 import { QueueManager } from "../systems/QueueManager";
+import { AlertSystem } from "../systems/AlertSystem";
+import { ConditionSystem } from "../systems/ConditionSystem";
+import { ContractSystem } from "../systems/ContractSystem";
+import { FinanceSystem } from "../systems/FinanceSystem";
+import { KPIService } from "../systems/KPIService";
+import { MoraleSystem } from "../systems/MoraleSystem";
+import { SafetySystem } from "../systems/SafetySystem";
+import { SatisfactionSystem } from "../systems/SatisfactionSystem";
 
 export interface SimulationRunnerOptions {
   seed?: number;
@@ -41,6 +55,14 @@ export class SimulationRunner {
   private readonly loadSystem = new LoadSystem();
   private readonly laborManager = new LaborManager();
   private readonly queueManager = new QueueManager();
+  private readonly conditionSystem = new ConditionSystem();
+  private readonly moraleSystem = new MoraleSystem();
+  private readonly safetySystem = new SafetySystem();
+  private readonly satisfactionSystem = new SatisfactionSystem();
+  private readonly contractSystem = new ContractSystem();
+  private readonly financeSystem = new FinanceSystem();
+  private readonly kpiService = new KPIService();
+  private readonly alertSystem = new AlertSystem();
   private readonly listeners = new Set<StateListener>();
   private readonly changeListeners = new Set<ChangeListener>();
   private readonly state: GameState;
@@ -59,7 +81,15 @@ export class SimulationRunner {
         inboundCubicFeet: 0,
         outboundCubicFeet: 0,
         throughputCubicFeet: 0,
-        safetyScore: 100,
+        revenue: 0,
+        laborCost: 0,
+        operatingCost: 0,
+        netOperatingResult: 0,
+        moraleScore: 80,
+        conditionScore: 85,
+        safetyScore: 90,
+        clientSatisfactionScore: 82,
+        customerSatisfactionScore: 82,
       },
       debug: {
         lastCommandType: null,
@@ -68,6 +98,10 @@ export class SimulationRunner {
       warehouseMap,
       freightFlow: createInitialFreightFlowState(warehouseMap),
       labor: this.laborManager.createInitialLaborState(),
+      economy: createInitialEconomyState(),
+      scores: createInitialScoreState(),
+      contracts: createInitialContractState(),
+      alerts: createInitialAlertState(),
     };
 
     this.commandBus = new CommandBus({
@@ -141,7 +175,14 @@ export class SimulationRunner {
       this.state.labor,
       this.laborManager.calculateWorkloads(this.state.freightFlow),
     );
-    this.updateFreightKpis();
+    this.conditionSystem.update(this.state);
+    this.moraleSystem.update(this.state);
+    this.safetySystem.update(this.state);
+    this.satisfactionSystem.update(this.state);
+    this.contractSystem.update(this.state);
+    events.push(...this.financeSystem.update(this.state, (type) => this.createEvent(type)));
+    this.kpiService.update(this.state);
+    events.push(...this.alertSystem.update(this.state, (type) => this.createEvent(type)));
     events.push(this.createEvent("simulation-ticked"));
     this.emitEvents(events);
     this.notifyStateChanged();
@@ -211,14 +252,6 @@ export class SimulationRunner {
     for (const listener of this.changeListeners) {
       listener();
     }
-  }
-
-  private updateFreightKpis(): void {
-    this.state.kpis.inboundCubicFeet = this.state.freightFlow.metrics.totalUnloadedCubicFeet;
-    this.state.kpis.outboundCubicFeet =
-      this.state.freightFlow.metrics.totalOutboundCubicFeetShipped;
-    this.state.kpis.throughputCubicFeet =
-      (this.state.kpis.inboundCubicFeet + this.state.kpis.outboundCubicFeet) / 2;
   }
 
   private emitEvents(events: DomainEvent[]): void {

@@ -45,6 +45,8 @@ function createOrder(overrides: Partial<OutboundOrder> = {}): OutboundOrder {
     blockedReason: null,
     remainingPickCubicFeet: 500,
     remainingLoadCubicFeet: 500,
+    revenueRecognizedTick: null,
+    recognizedRevenue: 0,
     ...overrides,
   };
 }

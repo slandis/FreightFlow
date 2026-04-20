@@ -7,7 +7,11 @@ import {
   selectCurrentTick,
   selectSpeed,
 } from "../../../game/simulation/selectors/timeSelectors";
-import { selectCash } from "../../../game/simulation/selectors/kpiSelectors";
+import {
+  selectCash,
+  selectCriticalAlertCount,
+  selectKpis,
+} from "../../../game/simulation/selectors/kpiSelectors";
 import { useSimulationState } from "../../hooks/useSimulation";
 
 const speedButtons: Array<{ speed: GameSpeed; label: string }> = [
@@ -22,12 +26,18 @@ export function TopHud() {
   const calendar = useSimulationState(selectCalendar);
   const speed = useSimulationState(selectSpeed);
   const cash = useSimulationState(selectCash);
+  const kpis = useSimulationState(selectKpis);
+  const criticalAlertCount = useSimulationState(selectCriticalAlertCount);
   const currentTick = useSimulationState(selectCurrentTick);
 
   return (
     <header className="top-hud">
       <span>{formatCalendarTime(calendar)}</span>
       <span>Cash: ${cash.toLocaleString()}</span>
+      <span>Morale: {kpis.moraleScore.toFixed(0)}</span>
+      <span>Safety: {kpis.safetyScore.toFixed(0)}</span>
+      <span>Condition: {kpis.conditionScore.toFixed(0)}</span>
+      <span>Critical alerts: {criticalAlertCount}</span>
       <span>Tick: {currentTick}</span>
       <div className="speed-controls" aria-label="Simulation speed">
         {speedButtons.map((button) => (

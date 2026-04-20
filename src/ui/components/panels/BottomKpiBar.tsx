@@ -24,6 +24,11 @@ export function BottomKpiBar() {
       <span>Stored: {storedCubicFeet.toLocaleString()} cu ft</span>
       <span>Open Orders: {openOutboundOrders}</span>
       <span>Shipped: {outboundShippedCubicFeet.toLocaleString()} cu ft</span>
+      <span>Revenue: ${kpis.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+      <span>Labor Cost: ${kpis.laborCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+      <span>Net: ${kpis.netOperatingResult.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+      <span>Client: {kpis.clientSatisfactionScore.toFixed(0)}</span>
+      <span>Customer: {kpis.customerSatisfactionScore.toFixed(0)}</span>
       <span>
         Labor: {laborSummary.totalHeadcount - laborSummary.unassignedHeadcount}/
         {laborSummary.totalHeadcount}

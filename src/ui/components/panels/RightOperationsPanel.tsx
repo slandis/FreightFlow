@@ -1,4 +1,9 @@
-import { Fragment } from "react";
+import { Fragment, type ReactNode, useState } from "react";
+import {
+  selectEconomySummary,
+  selectScoreSummary,
+  selectContractSummary,
+} from "../../../game/simulation/selectors/kpiSelectors";
 import {
   selectBottleneckSummary,
   selectLaborRoleDetails,
@@ -41,11 +46,14 @@ export function RightOperationsPanel() {
   const laborSummary = useSimulationState(selectLaborSummary);
   const laborRoles = useSimulationState(selectLaborRoleDetails);
   const topBottleneck = useSimulationState(selectBottleneckSummary);
+  const economy = useSimulationState(selectEconomySummary);
+  const scores = useSimulationState(selectScoreSummary);
+  const contracts = useSimulationState(selectContractSummary);
 
   return (
     <aside className="right-panel" aria-label="Operations">
       <strong>Operations</strong>
-      <section className="operations-summary">
+      <CollapsibleSection defaultOpen title="Flow">
         <p>Inbound flow is active when time is running.</p>
         <dl>
           <dt>Total inbound</dt>
@@ -96,10 +104,40 @@ export function RightOperationsPanel() {
           <dt>Outbound shipped</dt>
           <dd>{outboundShippedCubicFeet.toLocaleString()} cu ft</dd>
         </dl>
-      </section>
-      <section className="labor-summary">
+      </CollapsibleSection>
+      <CollapsibleSection title="Business">
+        <dl>
+          <dt>Revenue</dt>
+          <dd>${formatMoney(economy.currentMonthRevenue)}</dd>
+          <dt>Labor cost</dt>
+          <dd>${formatMoney(economy.currentMonthLaborCost)}</dd>
+          <dt>Operating cost</dt>
+          <dd>${formatMoney(economy.currentMonthOperatingCost)}</dd>
+          <dt>Net</dt>
+          <dd>${formatMoney(economy.currentMonthNet)}</dd>
+          <dt>Service level</dt>
+          <dd>{contracts.serviceLevel.toFixed(0)}%</dd>
+          <dt>Contract</dt>
+          <dd>{contracts.activeContracts[0]?.health ?? "none"}</dd>
+        </dl>
+      </CollapsibleSection>
+      <CollapsibleSection title="Scores">
+        <dl>
+          <dt>Morale</dt>
+          <dd>{formatScore(scores.morale.value, scores.morale.trend)}</dd>
+          <dt>Condition</dt>
+          <dd>{formatScore(scores.condition.value, scores.condition.trend)}</dd>
+          <dt>Safety</dt>
+          <dd>{formatScore(scores.safety.value, scores.safety.trend)}</dd>
+          <dt>Client</dt>
+          <dd>{formatScore(scores.clientSatisfaction.value, scores.clientSatisfaction.trend)}</dd>
+          <dt>Customer</dt>
+          <dd>{formatScore(scores.customerSatisfaction.value, scores.customerSatisfaction.trend)}</dd>
+        </dl>
+        <p>{formatTopScoreDriver(scores)}</p>
+      </CollapsibleSection>
+      <CollapsibleSection title="Labor">
         <div className="panel-section-heading">
-          <strong>Labor</strong>
           <button type="button" onClick={() => setLaborDialogOpen(true)}>
             Assign
           </button>
@@ -123,9 +161,8 @@ export function RightOperationsPanel() {
             </Fragment>
           ))}
         </dl>
-      </section>
-      <section className="dock-storage-needs">
-        <strong>Dock storage needs</strong>
+      </CollapsibleSection>
+      <CollapsibleSection title="Dock Storage Needs">
         {dockStorageNeeds.length > 0 ? (
           <ul>
             {dockStorageNeeds.map((need) => (
@@ -146,41 +183,69 @@ export function RightOperationsPanel() {
         ) : (
           <p>Dock is clear.</p>
         )}
-      </section>
-      <p>{selectedTile ? "Selected tile" : "Hover tile"}</p>
-      {inspectedTile ? (
-        <dl>
-          <dt>Position</dt>
-          <dd>
-            {inspectedTile.x}, {inspectedTile.y}
-          </dd>
-          <dt>Zone</dt>
-          <dd>{inspectedTile.zoneType}</dd>
-          <dt>Zone ID</dt>
-          <dd>{inspectedTile.zoneId ?? "none"}</dd>
-          <dt>Storage valid</dt>
-          <dd>{inspectedTile.validForStorage ? "yes" : "no"}</dd>
-          <dt>Invalid reason</dt>
-          <dd>{inspectedTile.invalidReason ?? "none"}</dd>
-          <dt>Nearest travel</dt>
-          <dd>
-            {inspectedTile.nearestTravelDistance === null
-              ? "none"
-              : `${inspectedTile.nearestTravelDistance} tiles`}
-          </dd>
-          <dt>Protected dock edge</dt>
-          <dd>{inspectedTile.isDockEdge ? "yes" : "no"}</dd>
-        </dl>
-      ) : (
-        <p>Click a warehouse tile.</p>
-      )}
-      <p>
-        Hover:{" "}
-        {hoveredTile
-          ? `${hoveredTile.x}, ${hoveredTile.y} (${hoveredTile.zoneType})`
-          : "none"}
-      </p>
+      </CollapsibleSection>
+      <CollapsibleSection defaultOpen title={selectedTile ? "Selected Tile" : "Hover Tile"}>
+        {inspectedTile ? (
+          <dl>
+            <dt>Position</dt>
+            <dd>
+              {inspectedTile.x}, {inspectedTile.y}
+            </dd>
+            <dt>Zone</dt>
+            <dd>{inspectedTile.zoneType}</dd>
+            <dt>Zone ID</dt>
+            <dd>{inspectedTile.zoneId ?? "none"}</dd>
+            <dt>Storage valid</dt>
+            <dd>{inspectedTile.validForStorage ? "yes" : "no"}</dd>
+            <dt>Invalid reason</dt>
+            <dd>{inspectedTile.invalidReason ?? "none"}</dd>
+            <dt>Nearest travel</dt>
+            <dd>
+              {inspectedTile.nearestTravelDistance === null
+                ? "none"
+                : `${inspectedTile.nearestTravelDistance} tiles`}
+            </dd>
+            <dt>Protected dock edge</dt>
+            <dd>{inspectedTile.isDockEdge ? "yes" : "no"}</dd>
+          </dl>
+        ) : (
+          <p>Click a warehouse tile.</p>
+        )}
+        <p>
+          Hover:{" "}
+          {hoveredTile
+            ? `${hoveredTile.x}, ${hoveredTile.y} (${hoveredTile.zoneType})`
+            : "none"}
+        </p>
+      </CollapsibleSection>
     </aside>
+  );
+}
+
+function CollapsibleSection({
+  children,
+  defaultOpen = false,
+  title,
+}: {
+  children: ReactNode;
+  defaultOpen?: boolean;
+  title: string;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <section className={`panel-collapsible ${isOpen ? "open" : ""}`}>
+      <button
+        aria-expanded={isOpen}
+        className="panel-collapsible-toggle"
+        onClick={() => setIsOpen((current) => !current)}
+        type="button"
+      >
+        <span>{title}</span>
+        <span className="panel-collapsible-state">{isOpen ? "Hide" : "Show"}</span>
+      </button>
+      {isOpen ? <div className="panel-collapsible-body">{children}</div> : null}
+    </section>
   );
 }
 
@@ -201,4 +266,28 @@ function formatLaborRole(roleId: string): string {
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
+}
+
+function formatMoney(value: number): string {
+  return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+
+function formatScore(value: number, trend: string): string {
+  return `${value.toFixed(0)} ${trend}`;
+}
+
+function formatTopScoreDriver(scores: ReturnType<typeof selectScoreSummary>): string {
+  const drivers = [
+    ...scores.morale.drivers,
+    ...scores.condition.drivers,
+    ...scores.safety.drivers,
+    ...scores.clientSatisfaction.drivers,
+    ...scores.customerSatisfaction.drivers,
+  ].sort((first, second) => Math.abs(second.impact) - Math.abs(first.impact));
+
+  if (!drivers[0]) {
+    return "Scores are stable.";
+  }
+
+  return `Top driver: ${drivers[0].label} (${drivers[0].impact.toFixed(2)})`;
 }

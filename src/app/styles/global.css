@@ -138,6 +138,44 @@ textarea {
   margin: 0;
 }
 
+.panel-collapsible {
+  border-top: 1px solid rgba(238, 244, 242, 0.12);
+  padding: 8px 0;
+}
+
+.panel-collapsible:first-of-type {
+  margin-top: 8px;
+}
+
+.panel-collapsible-toggle {
+  display: flex;
+  width: 100%;
+  min-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid rgba(238, 244, 242, 0.16);
+  border-radius: 8px;
+  color: #eef4f2;
+  background: rgba(94, 163, 198, 0.14);
+  cursor: pointer;
+  text-align: left;
+}
+
+.panel-collapsible.open .panel-collapsible-toggle {
+  border-color: rgba(230, 182, 85, 0.42);
+  background: rgba(230, 182, 85, 0.16);
+}
+
+.panel-collapsible-state {
+  color: rgba(238, 244, 242, 0.68);
+  font-size: 12px;
+}
+
+.panel-collapsible-body {
+  padding-top: 8px;
+}
+
 .panel-section-heading {
   display: flex;
   align-items: center;
@@ -159,7 +197,7 @@ textarea {
 }
 
 .dock-storage-needs {
-  margin: 14px 0;
+  margin: 0;
 }
 
 .dock-storage-needs ul {
@@ -203,6 +241,25 @@ textarea {
   right: 12px;
   bottom: 76px;
   padding: 10px 12px;
+  max-width: 360px;
+}
+
+.alerts-center ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.alerts-center li {
+  border-left: 3px solid #e6b655;
+  padding-left: 8px;
+}
+
+.alerts-center li.critical {
+  border-left-color: #d96c5f;
 }
 
 .modal-backdrop {

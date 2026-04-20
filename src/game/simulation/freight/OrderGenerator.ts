@@ -53,6 +53,8 @@ export class OrderGenerator {
       blockedReason: null,
       remainingPickCubicFeet: requestedCubicFeet,
       remainingLoadCubicFeet: requestedCubicFeet,
+      revenueRecognizedTick: null,
+      recognizedRevenue: 0,
     });
 
     const event = {

@@ -1,5 +1,117 @@
+import freightClasses from "../../../data/config/freightClasses.json";
+import type { GameState } from "../core/GameState";
+import type { DomainEvent } from "../events/DomainEvent";
+
+const LABOR_COST_PER_WORKER_PER_TICK = 2;
+const BASE_OPERATING_COST_PER_TICK = 20;
+
+type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
+
+const revenueByFreightClass = new Map<string, number>(
+  freightClasses.map((freightClass) => [
+    freightClass.id,
+    freightClass.baseRevenuePerCubicFoot,
+  ]),
+);
+
 export class FinanceSystem {
-  update(): void {
-    // Accrue revenue, labor cost, and monthly operating expenses.
+  update(state: GameState, createEvent: EventFactory): DomainEvent[] {
+    const events: DomainEvent[] = [];
+    const revenue = this.recognizeShipmentRevenue(state, createEvent, events);
+    const assignedHeadcount = state.labor.pools.reduce(
+      (total, pool) => total + pool.assignedHeadcount,
+      0,
+    );
+    const laborCost = assignedHeadcount * LABOR_COST_PER_WORKER_PER_TICK;
+    const operatingCost =
+      BASE_OPERATING_COST_PER_TICK +
+      state.labor.modifiers.conditionPressure * 0.1 +
+      Math.max(0, 100 - state.scores.condition.value) * 0.05 +
+      Math.max(0, 100 - state.scores.safety.value) * 0.05;
+
+    state.economy.revenuePerTick = revenue;
+    state.economy.laborCostPerTick = laborCost;
+    state.economy.operatingCostPerTick = operatingCost;
+    state.economy.lifetimeRevenue += revenue;
+    state.economy.lifetimeLaborCost += laborCost;
+    state.economy.lifetimeOperatingCost += operatingCost;
+    state.economy.currentMonthRevenue += revenue;
+    state.economy.currentMonthLaborCost += laborCost;
+    state.economy.currentMonthOperatingCost += operatingCost;
+    state.economy.lifetimeNet =
+      state.economy.lifetimeRevenue -
+      state.economy.lifetimeLaborCost -
+      state.economy.lifetimeOperatingCost;
+    state.economy.currentMonthNet =
+      state.economy.currentMonthRevenue -
+      state.economy.currentMonthLaborCost -
+      state.economy.currentMonthOperatingCost;
+    state.cash += revenue - laborCost - operatingCost;
+
+    if (revenue > 0) {
+      state.economy.lastRevenueTick = state.currentTick;
+    }
+
+    return events;
   }
+
+  private recognizeShipmentRevenue(
+    state: GameState,
+    createEvent: EventFactory,
+    events: DomainEvent[],
+  ): number {
+    let recognizedRevenue = 0;
+    const satisfactionMultiplier = getSatisfactionMultiplier(state);
+
+    for (const order of state.freightFlow.outboundOrders) {
+      if (order.state !== "complete" || order.revenueRecognizedTick !== null) {
+        continue;
+      }
+
+      const orderRevenue = order.freightBatchIds.reduce((total, batchId) => {
+        const batch = state.freightFlow.freightBatches.find(
+          (candidateBatch) => candidateBatch.id === batchId,
+        );
+
+        if (!batch) {
+          return total;
+        }
+
+        return (
+          total +
+          batch.cubicFeet *
+            (revenueByFreightClass.get(batch.freightClassId) ?? 0) *
+            satisfactionMultiplier
+        );
+      }, 0);
+
+      order.revenueRecognizedTick = state.currentTick;
+      order.recognizedRevenue = orderRevenue;
+      recognizedRevenue += orderRevenue;
+      const event = {
+        ...createEvent("revenue-recognized"),
+        outboundOrderId: order.id,
+        revenue: orderRevenue,
+      };
+
+      events.push(event);
+    }
+
+    return recognizedRevenue;
+  }
+}
+
+function getSatisfactionMultiplier(state: GameState): number {
+  const averageSatisfaction =
+    (state.scores.clientSatisfaction.value + state.scores.customerSatisfaction.value) / 2;
+
+  if (averageSatisfaction < 50) {
+    return 0.85;
+  }
+
+  if (averageSatisfaction >= 90) {
+    return 1.1;
+  }
+
+  return 1;
 }
