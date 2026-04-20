@@ -20,6 +20,7 @@ const speedButtons: Array<{ speed: GameSpeed; label: string }> = [
   { speed: GameSpeed.Slow, label: "Slow" },
   { speed: GameSpeed.Medium, label: "Medium" },
   { speed: GameSpeed.Fast, label: "Fast" },
+  { speed: GameSpeed.Hyper, label: "Hyper" },
 ];
 
 export function TopHud() {

@@ -1,12 +1,16 @@
 import { GameSpeed } from "../types/enums";
 
-export const MAX_TICKS_PER_FRAME = 30;
+export const MAX_TICKS_PER_FRAME = 120;
+export const TICKS_PER_MONTH = 30 * 24 * 60;
+export const HYPER_TARGET_SECONDS_PER_MONTH = 6;
+export const HYPER_TICKS_PER_SECOND = TICKS_PER_MONTH / HYPER_TARGET_SECONDS_PER_MONTH;
 
 const ticksPerSecondBySpeed: Record<GameSpeed, number> = {
   [GameSpeed.Paused]: 0,
   [GameSpeed.Slow]: 1,
   [GameSpeed.Medium]: 4,
   [GameSpeed.Fast]: 12,
+  [GameSpeed.Hyper]: HYPER_TICKS_PER_SECOND,
 };
 
 export interface TickCalculationResult {

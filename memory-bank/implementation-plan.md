@@ -232,6 +232,7 @@ Introduce the running simulation clock and speed controls.
 - implement speed state changes
 - wire UI speed controls to `ChangeSpeedCommand`
 - add pause/slow/medium/fast handling
+- add hyper speed for rapid month-cycle testing
 - create a simulation loop tied to browser time
 - map real time to in-game ticks
 - surface current tick/date/time in HUD
@@ -240,12 +241,14 @@ Introduce the running simulation clock and speed controls.
 ### Deliverables
 - running simulation
 - speed buttons in the HUD
+- hyper speed can cycle a full 30-day month in roughly 5-10 seconds
 - visible time progression
 - simulation pauses and resumes correctly
 
 ### Validation Checklist
 - paused state fully stops simulation updates
 - slow/medium/fast produce visibly different progression rates
+- hyper speed advances a month fast enough for planning-loop testing
 - HUD updates time correctly
 - no duplicate loops are created on rerender
 

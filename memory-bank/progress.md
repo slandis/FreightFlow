@@ -155,3 +155,12 @@ Phase 9: Completed
     - Added Vitest coverage for month rollover, one-time planning opening, slow-speed shift, budget validation, pending budget updates, planned labor validation, confirmation commits, budget effects, and planning-time command gating.
     - Verification completed: `npm run test` passed with 82 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
     - Local dev server was verified at `http://127.0.0.1:5173`.
+
+Hyper Speed Polish: Completed
+    - Added a new `Hyper` game speed for fast month-cycle testing.
+    - Hyper runs at 7,200 ticks per second, targeting one 30-day month, or 43,200 simulation ticks, in 6 seconds under normal frame pacing.
+    - Raised the per-frame catch-up cap to 120 ticks so Hyper can reach its target without changing slow, medium, or fast speed rates.
+    - Added Hyper to the top-HUD speed controls.
+    - Updated the simulation loop to stop remaining same-frame ticks when monthly planning opens, preventing Hyper from overshooting the month boundary after planning activates.
+    - Added timing coverage for Hyper speed and the 5-10 second month target.
+    - Verification completed: `npm run test` passed with 83 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.

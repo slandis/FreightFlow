@@ -3,6 +3,7 @@ export enum GameSpeed {
   Slow = "slow",
   Medium = "medium",
   Fast = "fast",
+  Hyper = "hyper",
 }
 
 export enum TileZoneType {

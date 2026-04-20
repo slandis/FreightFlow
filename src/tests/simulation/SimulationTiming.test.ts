@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   calculateTicksForElapsed,
+  HYPER_TARGET_SECONDS_PER_MONTH,
+  HYPER_TICKS_PER_SECOND,
   getTicksPerSecondForSpeed,
   MAX_TICKS_PER_FRAME,
+  TICKS_PER_MONTH,
 } from "../../game/simulation/core/SimulationTiming";
 import { GameSpeed } from "../../game/simulation/types/enums";
 
@@ -12,6 +15,7 @@ describe("SimulationTiming", () => {
     expect(getTicksPerSecondForSpeed(GameSpeed.Slow)).toBe(1);
     expect(getTicksPerSecondForSpeed(GameSpeed.Medium)).toBe(4);
     expect(getTicksPerSecondForSpeed(GameSpeed.Fast)).toBe(12);
+    expect(getTicksPerSecondForSpeed(GameSpeed.Hyper)).toBe(HYPER_TICKS_PER_SECOND);
   });
 
   it("does not accumulate ticks while paused", () => {
@@ -21,10 +25,19 @@ describe("SimulationTiming", () => {
     });
   });
 
-  it("calculates slow, medium, and fast ticks from elapsed time", () => {
+  it("calculates slow, medium, fast, and hyper ticks from elapsed time", () => {
     expect(calculateTicksForElapsed(1000, GameSpeed.Slow, 0).ticksToRun).toBe(1);
     expect(calculateTicksForElapsed(1000, GameSpeed.Medium, 0).ticksToRun).toBe(4);
     expect(calculateTicksForElapsed(1000, GameSpeed.Fast, 0).ticksToRun).toBe(12);
+    expect(calculateTicksForElapsed(1000, GameSpeed.Hyper, 0).ticksToRun).toBe(
+      MAX_TICKS_PER_FRAME,
+    );
+  });
+
+  it("targets a month of hyper ticks in six seconds", () => {
+    expect(HYPER_TARGET_SECONDS_PER_MONTH).toBeGreaterThanOrEqual(5);
+    expect(HYPER_TARGET_SECONDS_PER_MONTH).toBeLessThanOrEqual(10);
+    expect(HYPER_TICKS_PER_SECOND * HYPER_TARGET_SECONDS_PER_MONTH).toBe(TICKS_PER_MONTH);
   });
 
   it("carries partial elapsed time between frames", () => {

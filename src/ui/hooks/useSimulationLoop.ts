@@ -38,6 +38,11 @@ export function useSimulationLoop(simulation: SimulationRunner): void {
 
       for (let tickIndex = 0; tickIndex < result.ticksToRun; tickIndex += 1) {
         simulation.tick();
+
+        if (simulation.getState().planning.isPlanningActive) {
+          accumulatedMs = 0;
+          break;
+        }
       }
 
       animationFrameId = window.requestAnimationFrame(runFrame);
