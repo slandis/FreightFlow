@@ -34,4 +34,5 @@ export interface FreightFlowState {
   nextTrailerSequence: number;
   nextFreightBatchSequence: number;
   nextOutboundOrderSequence: number;
+  nextDoorSequence: number;
 }

@@ -43,6 +43,26 @@ const tools: Array<{ id: ActiveTool; label: string; description: string }> = [
     label: "Erase",
     description: "Return tiles to unassigned",
   },
+  {
+    id: "door-flex",
+    label: "Flex Door",
+    description: "Place inbound/outbound dock door",
+  },
+  {
+    id: "door-inbound",
+    label: "Inbound Door",
+    description: "Place receiving-only dock door",
+  },
+  {
+    id: "door-outbound",
+    label: "Outbound Door",
+    description: "Place shipping-only dock door",
+  },
+  {
+    id: "door-remove",
+    label: "Remove Door",
+    description: "Remove idle dock doors",
+  },
 ];
 
 export function LeftToolPanel() {

@@ -207,6 +207,12 @@ export function RightOperationsPanel() {
             </dd>
             <dt>Protected dock edge</dt>
             <dd>{inspectedTile.isDockEdge ? "yes" : "no"}</dd>
+            <dt>Door</dt>
+            <dd>{inspectedTile.isActiveDoor ? inspectedTile.doorId ?? "active" : "none"}</dd>
+            <dt>Door mode</dt>
+            <dd>{inspectedTile.doorMode ?? "none"}</dd>
+            <dt>Door state</dt>
+            <dd>{inspectedTile.doorState ?? "none"}</dd>
           </dl>
         ) : (
           <p>Click a warehouse tile.</p>

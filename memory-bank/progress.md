@@ -127,3 +127,15 @@ Phase 8 UI Polish: Completed
     - Added accordion styling for compact scanning without moving simulation state into UI presentation controls.
     - Updated `memory-bank/implementation-plan.md` so the Phase 10 readability pass explicitly includes collapsible right-panel diagnostics.
     - Verification completed: `npm run build` passed and the local dev server responded at `http://127.0.0.1:5173`. The build still emits the expected Phaser bundle-size warning.
+
+Door Placement Polish: Completed
+    - Added authoritative `PlaceDoorCommand` and `RemoveDoorCommand` for dock-edge door editing.
+    - Door placement validates mode, bounds, dock-edge-only placement, and duplicate doors.
+    - Door removal is limited to idle doors so active/reserved/loading/unloading doors cannot be removed while work is in progress.
+    - Added flex, inbound, outbound, and remove-door tools to the left tool panel and wired Phaser clicks to simulation commands.
+    - Updated selected/hover tile details to show door id, mode, and state.
+    - Placed doors mark their dock-edge tiles active, render through the existing door renderer, and are immediately available to trailer assignment.
+    - Added Vitest coverage for placement, invalid placement, removal, busy-door protection, and trailer assignment to a newly placed door.
+    - Updated `memory-bank/implementation-plan.md` so the Phase 5 door workflow includes player-facing door placement/removal.
+    - Expanded the Phase 5 plan notes with the supported door tools, dock-edge validation rules, idle-only removal behavior, and assignment expectations.
+    - Verification completed: `npm run test` passed with 75 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.

@@ -264,6 +264,9 @@ Create the first fully simulated freight workflow from yard arrival to dock unlo
 - implement inbound trailer spawning logic
 - add trailer yard queue representation
 - create active door model and initial door assignment logic
+- add player-facing door placement/removal commands for dock-edge tiles
+- support flex, inbound, outbound, and remove-door tools from the left tool panel
+- validate door edits through simulation commands, including dock-edge-only placement, duplicate prevention, and idle-only removal
 - render door states and trailer markers
 - implement switch queue and switch movement state
 - implement unload queue and unload state
@@ -273,12 +276,16 @@ Create the first fully simulated freight workflow from yard arrival to dock unlo
 ### Deliverables
 - inbound trailers appear over time
 - trailers can be assigned to doors
+- players can add or remove idle dock-edge doors
+- newly placed doors mark their tiles active, render immediately, and participate in inbound/outbound assignment
 - trailers progress through yard -> door -> unload stages
 - queue sizes and dwell times are tracked
 
 ### Validation Checklist
 - trailers spawn without breaking the loop
 - only available doors receive new inbound work
+- placed doors are available to freight assignment immediately
+- busy doors cannot be removed while reserved, occupied, loading, or unloading
 - dwell times increment as expected
 - visible map state reflects trailer progression
 

@@ -4,6 +4,10 @@ import { TileZoneType } from "../../game/simulation/types/enums";
 export type ActiveTool =
   | "select"
   | "erase"
+  | "door-flex"
+  | "door-inbound"
+  | "door-outbound"
+  | "door-remove"
   | Exclude<TileZoneType, TileZoneType.Dock | TileZoneType.Unassigned>;
 
 export interface TileSummary {
@@ -15,6 +19,10 @@ export interface TileSummary {
   validForStorage: boolean;
   invalidReason: string | null;
   nearestTravelDistance: number | null;
+  isActiveDoor: boolean;
+  doorId: string | null;
+  doorMode: string | null;
+  doorState: string | null;
 }
 
 interface UiState {

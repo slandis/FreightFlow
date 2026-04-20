@@ -1,10 +1,13 @@
 import Phaser from "phaser";
 import { useUiStore, type TileSummary } from "../../../ui/store/uiStore";
 import { PaintZoneCommand } from "../../simulation/commands/PaintZoneCommand";
+import { PlaceDoorCommand } from "../../simulation/commands/PlaceDoorCommand";
+import { RemoveDoorCommand } from "../../simulation/commands/RemoveDoorCommand";
 import type { SimulationRunner } from "../../simulation/core/SimulationRunner";
 import { TileZoneType } from "../../simulation/types/enums";
 import type { WarehouseMap } from "../../simulation/world/WarehouseMap";
 import type { Tile } from "../../simulation/world/Tile";
+import type { DoorNode } from "../../simulation/world/DoorNode";
 import { screenToTile } from "../rendering/isometric";
 import type { TileRenderer } from "../rendering/TileRenderer";
 
@@ -17,6 +20,7 @@ export class MapInputController {
   private selectedTile: Tile | null = null;
   private isPanning = false;
   private isPainting = false;
+  private isDoorEditing = false;
   private hasDragged = false;
   private lastPointerX = 0;
   private lastPointerY = 0;
@@ -51,6 +55,7 @@ export class MapInputController {
     this.hasDragged = false;
     this.isPanning = pointer.rightButtonDown() || pointer.middleButtonDown();
     this.isPainting = false;
+    this.isDoorEditing = false;
     this.lastPaintedTile = null;
     this.paintedTileKeys.clear();
 
@@ -59,6 +64,11 @@ export class MapInputController {
     if (!this.isPanning && this.getPointerButton(pointer) === 0 && this.isPaintToolActive()) {
       this.isPainting = true;
       this.paintHoveredTile();
+    }
+
+    if (!this.isPanning && this.getPointerButton(pointer) === 0 && this.isDoorToolActive()) {
+      this.isDoorEditing = true;
+      this.applyDoorTool();
     }
   }
 
@@ -97,6 +107,11 @@ export class MapInputController {
       this.isPainting = false;
       this.lastPaintedTile = null;
       this.paintedTileKeys.clear();
+      return;
+    }
+
+    if (this.isDoorEditing) {
+      this.isDoorEditing = false;
       return;
     }
 
@@ -224,10 +239,68 @@ export class MapInputController {
       return TileZoneType.Unassigned;
     }
 
-    return activeTool;
+    if (Object.values(TileZoneType).includes(activeTool as TileZoneType)) {
+      return activeTool as TileZoneType;
+    }
+
+    return null;
+  }
+
+  private isDoorToolActive(): boolean {
+    return this.isDoorTool(useUiStore.getState().activeTool);
+  }
+
+  private isDoorTool(activeTool: string): boolean {
+    return (
+      activeTool === "door-flex" ||
+      activeTool === "door-inbound" ||
+      activeTool === "door-outbound" ||
+      activeTool === "door-remove"
+    );
+  }
+
+  private applyDoorTool(): void {
+    if (!this.hoveredTile) {
+      return;
+    }
+
+    const activeTool = useUiStore.getState().activeTool;
+
+    if (activeTool === "door-remove") {
+      this.simulation.dispatch(new RemoveDoorCommand(this.hoveredTile.x, this.hoveredTile.y));
+      return;
+    }
+
+    const mode = this.getDoorMode(activeTool);
+
+    if (!mode) {
+      return;
+    }
+
+    this.simulation.dispatch(new PlaceDoorCommand(this.hoveredTile.x, this.hoveredTile.y, mode));
+  }
+
+  private getDoorMode(activeTool: string): DoorNode["mode"] | null {
+    if (activeTool === "door-inbound") {
+      return "inbound";
+    }
+
+    if (activeTool === "door-outbound") {
+      return "outbound";
+    }
+
+    if (activeTool === "door-flex") {
+      return "flex";
+    }
+
+    return null;
   }
 
   private createTileSummary(tile: Tile): TileSummary {
+    const door = this.simulation
+      .getState()
+      .freightFlow.doors.find((candidateDoor) => candidateDoor.x === tile.x && candidateDoor.y === tile.y);
+
     return {
       x: tile.x,
       y: tile.y,
@@ -237,6 +310,10 @@ export class MapInputController {
       validForStorage: tile.validForStorage,
       invalidReason: tile.invalidReason,
       nearestTravelDistance: tile.nearestTravelDistance,
+      isActiveDoor: tile.isActiveDoor,
+      doorId: door?.id ?? null,
+      doorMode: door?.mode ?? null,
+      doorState: door?.state ?? null,
     };
   }
 

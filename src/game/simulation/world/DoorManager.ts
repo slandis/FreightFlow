@@ -49,5 +49,6 @@ export function createInitialFreightFlowState(map: WarehouseMap): FreightFlowSta
     nextTrailerSequence: 1,
     nextFreightBatchSequence: 1,
     nextOutboundOrderSequence: 1,
+    nextDoorSequence: doors.length + 1,
   };
 }
