@@ -35,14 +35,10 @@ export function useSimulationLoop(simulation: SimulationRunner): void {
         accumulatedMs,
       );
       accumulatedMs = result.accumulatedMs;
+      const executedTicks = simulation.tickMany(result.ticksToRun);
 
-      for (let tickIndex = 0; tickIndex < result.ticksToRun; tickIndex += 1) {
-        simulation.tick();
-
-        if (simulation.getState().planning.isPlanningActive) {
-          accumulatedMs = 0;
-          break;
-        }
+      if (executedTicks > 0 && simulation.getState().planning.isPlanningActive) {
+        accumulatedMs = 0;
       }
 
       animationFrameId = window.requestAnimationFrame(runFrame);

@@ -140,6 +140,80 @@ export class SimulationRunner {
   }
 
   tick(): void {
+    this.tickInternal(true);
+  }
+
+  tickMany(tickCount: number): number {
+    if (tickCount <= 0) {
+      return 0;
+    }
+
+    let executedTicks = 0;
+
+    for (let tickIndex = 0; tickIndex < tickCount; tickIndex += 1) {
+      this.tickInternal(false);
+      executedTicks += 1;
+
+      if (this.state.planning.isPlanningActive) {
+        break;
+      }
+    }
+
+    this.notifyStateChanged();
+
+    return executedTicks;
+  }
+
+  dispatch(command: Command): CommandResult {
+    const result = this.commandBus.dispatch(command);
+    this.notifyStateChanged();
+    return result;
+  }
+
+  getState(): GameState {
+    return this.state;
+  }
+
+  replaceState(nextState: GameState): void {
+    Object.assign(this.state, nextState);
+    this.clock.restore(nextState.currentTick, nextState.calendar);
+    this.notifyStateChanged();
+  }
+
+  getRevision(): number {
+    return this.revision;
+  }
+
+  getCommandBus(): CommandBus {
+    return this.commandBus;
+  }
+
+  getEventBus(): EventBus {
+    return this.eventBus;
+  }
+
+  getRandomService(): RandomService {
+    return this.random;
+  }
+
+  subscribe(listener: StateListener): () => void {
+    this.listeners.add(listener);
+    listener(this.state);
+
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  subscribeToChanges(listener: ChangeListener): () => void {
+    this.changeListeners.add(listener);
+
+    return () => {
+      this.changeListeners.delete(listener);
+    };
+  }
+
+  private tickInternal(notifyAfterTick: boolean): void {
     this.state.currentTick = this.clock.advance();
     this.state.calendar = this.clock.getCalendar();
     const difficultyMode = getDifficultyModeById(this.state.difficultyModeId);
@@ -223,56 +297,10 @@ export class SimulationRunner {
     events.push(...this.alertSystem.update(this.state, (type) => this.createEvent(type)));
     events.push(this.createEvent("simulation-ticked"));
     this.emitEvents(events);
-    this.notifyStateChanged();
-  }
 
-  dispatch(command: Command): CommandResult {
-    const result = this.commandBus.dispatch(command);
-    this.notifyStateChanged();
-    return result;
-  }
-
-  getState(): GameState {
-    return this.state;
-  }
-
-  replaceState(nextState: GameState): void {
-    Object.assign(this.state, nextState);
-    this.clock.restore(nextState.currentTick, nextState.calendar);
-    this.notifyStateChanged();
-  }
-
-  getRevision(): number {
-    return this.revision;
-  }
-
-  getCommandBus(): CommandBus {
-    return this.commandBus;
-  }
-
-  getEventBus(): EventBus {
-    return this.eventBus;
-  }
-
-  getRandomService(): RandomService {
-    return this.random;
-  }
-
-  subscribe(listener: StateListener): () => void {
-    this.listeners.add(listener);
-    listener(this.state);
-
-    return () => {
-      this.listeners.delete(listener);
-    };
-  }
-
-  subscribeToChanges(listener: ChangeListener): () => void {
-    this.changeListeners.add(listener);
-
-    return () => {
-      this.changeListeners.delete(listener);
-    };
+    if (notifyAfterTick) {
+      this.notifyStateChanged();
+    }
   }
 
   private createEvent<TType extends string>(type: TType): DomainEvent<TType> {

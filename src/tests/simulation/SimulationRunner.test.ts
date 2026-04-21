@@ -109,6 +109,24 @@ describe("SimulationRunner", () => {
     expect(changeCount).toBe(1);
   });
 
+  it("batches change notifications when multiple ticks run together", () => {
+    const runner = new SimulationRunner();
+    let changeCount = 0;
+
+    const unsubscribe = runner.subscribeToChanges(() => {
+      changeCount += 1;
+    });
+
+    const executedTicks = runner.tickMany(5);
+
+    unsubscribe();
+
+    expect(executedTicks).toBe(5);
+    expect(runner.getState().currentTick).toBe(5);
+    expect(changeCount).toBe(1);
+    expect(runner.getRevision()).toBe(1);
+  });
+
   it("exposes baseline state through selectors", () => {
     const runner = new SimulationRunner({ startingCash: 125000 });
     const state = runner.getState();

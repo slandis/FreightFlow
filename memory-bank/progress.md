@@ -241,3 +241,10 @@ Dock Capacity Indicator Polish: Completed
     - Dock indicators now stay white under normal load, turn yellow when any supported dock tile is more than 75% full, and turn red when a supported dock tile is full.
     - Wired the door renderer to live warehouse-map dock-capacity data so the warning light updates as trailers reserve, unload, and clear dock space.
     - Verification completed: `npm run test` passed with 109 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+
+Hyper Speed Responsiveness Polish: Completed
+    - Added batched simulation ticking through `SimulationRunner.tickMany()` so multiple Hyper-speed ticks can execute with one state-change notification pass.
+    - Moved the browser animation loop to use batched ticks per frame instead of notifying React and Phaser after every individual Hyper-speed tick.
+    - Preserved the monthly-planning guard so Hyper still stops accumulated frame time once planning opens.
+    - Added regression coverage confirming grouped ticks only notify change subscribers once per batch.
+    - Verification completed: `npm run test` passed with 110 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
