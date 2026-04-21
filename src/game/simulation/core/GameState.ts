@@ -62,6 +62,7 @@ export type LaborAssignmentPlan = Record<LaborRole, number>;
 
 export interface MonthlyPlan {
   monthKey: string;
+  totalHeadcount: number;
   budget: BudgetPlan;
   laborAssignments: LaborAssignmentPlan;
 }
@@ -111,6 +112,7 @@ export interface PlanningState {
   lastOpenedMonthKey: string | null;
   lastConfirmedMonthKey: string | null;
   pendingPlan: MonthlyPlan | null;
+  queuedPlan: MonthlyPlan | null;
   currentPlan: MonthlyPlan;
   latestSnapshot: PlanningSnapshot | null;
 }
@@ -325,6 +327,7 @@ export function createInitialPlanningState(
   const monthKey = getMonthKey(calendar);
   const currentPlan = {
     monthKey,
+    totalHeadcount: labor.totalHeadcount,
     budget: createDefaultBudgetPlan(),
     laborAssignments: createLaborAssignmentPlan(labor),
   };
@@ -335,6 +338,7 @@ export function createInitialPlanningState(
     lastOpenedMonthKey: monthKey,
     lastConfirmedMonthKey: monthKey,
     pendingPlan: null,
+    queuedPlan: null,
     currentPlan,
     latestSnapshot: null,
   };

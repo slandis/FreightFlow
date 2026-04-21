@@ -9,6 +9,7 @@ import type {
 } from "../core/GameState";
 import { getMonthIndex } from "../core/GameState";
 import type { RandomService } from "../core/RandomService";
+import { LABOR_COST_PER_WORKER_PER_MONTH } from "../labor/laborCost";
 import { LaborRole } from "../types/enums";
 import { createId } from "../types/ids";
 
@@ -46,8 +47,6 @@ const ROLE_ORDER: LaborRole[] = [
   LaborRole.Pick,
   LaborRole.Load,
 ];
-const ESTIMATED_LABOR_COST_PER_HEADCOUNT_PER_MONTH = 2 * 1440 * 30;
-
 type FreightClassConfig = (typeof freightClasses)[number];
 
 export function generateMonthlyContractOffers(
@@ -296,7 +295,7 @@ function buildOfferAnalysis(
   );
   const recommendedStorageZoneTypes = [...freightClass.compatibleZoneTypes];
   const estimatedMonthlyLaborCostDelta =
-    totalExpectedHeadcount * ESTIMATED_LABOR_COST_PER_HEADCOUNT_PER_MONTH;
+    totalExpectedHeadcount * LABOR_COST_PER_WORKER_PER_MONTH;
   const estimatedMonthlyOperatingCostDelta = roundCurrency(
     expectedMonthlyThroughputCubicFeet *
       {

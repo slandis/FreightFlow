@@ -10,6 +10,9 @@ import {
   selectScoreSummary,
 } from "../../game/simulation/selectors/kpiSelectors";
 import { ContractSystem } from "../../game/simulation/systems/ContractSystem";
+import {
+  LABOR_COST_PER_WORKER_PER_TICK,
+} from "../../game/simulation/labor/laborCost";
 import { LaborRole } from "../../game/simulation/types/enums";
 
 function runTicks(runner: SimulationRunner, ticks: number): void {
@@ -107,9 +110,40 @@ describe("core scores and economy", () => {
     runner.tick();
 
     const economy = selectEconomySummary(runner.getState());
-    expect(economy.currentMonthLaborCost).toBe(36);
+    expect(economy.currentMonthLaborCost).toBeCloseTo(18 * LABOR_COST_PER_WORKER_PER_TICK, 6);
     expect(economy.currentMonthOperatingCost).toBeGreaterThan(0);
     expect(runner.getState().cash).toBeLessThan(100000);
+  });
+
+  it("bases payroll on total employed headcount, not only assigned roles", () => {
+    const runner = new SimulationRunner({ startingCash: 100000 });
+
+    runner.getState().labor.totalHeadcount = 20;
+    runner.getState().labor.unassignedHeadcount = 2;
+
+    runner.tick();
+
+    expect(runner.getState().economy.currentMonthLaborCost).toBeCloseTo(
+      20 * LABOR_COST_PER_WORKER_PER_TICK,
+      6,
+    );
+  });
+
+  it("keeps baseline fixed costs in scale with baseline monthly contract revenue", () => {
+    const runner = new SimulationRunner();
+    const baselineContract = runner.getState().contracts.activeContracts[0];
+    const monthlyRevenueCapacity =
+      (baselineContract?.expectedMonthlyThroughputCubicFeet ?? 0) *
+      (baselineContract?.revenuePerCubicFoot ?? 0);
+    const monthlyLaborCost =
+      runner.getState().labor.totalHeadcount * LABOR_COST_PER_WORKER_PER_TICK * 1440 * 30;
+
+    runner.tick();
+
+    const monthlyOperatingFloor =
+      runner.getState().economy.operatingCostPerTick * 1440 * 30;
+
+    expect(monthlyLaborCost + monthlyOperatingFloor).toBeLessThan(monthlyRevenueCapacity * 1.1);
   });
 
   it("updates KPI fields from economy and score state", () => {

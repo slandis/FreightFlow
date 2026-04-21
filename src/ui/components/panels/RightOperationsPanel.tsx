@@ -7,6 +7,7 @@ import {
   selectEconomySummary,
   selectScoreSummary,
 } from "../../../game/simulation/selectors/kpiSelectors";
+import { OpenMonthlyPlanningCommand } from "../../../game/simulation/commands/OpenMonthlyPlanningCommand";
 import {
   selectBottleneckSummary,
   selectLaborRoleDetails,
@@ -27,11 +28,12 @@ import {
   selectStorageQueueCubicFeet,
   selectTotalStoredCubicFeet,
 } from "../../../game/simulation/selectors/queueSelectors";
-import { useSimulationState } from "../../hooks/useSimulation";
+import { useSimulation, useSimulationState } from "../../hooks/useSimulation";
 import { usePlaytestReview } from "../../hooks/usePlaytestReview";
 import { useUiStore } from "../../store/uiStore";
 
 export function RightOperationsPanel() {
+  const simulation = useSimulation();
   const hoveredTile = useUiStore((state) => state.hoveredTile);
   const selectedTile = useUiStore((state) => state.selectedTile);
   const setLaborDialogOpen = useUiStore((state) => state.setLaborDialogOpen);
@@ -57,6 +59,7 @@ export function RightOperationsPanel() {
   const economy = useSimulationState(selectEconomySummary);
   const scores = useSimulationState(selectScoreSummary);
   const contracts = useSimulationState(selectContractSummary);
+  const planning = useSimulationState((state) => state.planning);
   const contractPortfolioCards = useSimulationState(selectContractPortfolioCards);
   const difficultyMode = useSimulationState((state) =>
     getDifficultyModeById(state.difficultyModeId),
@@ -221,6 +224,21 @@ export function RightOperationsPanel() {
         </dl>
       </CollapsibleSection>
       <CollapsibleSection title="Business">
+        <div className="panel-section-heading">
+          <button
+            onClick={() => simulation.dispatch(new OpenMonthlyPlanningCommand())}
+            type="button"
+          >
+            Plan
+          </button>
+          <small>
+            {planning.isPlanningActive
+              ? "Planning open"
+              : planning.queuedPlan
+                ? "Queued for next tick"
+                : "Ready"}
+          </small>
+        </div>
         <dl>
           <dt>Difficulty</dt>
           <dd>{difficultyMode.name}</dd>

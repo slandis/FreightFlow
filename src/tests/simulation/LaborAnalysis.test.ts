@@ -6,9 +6,12 @@ import type { FreightBatch } from "../../game/simulation/freight/FreightBatch";
 import type { Trailer } from "../../game/simulation/freight/Trailer";
 import {
   selectLaborAnalysisRoles,
+  selectLaborAnalysisSummary,
   selectLaborAnalysisSuggestions,
   selectLaborForecastHeadcountChart,
 } from "../../game/simulation/selectors/laborSelectors";
+import { selectContractPortfolioCards } from "../../game/simulation/selectors/contractSelectors";
+import { LABOR_COST_PER_WORKER_PER_TICK, TICKS_PER_DAY } from "../../game/simulation/labor/laborCost";
 import { LaborRole } from "../../game/simulation/types/enums";
 import { deserializeGameState, serializeGameState } from "../../persistence/GameStateSerializer";
 
@@ -144,6 +147,21 @@ describe("labor analysis", () => {
     expect(suggestions).toContain("Look into adding more unloader labor.");
   });
 
+  it("matches labor analysis summary cost to employed-headcount payroll", () => {
+    const runner = new SimulationRunner();
+    const state = runner.getState();
+
+    state.labor.totalHeadcount = 20;
+    state.labor.unassignedHeadcount = 2;
+
+    runner.tick();
+
+    const summary = selectLaborAnalysisSummary(state);
+
+    expect(summary.totalLaborCost).toBe(state.economy.currentMonthLaborCost);
+    expect(summary.totalLaborCost).toBeCloseTo(20 * LABOR_COST_PER_WORKER_PER_TICK, 6);
+  });
+
   it("builds a positive forecast headcount for accepted contracts", () => {
     const runner = new SimulationRunner();
     const state = runner.getState();
@@ -156,6 +174,31 @@ describe("labor analysis", () => {
 
     expect(unload?.idealHeadcount).toBeGreaterThan(0);
     expect(sanitation?.idealHeadcount).toBeGreaterThan(0);
+  });
+
+  it("uses employed headcount for contract portfolio labor estimates", () => {
+    const runner = new SimulationRunner();
+    const state = runner.getState();
+
+    state.labor.totalHeadcount = 20;
+    state.labor.unassignedHeadcount = 2;
+    state.contracts.activeContracts.push(createAcceptedContract());
+
+    const cards = selectContractPortfolioCards(state);
+    const totalEstimatedDailyLaborCost = cards.reduce(
+      (total, card) => total + card.estimatedDailyLaborCost,
+      0,
+    );
+    const totalEstimatedDailyHeadcount = cards.reduce(
+      (total, card) => total + card.estimatedDailyHeadcount,
+      0,
+    );
+
+    expect(totalEstimatedDailyLaborCost).toBeCloseTo(
+      20 * LABOR_COST_PER_WORKER_PER_TICK * TICKS_PER_DAY,
+      6,
+    );
+    expect(totalEstimatedDailyHeadcount).toBeCloseTo(20, 6);
   });
 
   it("preserves labor analytics through serialization", () => {

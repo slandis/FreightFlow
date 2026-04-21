@@ -274,3 +274,24 @@ Phase 14: Implemented
     - Implemented a dependency-free forecast chart using the existing React/CSS surface instead of adding a new charting library.
     - Added focused coverage for labor-analysis recording, suggestion behavior, forecast calculations, month rollover reset, and analytics serialization.
     - Verification completed: `npm run test` passed with 116 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+
+Monthly Planning Access and Workforce Headcount: Completed
+    - Added a manual `Plan` button to the right HUD Business section so monthly review and planning can be opened during normal operations instead of only at month rollover.
+    - Reworked monthly planning close behavior so confirmed plan changes are queued and become authoritative on the next simulation tick rather than applying immediately when the dialog closes.
+    - Stopped simulation time from advancing while monthly planning is open, including batched Hyper-speed tick accumulation.
+    - Extended authoritative monthly planning state to track queued plans and planned total headcount alongside budget and role assignments.
+    - Added `SetPlannedTotalHeadcountCommand` and Workforce-page controls so the player can manage total employed headcount during planning.
+    - Updated planning validation so planned role assignments cannot exceed the planned total headcount and planned total headcount cannot be set below already assigned labor.
+    - Updated queued-plan activation so total headcount, labor assignments, budget, and accepted contract decisions all apply together at the start of the next tick.
+    - Changed payroll accrual to charge total employed headcount instead of only currently assigned heads, making unassigned labor a real business cost.
+    - Added and updated simulation coverage for manual planning open, next-tick plan activation, planning-time headcount changes, non-advancing time while planning is open, and payroll based on total employed headcount.
+    - Verification completed: `npm test` passed with 124 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+
+Economy Scale Rebalance: Completed
+    - Rebalanced the shared labor cost constant downward so employed-headcount payroll operates on the same unit scale as freight revenue.
+    - Lowered the base operating-cost floor and scaled down condition and safety cost penalties so routine operating burn no longer overwhelms plausible monthly contract income by default.
+    - Reduced budget cost-per-point so default planning budgets remain meaningful without dominating the entire operating-cost model.
+    - Updated contract-offer labor delta estimates to derive from the shared labor-cost constants instead of a duplicated oversized monthly formula.
+    - Added regression coverage to keep baseline fixed labor and operating costs within a believable range relative to baseline contract revenue.
+    - Added and updated economy and labor-analysis coverage so finance, planning analysis, and contract analysis all reflect the rebalanced cost scale consistently.
+    - Verification completed: `npm test` passed with 127 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.

@@ -1,11 +1,8 @@
 import type { Command, CommandContext } from "./Command";
-import { activateAcceptedContractOffers } from "../contracts/contractOffers";
-import { LaborManager } from "../labor/LaborManager";
+import type { MonthlyPlanQueuedEvent } from "../events/MonthlyPlanQueuedEvent";
 import { cloneBudgetPlan } from "../planning/BudgetPlan";
 import { validateMonthlyPlan } from "../systems/PlanningSystem";
 import { commandFailed, commandSucceeded } from "./Command";
-
-const laborManager = new LaborManager();
 
 export class ConfirmMonthlyPlanCommand implements Command<"confirm-monthly-plan"> {
   readonly type = "confirm-monthly-plan";
@@ -23,34 +20,23 @@ export class ConfirmMonthlyPlanCommand implements Command<"confirm-monthly-plan"
       return commandFailed(validationError);
     }
 
-    for (const pool of context.state.labor.pools) {
-      pool.assignedHeadcount = pendingPlan.laborAssignments[pool.roleId] ?? 0;
-      pool.availableHeadcount = pool.assignedHeadcount;
-    }
-
-    laborManager.recalculate(
-      context.state.labor,
-      laborManager.calculateWorkloads(context.state.freightFlow),
-      pendingPlan.budget,
-    );
-
-    activateAcceptedContractOffers(context.state);
-
-    context.state.planning.currentPlan = {
+    context.state.planning.queuedPlan = {
       monthKey: pendingPlan.monthKey,
+      totalHeadcount: pendingPlan.totalHeadcount,
       budget: cloneBudgetPlan(pendingPlan.budget),
       laborAssignments: { ...pendingPlan.laborAssignments },
     };
-    context.state.planning.lastConfirmedMonthKey = pendingPlan.monthKey;
     context.state.planning.isPlanningActive = false;
     context.state.planning.activePlanId = null;
     context.state.planning.pendingPlan = null;
+    context.state.planning.latestSnapshot = null;
 
-    const event = {
-      ...context.createEvent("monthly-plan-confirmed"),
-      monthKey: context.state.planning.currentPlan.monthKey,
-      budget: cloneBudgetPlan(context.state.planning.currentPlan.budget),
-      laborAssignments: { ...context.state.planning.currentPlan.laborAssignments },
+    const event: MonthlyPlanQueuedEvent = {
+      ...context.createEvent("monthly-plan-queued"),
+      monthKey: context.state.planning.queuedPlan.monthKey,
+      totalHeadcount: context.state.planning.queuedPlan.totalHeadcount,
+      budget: cloneBudgetPlan(context.state.planning.queuedPlan.budget),
+      laborAssignments: { ...context.state.planning.queuedPlan.laborAssignments },
     };
 
     return commandSucceeded([event]);

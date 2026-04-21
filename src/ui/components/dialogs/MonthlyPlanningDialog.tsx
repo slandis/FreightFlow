@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ApplyBudgetPlanCommand } from "../../../game/simulation/commands/ApplyBudgetPlanCommand";
 import { AssignPlannedLaborCommand } from "../../../game/simulation/commands/AssignPlannedLaborCommand";
 import { ConfirmMonthlyPlanCommand } from "../../../game/simulation/commands/ConfirmMonthlyPlanCommand";
+import { SetPlannedTotalHeadcountCommand } from "../../../game/simulation/commands/SetPlannedTotalHeadcountCommand";
 import { SetContractOfferDecisionCommand } from "../../../game/simulation/commands/SetContractOfferDecisionCommand";
 import { getDifficultyModeById } from "../../../game/simulation/config/difficulty";
 import type { BudgetPlan } from "../../../game/simulation/core/GameState";
@@ -91,10 +92,20 @@ export function MonthlyPlanningDialog() {
     setError(result.success ? null : result.errors[0] ?? "Planned labor update failed");
   };
 
-  const confirmPlan = () => {
+  const updatePlannedTotalHeadcount = (delta: number) => {
+    const result = simulation.dispatch(
+      new SetPlannedTotalHeadcountCommand(
+        Math.max(0, activePendingPlan.totalHeadcount + delta),
+      ),
+    );
+
+    setError(result.success ? null : result.errors[0] ?? "Planned headcount update failed");
+  };
+
+  const queuePlan = () => {
     const result = simulation.dispatch(new ConfirmMonthlyPlanCommand());
 
-    setError(result.success ? null : result.errors[0] ?? "Plan confirmation failed");
+    setError(result.success ? null : result.errors[0] ?? "Plan update failed");
   };
 
   const setOfferDecision = (offerId: string, decision: "accepted" | "rejected") => {
@@ -115,12 +126,12 @@ export function MonthlyPlanningDialog() {
           <div>
             <strong>Monthly Planning</strong>
             <p>
-              Month {activeSnapshot.month}, Year {activeSnapshot.year}. Confirm the plan before
-              returning to live operations.
+              Month {activeSnapshot.month}, Year {activeSnapshot.year}. Changes apply on the next
+              tick after you close planning.
             </p>
           </div>
-          <button type="button" onClick={confirmPlan}>
-            Confirm Plan
+          <button type="button" onClick={queuePlan}>
+            Apply and Close
           </button>
         </header>
 
@@ -146,6 +157,7 @@ export function MonthlyPlanningDialog() {
         <footer className="planning-summary-bar">
           <span>Cash ${formatNumber(activeSnapshot.cash)}</span>
           <span>Net ${formatNumber(activeSnapshot.currentMonthNet)}</span>
+          <span>Headcount {activePendingPlan.totalHeadcount}</span>
           <span>Budget {getTotalBudgetPoints(activePendingPlan.budget)} pts</span>
           <span>Budget cost ${activeSnapshot.projectedBudgetCostPerTick.toFixed(1)}/tick</span>
           <span>Accepted offers {acceptedOfferCount}</span>
@@ -279,13 +291,29 @@ export function MonthlyPlanningDialog() {
           <PlanningSection title="Workforce">
             <PlanningStats
               rows={[
-                ["Total headcount", activeSnapshot.totalHeadcount.toString()],
+                ["Current headcount", activeSnapshot.totalHeadcount.toString()],
+                ["Planned headcount", activePendingPlan.totalHeadcount.toString()],
                 ["Unassigned now", activeSnapshot.unassignedHeadcount.toString()],
                 ["Planned unassigned", getUnassignedPlannedLabor().toString()],
                 ["Top bottleneck", activeSnapshot.topBottleneckLabel ?? "None"],
                 ["Pressure", activeSnapshot.topBottleneckPressure ?? "healthy"],
               ]}
             />
+            <article className="planning-role">
+              <div>
+                <strong>Total Headcount</strong>
+                <p>Adjust the employed workforce size for the next active plan tick.</p>
+              </div>
+              <div className="planning-stepper">
+                <button type="button" onClick={() => updatePlannedTotalHeadcount(-1)}>
+                  -
+                </button>
+                <span>{activePendingPlan.totalHeadcount}</span>
+                <button type="button" onClick={() => updatePlannedTotalHeadcount(1)}>
+                  +
+                </button>
+              </div>
+            </article>
             <p className="planning-note">
               Use the Productivity page to set next-month labor assignments.
             </p>
@@ -380,7 +408,7 @@ export function MonthlyPlanningDialog() {
   function getUnassignedPlannedLabor(): number {
     return Math.max(
       0,
-      activeSnapshot.totalHeadcount -
+      activePendingPlan.totalHeadcount -
         Object.values(activePendingPlan.laborAssignments).reduce(
           (total, headcount) => total + headcount,
           0,

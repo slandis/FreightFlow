@@ -1,6 +1,6 @@
 import type { BudgetPlan } from "../core/GameState";
 
-export const BUDGET_COST_PER_POINT_PER_TICK = 0.5;
+export const BUDGET_COST_PER_POINT_PER_TICK = 0.01;
 
 const MAX_MAINTENANCE_SUPPORT = 0.35;
 const MAX_SAFETY_SUPPORT = 0.3;

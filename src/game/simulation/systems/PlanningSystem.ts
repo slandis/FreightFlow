@@ -1,9 +1,15 @@
 import type { GameState, MonthlyPlan, PlanningSnapshot } from "../core/GameState";
 import { createLaborAssignmentPlan, getMonthKey } from "../core/GameState";
-import { generateMonthlyContractOffers } from "../contracts/contractOffers";
+import {
+  activateAcceptedContractOffers,
+  generateMonthlyContractOffers,
+} from "../contracts/contractOffers";
 import type { RandomService } from "../core/RandomService";
 import type { DomainEvent } from "../events/DomainEvent";
+import type { MonthlyPlanConfirmedEvent } from "../events/MonthlyPlanConfirmedEvent";
+import type { MonthlyPlanningOpenedEvent } from "../events/MonthlyPlanningOpenedEvent";
 import { LaborAnalyticsRecorder } from "../labor/LaborAnalyticsRecorder";
+import { LaborManager } from "../labor/LaborManager";
 import {
   cloneBudgetPlan,
   getBudgetCostPerTick,
@@ -14,6 +20,14 @@ import { GameSpeed } from "../types/enums";
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
 
 const laborAnalyticsRecorder = new LaborAnalyticsRecorder();
+const laborManager = new LaborManager();
+
+interface OpenPlanningOptions {
+  monthKey?: string;
+  resetCurrentMonthEconomy?: boolean;
+  regenerateOffers?: boolean;
+  setSpeedToSlow?: boolean;
+}
 
 export class PlanningSystem {
   update(
@@ -34,41 +48,104 @@ export class PlanningSystem {
       return [];
     }
 
-    return this.openMonthlyPlanning(state, monthKey, random, createEvent);
+    return openMonthlyPlanning(state, random, createEvent, {
+      monthKey,
+      regenerateOffers: true,
+      resetCurrentMonthEconomy: true,
+      setSpeedToSlow: true,
+    });
+  }
+}
+
+export function openMonthlyPlanning(
+  state: GameState,
+  random: RandomService,
+  createEvent: EventFactory,
+  options: OpenPlanningOptions = {},
+): DomainEvent[] {
+  if (state.planning.isPlanningActive) {
+    return [];
   }
 
-  openMonthlyPlanning(
-    state: GameState,
-    monthKey: string,
-    random: RandomService,
-    createEvent: EventFactory,
-  ): DomainEvent[] {
-    const pendingPlan: MonthlyPlan = {
-      monthKey,
-      budget: cloneBudgetPlan(state.planning.currentPlan.budget),
-      laborAssignments: createLaborAssignmentPlan(state.labor),
-    };
+  const monthKey = options.monthKey ?? getMonthKey(state.calendar);
+  const pendingPlan: MonthlyPlan = {
+    monthKey,
+    totalHeadcount: state.planning.currentPlan.totalHeadcount,
+    budget: cloneBudgetPlan(state.planning.currentPlan.budget),
+    laborAssignments: createLaborAssignmentPlan(state.labor),
+  };
 
-    const snapshot = createPlanningSnapshot(state, monthKey, pendingPlan);
+  state.planning.isPlanningActive = true;
+  state.planning.activePlanId = `plan-${monthKey}`;
+  state.planning.lastOpenedMonthKey = monthKey;
+  state.planning.pendingPlan = pendingPlan;
+  state.planning.latestSnapshot = createPlanningSnapshot(state, monthKey, pendingPlan);
 
-    state.planning.isPlanningActive = true;
-    state.planning.activePlanId = `plan-${monthKey}`;
-    state.planning.lastOpenedMonthKey = monthKey;
-    state.planning.pendingPlan = pendingPlan;
-    state.planning.latestSnapshot = snapshot;
+  if (options.regenerateOffers) {
     state.contracts.pendingOffers = generateMonthlyContractOffers(state, monthKey, random);
+  }
+
+  if (options.setSpeedToSlow) {
     state.speed = GameSpeed.Slow;
+  }
+
+  if (options.resetCurrentMonthEconomy) {
     resetCurrentMonthEconomy(state);
     laborAnalyticsRecorder.resetForMonth(state.labor, monthKey, state.currentTick);
-
-    const event = {
-      ...createEvent("monthly-planning-opened"),
-      monthKey,
-      planId: state.planning.activePlanId,
-    };
-
-    return [event];
   }
+
+  const event: MonthlyPlanningOpenedEvent = {
+    ...createEvent("monthly-planning-opened"),
+    monthKey,
+    planId: state.planning.activePlanId,
+  };
+
+  return [event];
+}
+
+export function applyQueuedMonthlyPlan(
+  state: GameState,
+  createEvent: EventFactory,
+): DomainEvent[] {
+  const queuedPlan = state.planning.queuedPlan;
+
+  if (!queuedPlan) {
+    return [];
+  }
+
+  for (const pool of state.labor.pools) {
+    pool.assignedHeadcount = queuedPlan.laborAssignments[pool.roleId] ?? 0;
+    pool.availableHeadcount = pool.assignedHeadcount;
+  }
+
+  state.labor.totalHeadcount = queuedPlan.totalHeadcount;
+
+  laborManager.recalculate(
+    state.labor,
+    laborManager.calculateWorkloads(state.freightFlow),
+    queuedPlan.budget,
+  );
+
+  activateAcceptedContractOffers(state);
+
+  state.planning.currentPlan = {
+    monthKey: queuedPlan.monthKey,
+    totalHeadcount: queuedPlan.totalHeadcount,
+    budget: cloneBudgetPlan(queuedPlan.budget),
+    laborAssignments: { ...queuedPlan.laborAssignments },
+  };
+  state.planning.lastConfirmedMonthKey = queuedPlan.monthKey;
+  state.planning.queuedPlan = null;
+
+  const event: MonthlyPlanConfirmedEvent = {
+    ...createEvent("monthly-plan-confirmed"),
+    monthKey: state.planning.currentPlan.monthKey,
+    totalHeadcount: state.planning.currentPlan.totalHeadcount,
+    budget: cloneBudgetPlan(state.planning.currentPlan.budget),
+    laborAssignments: { ...state.planning.currentPlan.laborAssignments },
+  };
+
+  return [event];
 }
 
 export function createPlanningSnapshot(
@@ -130,6 +207,14 @@ export function createPlanningSnapshot(
 }
 
 export function validateMonthlyPlan(state: GameState, plan: MonthlyPlan): string | null {
+  if (
+    !Number.isFinite(plan.totalHeadcount) ||
+    !Number.isInteger(plan.totalHeadcount) ||
+    plan.totalHeadcount < 0
+  ) {
+    return "Planned total headcount must be a non-negative integer";
+  }
+
   const budgetError = validateBudgetPlan(plan.budget);
 
   if (budgetError) {
@@ -145,7 +230,7 @@ export function validateMonthlyPlan(state: GameState, plan: MonthlyPlan): string
     return "Planned labor assignments must be non-negative integers";
   }
 
-  if (totalAssigned > state.labor.totalHeadcount) {
+  if (totalAssigned > plan.totalHeadcount) {
     return "Planned labor assignments exceed total headcount";
   }
 

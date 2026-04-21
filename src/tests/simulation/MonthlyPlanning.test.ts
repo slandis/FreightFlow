@@ -3,8 +3,10 @@ import { ApplyBudgetPlanCommand } from "../../game/simulation/commands/ApplyBudg
 import { AssignPlannedLaborCommand } from "../../game/simulation/commands/AssignPlannedLaborCommand";
 import { ChangeSpeedCommand } from "../../game/simulation/commands/ChangeSpeedCommand";
 import { ConfirmMonthlyPlanCommand } from "../../game/simulation/commands/ConfirmMonthlyPlanCommand";
+import { OpenMonthlyPlanningCommand } from "../../game/simulation/commands/OpenMonthlyPlanningCommand";
 import { PaintZoneCommand } from "../../game/simulation/commands/PaintZoneCommand";
 import { SetContractOfferDecisionCommand } from "../../game/simulation/commands/SetContractOfferDecisionCommand";
+import { SetPlannedTotalHeadcountCommand } from "../../game/simulation/commands/SetPlannedTotalHeadcountCommand";
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
 import type { DomainEvent } from "../../game/simulation/events/DomainEvent";
 import { LaborRole, GameSpeed, TileZoneType } from "../../game/simulation/types/enums";
@@ -33,6 +35,8 @@ describe("monthly planning", () => {
 
     expect(state.planning.isPlanningActive).toBe(true);
     expect(state.planning.pendingPlan?.monthKey).toBe("Y1-M1");
+    expect(state.planning.pendingPlan?.totalHeadcount).toBe(18);
+    expect(state.planning.queuedPlan).toBeNull();
     expect(state.planning.latestSnapshot?.monthKey).toBe("Y1-M1");
     expect(state.contracts.pendingOffers).toHaveLength(4);
     expect(state.speed).toBe(GameSpeed.Slow);
@@ -125,8 +129,24 @@ describe("monthly planning", () => {
     expect(result.errors[0]).toBe("Planned labor assignments exceed total headcount");
   });
 
+  it("rejects planned total headcount below assigned labor", () => {
+    const runner = createRunnerAtMonthEnd();
+    openPlanning(runner);
+
+    const result = runner.dispatch(new SetPlannedTotalHeadcountCommand(17));
+
+    expect(result.success).toBe(false);
+    expect(result.errors[0]).toBe("Planned total headcount cannot be lower than assigned labor");
+  });
+
   it("confirms budget and labor assignments into authoritative state", () => {
     const runner = createRunnerAtMonthEnd();
+    const confirmedEvents: DomainEvent[] = [];
+
+    runner.getEventBus().subscribe("monthly-plan-confirmed", (event) => {
+      confirmedEvents.push(event);
+    });
+
     openPlanning(runner);
 
     const budget = {
@@ -138,26 +158,43 @@ describe("monthly planning", () => {
     };
 
     expect(runner.dispatch(new ApplyBudgetPlanCommand(budget)).success).toBe(true);
+    expect(runner.dispatch(new SetPlannedTotalHeadcountCommand(20)).success).toBe(true);
     expect(runner.dispatch(new AssignPlannedLaborCommand(LaborRole.Sanitation, 1)).success).toBe(
       true,
     );
 
     const result = runner.dispatch(new ConfirmMonthlyPlanCommand());
-    const state = runner.getState();
+    const queuedState = runner.getState();
 
     expect(result.success).toBe(true);
-    expect(state.planning.isPlanningActive).toBe(false);
-    expect(state.planning.pendingPlan).toBeNull();
+    expect(queuedState.planning.isPlanningActive).toBe(false);
+    expect(queuedState.planning.pendingPlan).toBeNull();
+    expect(queuedState.planning.queuedPlan?.monthKey).toBe("Y1-M2");
+    expect(queuedState.planning.queuedPlan?.totalHeadcount).toBe(20);
+    expect(queuedState.planning.currentPlan.monthKey).toBe("Y1-M1");
+    expect(queuedState.planning.currentPlan.totalHeadcount).toBe(18);
+    expect(queuedState.planning.currentPlan.budget).not.toEqual(budget);
+    expect(queuedState.planning.lastConfirmedMonthKey).toBe("Y1-M1");
+    expect(queuedState.debug.lastCommandType).toBe("confirm-monthly-plan");
+    expect(queuedState.debug.lastEventType).toBe("monthly-plan-queued");
+
+    runner.tick();
+
+    const state = runner.getState();
+
+    expect(state.planning.queuedPlan).toBeNull();
     expect(state.planning.currentPlan.monthKey).toBe("Y1-M2");
+    expect(state.planning.currentPlan.totalHeadcount).toBe(20);
     expect(state.planning.currentPlan.budget).toEqual(budget);
     expect(state.planning.lastConfirmedMonthKey).toBe("Y1-M2");
+    expect(state.labor.totalHeadcount).toBe(20);
     expect(
       state.labor.pools.find((pool) => pool.roleId === LaborRole.Sanitation)?.assignedHeadcount,
     ).toBe(
       1,
     );
-    expect(state.debug.lastCommandType).toBe("confirm-monthly-plan");
-    expect(state.debug.lastEventType).toBe("monthly-plan-confirmed");
+    expect(state.labor.unassignedHeadcount).toBe(3);
+    expect(confirmedEvents).toHaveLength(1);
   });
 
   it("activates accepted contract offers when the monthly plan is confirmed", () => {
@@ -174,9 +211,18 @@ describe("monthly planning", () => {
     const state = runner.getState();
 
     expect(result.success).toBe(true);
-    expect(state.contracts.pendingOffers).toHaveLength(0);
-    expect(state.contracts.activeContracts.length).toBeGreaterThan(1);
-    expect(state.contracts.activeContracts.some((contract) => contract.id !== "baseline-general-freight")).toBe(true);
+    expect(state.contracts.pendingOffers).toHaveLength(4);
+    expect(state.contracts.activeContracts).toHaveLength(1);
+
+    runner.tick();
+
+    expect(runner.getState().contracts.pendingOffers).toHaveLength(0);
+    expect(runner.getState().contracts.activeContracts.length).toBeGreaterThan(1);
+    expect(
+      runner
+        .getState()
+        .contracts.activeContracts.some((contract) => contract.id !== "baseline-general-freight"),
+    ).toBe(true);
   });
 
   it("budget support affects score and cost paths", () => {
@@ -225,5 +271,37 @@ describe("monthly planning", () => {
 
     expect(runner.dispatch(new ChangeSpeedCommand(GameSpeed.Fast)).success).toBe(false);
     expect(runner.dispatch(new PaintZoneCommand(4, 4, TileZoneType.Travel)).success).toBe(false);
+  });
+
+  it("can open planning manually during the month without resetting monthly economy", () => {
+    const runner = new SimulationRunner();
+    runner.getState().economy.currentMonthRevenue = 1234;
+    runner.getState().economy.currentMonthLaborCost = 456;
+    runner.getState().economy.currentMonthOperatingCost = 78;
+    runner.getState().economy.currentMonthNet = 700;
+
+    const result = runner.dispatch(new OpenMonthlyPlanningCommand());
+    const state = runner.getState();
+
+    expect(result.success).toBe(true);
+    expect(state.planning.isPlanningActive).toBe(true);
+    expect(state.planning.pendingPlan?.monthKey).toBe("Y1-M1");
+    expect(state.planning.pendingPlan?.totalHeadcount).toBe(18);
+    expect(state.planning.latestSnapshot?.currentMonthRevenue).toBe(1234);
+    expect(state.economy.currentMonthRevenue).toBe(1234);
+    expect(state.contracts.pendingOffers).toHaveLength(0);
+  });
+
+  it("does not advance simulation time while planning is open", () => {
+    const runner = new SimulationRunner({ openInitialPlanning: true });
+    const startingTick = runner.getState().currentTick;
+    const startingCalendar = { ...runner.getState().calendar };
+
+    runner.tick();
+    const executedTicks = runner.tickMany(5);
+
+    expect(runner.getState().currentTick).toBe(startingTick);
+    expect(runner.getState().calendar).toEqual(startingCalendar);
+    expect(executedTicks).toBe(0);
   });
 });

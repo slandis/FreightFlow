@@ -960,11 +960,16 @@ Monthly operating cost should aggregate major cost categories.
 **Monthly Cost = Payroll Cost + Maintenance Cost + Training Cost + Safety Program Cost + Incident Cost + Other Fixed Costs**
 
 Suggested components:
-- **Payroll Cost = Sum of all assigned headcount × wage rate by role**
+- **Payroll Cost = Total employed headcount × wage rate**
 - **Maintenance Cost = chosen budget allocation + reactive repair penalties**
 - **Training Cost = training budget allocation**
 - **Safety Program Cost = safety budget allocation**
 - **Incident Cost = sum of safety event penalties during period**
+
+Balancing note:
+- recurring labor, budget, and fixed operating costs should remain in the same economic scale as plausible monthly freight revenue
+- baseline warehouse staffing should create meaningful pressure on cash without making the default contract portfolio mathematically impossible to sustain
+- condition and safety cost penalties should act as amplifiers on a stable operating baseline, not dominate the entire cost model by default
 
 ### 27.5 Net Cash Change
 **Net Cash Change = Revenue - Monthly Cost**
@@ -1763,8 +1768,9 @@ Suggested responsibilities:
 - detect month transition
 - switch speed to slow or pause interactive flow
 - open planning dialog
+- allow the player to reopen planning manually from the HUD at any time
 - load current month data snapshot
-- apply player budget and labor changes on confirm
+- queue player budget, labor-assignment, and total-headcount changes for next-tick activation when planning closes
 - resume simulation after planning completion
 
 Suggested planning data snapshot:
@@ -2908,6 +2914,8 @@ The UI should clearly distinguish between:
 #### Rules
 - live HUD remains visible in operations mode
 - planning dialog blocks simulation-changing input until confirmed or closed
+- a `Plan` button in the right HUD Business section can reopen the planning dialog during normal operations
+- when the player closes planning with applied changes, those changes become authoritative on the next simulation tick rather than immediately on modal close
 - alerts can be opened without fully obscuring the map
 - tooltips should never block important click targets
 - secondary panels should be collapsible when not in use
@@ -3047,4 +3055,3 @@ Its defining loop combines:
 - and layered management of labor, condition, satisfaction, and capacity.
 
 The result should feel like a deep but readable warehouse operations simulator where layout, staffing, and strategic planning all matter.
-

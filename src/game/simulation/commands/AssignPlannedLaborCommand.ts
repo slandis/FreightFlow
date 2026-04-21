@@ -29,7 +29,7 @@ export class AssignPlannedLaborCommand implements Command<"assign-planned-labor"
       .filter(([roleId]) => roleId !== this.roleId)
       .reduce((total, [, assignedHeadcount]) => total + assignedHeadcount, 0);
 
-    if (assignedOtherHeadcount + this.headcount > context.state.labor.totalHeadcount) {
+    if (assignedOtherHeadcount + this.headcount > pendingPlan.totalHeadcount) {
       return commandFailed("Planned labor assignments exceed total headcount");
     }
 
@@ -42,7 +42,7 @@ export class AssignPlannedLaborCommand implements Command<"assign-planned-labor"
       assignedHeadcount: this.headcount,
       unassignedHeadcount: Math.max(
         0,
-        context.state.labor.totalHeadcount -
+        pendingPlan.totalHeadcount -
           Object.values(pendingPlan.laborAssignments).reduce(
             (total, assignedHeadcount) => total + assignedHeadcount,
             0,

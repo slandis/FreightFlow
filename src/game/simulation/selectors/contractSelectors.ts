@@ -1,10 +1,10 @@
 import freightClasses from "../../../data/config/freightClasses.json";
 import type { ActiveContract, ContractOffer, GameState } from "../core/GameState";
+import { LABOR_COST_PER_WORKER_PER_TICK } from "../labor/laborCost";
 
 const TICKS_PER_DAY = 1440;
 const TICKS_PER_WEEK = TICKS_PER_DAY * 7;
 const TICKS_PER_MONTH = TICKS_PER_DAY * 30;
-const LABOR_COST_PER_WORKER_PER_TICK = 2;
 
 export interface ContractPortfolioCard {
   id: string;
@@ -34,11 +34,9 @@ export function selectAcceptedContractOfferCount(state: GameState): number {
 }
 
 export function selectContractPortfolioCards(state: GameState): ContractPortfolioCard[] {
-  const totalAssignedHeadcount = state.labor.pools.reduce(
-    (total, pool) => total + pool.assignedHeadcount,
-    0,
-  );
-  const totalDailyLaborCost = totalAssignedHeadcount * LABOR_COST_PER_WORKER_PER_TICK * TICKS_PER_DAY;
+  const totalEmployedHeadcount = state.labor.totalHeadcount;
+  const totalDailyLaborCost =
+    totalEmployedHeadcount * LABOR_COST_PER_WORKER_PER_TICK * TICKS_PER_DAY;
   const activityWeights = new Map<string, number>();
 
   for (const contract of state.contracts.activeContracts) {
@@ -70,7 +68,7 @@ export function selectContractPortfolioCards(state: GameState): ContractPortfoli
       weeklyThroughputCubicFeet: getWeeklyThroughput(state, contract.id),
       monthlyThroughputCubicFeet: getMonthlyThroughput(state, contract.id),
       estimatedDailyLaborCost: totalDailyLaborCost * activityShare,
-      estimatedDailyHeadcount: totalAssignedHeadcount * activityShare,
+      estimatedDailyHeadcount: totalEmployedHeadcount * activityShare,
       penaltyCostToDate: contract.penaltyCostToDate,
       operationalChallengeNote: contract.operationalChallengeNote,
     };

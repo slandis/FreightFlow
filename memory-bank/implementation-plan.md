@@ -411,6 +411,8 @@ Introduce secondary management systems that affect performance and long-term out
 - labor costs affect cash correctly
 - poor conditions reduce performance in a visible way
 - low morale or safety can be observed affecting outcomes
+- baseline labor, budget, and fixed operating costs stay within a believable range relative to baseline contract revenue
+- economy constants are shared across finance, planning analysis, and contract analysis to avoid scale drift
 
 ### Dependencies
 - throughput loop functioning end to end
@@ -418,6 +420,7 @@ Introduce secondary management systems that affect performance and long-term out
 
 ### Implementation Notes
 Early formulas can be intentionally simple as long as cause and effect are visible.
+Keep recurring labor, budget, and fixed operating cost constants on the same unit scale as baseline freight revenue so the default operation is strained but viable.
 
 ---
 
@@ -439,14 +442,18 @@ Implement the strategic month boundary and business-planning loop.
 - add Productivity/Labor page
 - implement “confirm plan” flow
 - open the first monthly planning dialog when a new live game starts
+- add a manual `Plan` entry point in the right HUD Business section
 - auto-shift speed to slow at month start
 - pause or gate simulation-changing actions while planning is active
+- support planning-time total headcount changes in addition to role assignment
+- apply confirmed planning changes on the next tick after planning closes
 
 ### Deliverables
 - beginning of each month triggers planning flow
 - new live games begin with the planning dialog visible
+- player can reopen planning during the month without forcing a month rollover
 - player can review business pages
-- budget and labor changes are applied on confirmation
+- budget, labor-assignment, and total-headcount changes are queued when planning closes and become authoritative on the next tick
 - simulation resumes after planning completion
 
 ### Validation Checklist
@@ -454,6 +461,8 @@ Implement the strategic month boundary and business-planning loop.
 - first-run planning opens without requiring the player to wait through an entire month
 - values shown in planning reflect recent simulation state
 - confirmed changes affect the next month of play
+- manually opened planning preserves the current month economy snapshot
+- planned total headcount cannot be set below planned assigned labor
 - cancel/confirm behavior is consistent and safe
 
 ### Dependencies

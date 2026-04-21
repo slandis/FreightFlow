@@ -5,7 +5,7 @@ import type { DomainEvent } from "../events/DomainEvent";
 import { LABOR_COST_PER_WORKER_PER_TICK } from "../labor/laborCost";
 import { getBudgetCostPerTick } from "../planning/BudgetPlan";
 
-const BASE_OPERATING_COST_PER_TICK = 20;
+const BASE_OPERATING_COST_PER_TICK = 0.15;
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
 
@@ -20,17 +20,13 @@ export class FinanceSystem {
   update(state: GameState, createEvent: EventFactory): DomainEvent[] {
     const events: DomainEvent[] = [];
     const revenue = this.recognizeShipmentRevenue(state, createEvent, events);
-    const assignedHeadcount = state.labor.pools.reduce(
-      (total, pool) => total + pool.assignedHeadcount,
-      0,
-    );
-    const laborCost = assignedHeadcount * LABOR_COST_PER_WORKER_PER_TICK;
+    const laborCost = state.labor.totalHeadcount * LABOR_COST_PER_WORKER_PER_TICK;
     const operatingCost =
       BASE_OPERATING_COST_PER_TICK +
       getBudgetCostPerTick(state.planning.currentPlan.budget) +
-      state.labor.modifiers.conditionPressure * 0.1 +
-      Math.max(0, 100 - state.scores.condition.value) * 0.05 +
-      Math.max(0, 100 - state.scores.safety.value) * 0.05;
+      state.labor.modifiers.conditionPressure * 0.01 +
+      Math.max(0, 100 - state.scores.condition.value) * 0.005 +
+      Math.max(0, 100 - state.scores.safety.value) * 0.005;
 
     state.economy.revenuePerTick = revenue;
     state.economy.laborCostPerTick = laborCost;

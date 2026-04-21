@@ -164,14 +164,15 @@ export function selectLaborAnalysisSummary(state: GameState): LaborAnalysisSumma
   const throughputCubicFeet = getFacilityThroughputCubicFeet(state);
   const forecastRoles = selectLaborForecastHeadcountChart(state);
   const acceptedContractForecastCubicFeet = getAcceptedContractForecastCube(state);
+  const totalLaborCost = state.economy.currentMonthLaborCost;
 
   return {
     monthKey: state.labor.analytics.monthKey,
     elapsedTicks: getElapsedAnalysisTicks(state),
-    totalLaborCost: roles.reduce((total, role) => total + role.totalLaborCost, 0),
+    totalLaborCost,
     laborCostPerThroughputCube:
       throughputCubicFeet > 0
-        ? roles.reduce((total, role) => total + role.totalLaborCost, 0) / throughputCubicFeet
+        ? totalLaborCost / throughputCubicFeet
         : null,
     throughputCubicFeet,
     mostStrainedRoleLabel: state.labor.pressure.topBottleneck?.label ?? null,

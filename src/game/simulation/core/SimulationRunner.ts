@@ -34,7 +34,11 @@ import { ContractSystem } from "../systems/ContractSystem";
 import { FinanceSystem } from "../systems/FinanceSystem";
 import { KPIService } from "../systems/KPIService";
 import { MoraleSystem } from "../systems/MoraleSystem";
-import { PlanningSystem } from "../systems/PlanningSystem";
+import {
+  applyQueuedMonthlyPlan,
+  openMonthlyPlanning,
+  PlanningSystem,
+} from "../systems/PlanningSystem";
 import { SafetySystem } from "../systems/SafetySystem";
 import { SatisfactionSystem } from "../systems/SatisfactionSystem";
 import {
@@ -134,16 +138,20 @@ export class SimulationRunner {
     });
 
     if (options.openInitialPlanning) {
-      this.planningSystem.openMonthlyPlanning(
-        this.state,
-        this.state.planning.currentPlan.monthKey,
-        this.random,
-        (type) => this.createEvent(type),
-      );
+      openMonthlyPlanning(this.state, this.random, (type) => this.createEvent(type), {
+        monthKey: this.state.planning.currentPlan.monthKey,
+        regenerateOffers: true,
+        resetCurrentMonthEconomy: true,
+        setSpeedToSlow: true,
+      });
     }
   }
 
   tick(): void {
+    if (this.state.planning.isPlanningActive) {
+      return;
+    }
+
     this.tickInternal(true);
   }
 
@@ -155,6 +163,10 @@ export class SimulationRunner {
     let executedTicks = 0;
 
     for (let tickIndex = 0; tickIndex < tickCount; tickIndex += 1) {
+      if (this.state.planning.isPlanningActive) {
+        break;
+      }
+
       this.tickInternal(false);
       executedTicks += 1;
 
@@ -220,6 +232,7 @@ export class SimulationRunner {
   private tickInternal(notifyAfterTick: boolean): void {
     this.state.currentTick = this.clock.advance();
     this.state.calendar = this.clock.getCalendar();
+    const queuedPlanEvents = applyQueuedMonthlyPlan(this.state, (type) => this.createEvent(type));
     const difficultyMode = getDifficultyModeById(this.state.difficultyModeId);
     const planningEvents = this.planningSystem.update(this.state, this.random, (type) =>
       this.createEvent(type),
@@ -232,6 +245,7 @@ export class SimulationRunner {
     this.laborAnalyticsRecorder.recordTick(this.state.labor);
 
     const events = [
+      ...queuedPlanEvents,
       ...planningEvents,
       ...this.freightGenerator.generateInbound(
         this.state.freightFlow,
