@@ -22,6 +22,7 @@ export class PickSystem {
             (batch) =>
               batch.state === "in-storage" &&
               batch.outboundOrderId === null &&
+              batch.contractId === order.contractId &&
               batch.freightClassId === order.freightClassId,
           )
           .sort((first, second) => (first.storedTick ?? 0) - (second.storedTick ?? 0));

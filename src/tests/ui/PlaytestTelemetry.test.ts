@@ -17,6 +17,7 @@ describe("playtest telemetry", () => {
     state.freightFlow.queues.storageQueueCubicFeet = 900;
     state.freightFlow.outboundOrders.push({
       id: "order-1",
+      contractId: "baseline-general-freight",
       freightClassId: "standard",
       requestedCubicFeet: 400,
       fulfilledCubicFeet: 0,
@@ -30,6 +31,7 @@ describe("playtest telemetry", () => {
       remainingLoadCubicFeet: 400,
       revenueRecognizedTick: null,
       recognizedRevenue: 0,
+      recognizedPenalty: 0,
     });
     samplePlaytestMonth(accumulator, state);
 

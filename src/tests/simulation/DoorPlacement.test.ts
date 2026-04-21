@@ -7,6 +7,7 @@ import type { Trailer } from "../../game/simulation/freight/Trailer";
 function createYardTrailer(id: string): Trailer {
   return {
     id,
+    contractId: "baseline-general-freight",
     direction: "inbound",
     state: "yard",
     doorId: null,
@@ -86,6 +87,7 @@ describe("door placement", () => {
     runner.getState().freightFlow.freightBatches.push({
       id: "dock-batch-test",
       trailerId: "trailer-test",
+      contractId: "baseline-general-freight",
       freightClassId: "standard",
       cubicFeet: 1200,
       state: "on-dock",

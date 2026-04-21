@@ -1,4 +1,5 @@
 import freightClasses from "../../../data/config/freightClasses.json";
+import type { ActiveContract } from "../core/GameState";
 import type { DifficultyModeConfig } from "../config/difficulty";
 import type { DomainEvent } from "../events/DomainEvent";
 import type { FreightFlowState } from "./FreightFlowState";
@@ -19,6 +20,7 @@ export class FreightGenerator {
     random: RandomService,
     createEvent: EventFactory,
     difficultyMode: DifficultyModeConfig,
+    activeContracts: ActiveContract[] = [],
   ): DomainEvent[] {
     const interval = Math.max(
       1,
@@ -31,7 +33,12 @@ export class FreightGenerator {
 
     const trailerId = createId("trailer", freightFlow.nextTrailerSequence);
     const freightBatchId = createId("freight-batch", freightFlow.nextFreightBatchSequence);
-    const freightClass = freightClasses[random.nextInt(0, freightClasses.length - 1)];
+    const contract = selectInboundContract(activeContracts, random);
+    const freightClass =
+      contract?.freightClassId
+        ? freightClasses.find((candidateClass) => candidateClass.id === contract.freightClassId) ??
+          freightClasses[random.nextInt(0, freightClasses.length - 1)]
+        : freightClasses[random.nextInt(0, freightClasses.length - 1)];
     const minimumCubicFeet = Math.max(
       1,
       Math.round(BASE_MIN_INBOUND_CUBIC_FEET * difficultyMode.inboundVolumeMultiplier),
@@ -53,6 +60,7 @@ export class FreightGenerator {
     freightFlow.nextFreightBatchSequence += 1;
     freightFlow.trailers.push({
       id: trailerId,
+      contractId: contract?.id ?? null,
       direction: "inbound",
       state: "yard",
       doorId: null,
@@ -69,6 +77,7 @@ export class FreightGenerator {
     freightFlow.freightBatches.push({
       id: freightBatchId,
       trailerId,
+      contractId: contract?.id ?? null,
       freightClassId: freightClass.id,
       cubicFeet,
       state: "in-yard",
@@ -94,4 +103,29 @@ export class FreightGenerator {
 
     return [event];
   }
+}
+
+function selectInboundContract(
+  activeContracts: ActiveContract[],
+  random: RandomService,
+): ActiveContract | null {
+  if (activeContracts.length === 0) {
+    return null;
+  }
+
+  const totalWeight = activeContracts.reduce(
+    (total, contract) => total + Math.max(1, contract.expectedMonthlyThroughputCubicFeet),
+    0,
+  );
+  let cursor = random.next() * totalWeight;
+
+  for (const contract of activeContracts) {
+    cursor -= Math.max(1, contract.expectedMonthlyThroughputCubicFeet);
+
+    if (cursor <= 0) {
+      return contract;
+    }
+  }
+
+  return activeContracts[activeContracts.length - 1] ?? null;
 }

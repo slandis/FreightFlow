@@ -14,6 +14,7 @@ function createDockBatch(freightClassId = "standard"): FreightBatch {
   return {
     id: "batch-test",
     trailerId: "trailer-test",
+    contractId: "baseline-general-freight",
     freightClassId,
     cubicFeet: 600,
     state: "on-dock",
@@ -86,6 +87,7 @@ describe("diagnostic selectors", () => {
 
     state.freightFlow.trailers.push({
       id: "trailer-blocked",
+      contractId: "baseline-general-freight",
       direction: "inbound",
       state: "yard",
       doorId: null,
@@ -108,6 +110,7 @@ describe("diagnostic selectors", () => {
           state.freightFlow.freightBatches.push({
             id: `batch-${door.id}-${index}`,
             trailerId: `occupied-${door.id}-${index}`,
+            contractId: "baseline-general-freight",
             freightClassId: "standard",
             cubicFeet: 5000,
             state: "on-dock",

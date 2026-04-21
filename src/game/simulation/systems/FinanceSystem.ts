@@ -1,4 +1,5 @@
 import freightClasses from "../../../data/config/freightClasses.json";
+import type { ActiveContract } from "../core/GameState";
 import type { GameState } from "../core/GameState";
 import type { DomainEvent } from "../events/DomainEvent";
 import { getBudgetCostPerTick } from "../planning/BudgetPlan";
@@ -70,6 +71,7 @@ export class FinanceSystem {
         continue;
       }
 
+      const contract = getContract(state, order.contractId);
       const orderRevenue = order.freightBatchIds.reduce((total, batchId) => {
         const batch = state.freightFlow.freightBatches.find(
           (candidateBatch) => candidateBatch.id === batchId,
@@ -79,21 +81,31 @@ export class FinanceSystem {
           return total;
         }
 
-        return (
-          total +
-          batch.cubicFeet *
-            (revenueByFreightClass.get(batch.freightClassId) ?? 0) *
-            satisfactionMultiplier
-        );
+        const revenueRate =
+          contract?.revenuePerCubicFoot ?? revenueByFreightClass.get(batch.freightClassId) ?? 0;
+
+        return total + batch.cubicFeet * revenueRate * satisfactionMultiplier;
       }, 0);
+      const orderPenalty = contract
+        ? calculateDwellPenalty(state, order.freightBatchIds, contract)
+        : 0;
+      const recognizedNetRevenue = Math.max(0, orderRevenue - orderPenalty);
 
       order.revenueRecognizedTick = state.currentTick;
-      order.recognizedRevenue = orderRevenue;
-      recognizedRevenue += orderRevenue;
+      order.recognizedRevenue = recognizedNetRevenue;
+      order.recognizedPenalty = orderPenalty;
+      recognizedRevenue += recognizedNetRevenue;
+
+      if (contract && orderPenalty > 0) {
+        contract.penaltyCostToDate += orderPenalty;
+        contract.lastPenaltyTick = state.currentTick;
+      }
+
       const event = {
         ...createEvent("revenue-recognized"),
         outboundOrderId: order.id,
-        revenue: orderRevenue,
+        revenue: recognizedNetRevenue,
+        penalty: orderPenalty,
       };
 
       events.push(event);
@@ -101,6 +113,45 @@ export class FinanceSystem {
 
     return recognizedRevenue;
   }
+}
+
+function getContract(state: GameState, contractId: string | null): ActiveContract | null {
+  if (!contractId) {
+    return null;
+  }
+
+  return (
+    state.contracts.activeContracts.find((contract) => contract.id === contractId) ?? null
+  );
+}
+
+function calculateDwellPenalty(
+  state: GameState,
+  batchIds: string[],
+  contract: ActiveContract,
+): number {
+  const exceededBatch = state.freightFlow.freightBatches.find((batch) => {
+    if (!batchIds.includes(batch.id)) {
+      return false;
+    }
+
+    const completedTick = batch.loadedTick ?? state.currentTick;
+    return completedTick - batch.createdTick > contract.dwellPenaltyThresholdTicks;
+  });
+
+  if (!exceededBatch) {
+    return 0;
+  }
+
+  return Math.round(
+    batchIds.reduce((total, batchId) => {
+      const batch = state.freightFlow.freightBatches.find(
+        (candidateBatch) => candidateBatch.id === batchId,
+      );
+
+      return total + (batch?.cubicFeet ?? 0) * contract.dwellPenaltyRatePerCubicFoot;
+    }, 0) * 100,
+  ) / 100;
 }
 
 function getSatisfactionMultiplier(state: GameState): number {

@@ -3,8 +3,10 @@ import type { ReactNode } from "react";
 import { ApplyBudgetPlanCommand } from "../../../game/simulation/commands/ApplyBudgetPlanCommand";
 import { AssignPlannedLaborCommand } from "../../../game/simulation/commands/AssignPlannedLaborCommand";
 import { ConfirmMonthlyPlanCommand } from "../../../game/simulation/commands/ConfirmMonthlyPlanCommand";
+import { SetContractOfferDecisionCommand } from "../../../game/simulation/commands/SetContractOfferDecisionCommand";
 import { getDifficultyModeById } from "../../../game/simulation/config/difficulty";
 import type { BudgetPlan } from "../../../game/simulation/core/GameState";
+import { selectAcceptedContractOfferCount, selectContractOffers } from "../../../game/simulation/selectors/contractSelectors";
 import { selectPlanningState } from "../../../game/simulation/selectors/planningSelectors";
 import { LaborRole } from "../../../game/simulation/types/enums";
 import { useSimulation, useSimulationState } from "../../hooks/useSimulation";
@@ -12,6 +14,7 @@ import { type PlanningPage, useUiStore } from "../../store/uiStore";
 
 const planningPages: Array<{ id: PlanningPage; label: string }> = [
   { id: "forecast", label: "Forecast" },
+  { id: "contracts", label: "Contracts" },
   { id: "workforce", label: "Workforce" },
   { id: "condition", label: "Condition" },
   { id: "satisfaction", label: "Satisfaction" },
@@ -50,6 +53,8 @@ const roleOrder = Object.values(LaborRole);
 export function MonthlyPlanningDialog() {
   const simulation = useSimulation();
   const planning = useSimulationState(selectPlanningState);
+  const contractOffers = useSimulationState(selectContractOffers);
+  const acceptedOfferCount = useSimulationState(selectAcceptedContractOfferCount);
   const difficultyMode = useSimulationState((state) => getDifficultyModeById(state.difficultyModeId));
   const activePage = useUiStore((state) => state.activePlanningPage);
   const setActivePlanningPage = useUiStore((state) => state.setActivePlanningPage);
@@ -90,6 +95,12 @@ export function MonthlyPlanningDialog() {
     const result = simulation.dispatch(new ConfirmMonthlyPlanCommand());
 
     setError(result.success ? null : result.errors[0] ?? "Plan confirmation failed");
+  };
+
+  const setOfferDecision = (offerId: string, decision: "accepted" | "rejected") => {
+    const result = simulation.dispatch(new SetContractOfferDecisionCommand(offerId, decision));
+
+    setError(result.success ? null : result.errors[0] ?? "Offer decision update failed");
   };
 
   return (
@@ -137,6 +148,7 @@ export function MonthlyPlanningDialog() {
           <span>Net ${formatNumber(activeSnapshot.currentMonthNet)}</span>
           <span>Budget {getTotalBudgetPoints(activePendingPlan.budget)} pts</span>
           <span>Budget cost ${activeSnapshot.projectedBudgetCostPerTick.toFixed(1)}/tick</span>
+          <span>Accepted offers {acceptedOfferCount}</span>
           <span>Unassigned labor {getUnassignedPlannedLabor()}</span>
         </footer>
       </section>
@@ -157,11 +169,109 @@ export function MonthlyPlanningDialog() {
                 ["Forecast accuracy", `${Math.round(difficultyMode.forecastAccuracy * 100)}%`],
                 ["Service level", `${activeSnapshot.serviceLevel.toFixed(0)}%`],
                 ["Contract health", activeSnapshot.contractHealth],
+                ["Active contracts", activeSnapshot.activeContractCount.toString()],
               ]}
             />
             <p className="planning-note">
               Queues and alerts are the clearest risk signal for this first planning slice.
             </p>
+          </PlanningSection>
+        );
+      case "contracts":
+        return (
+          <PlanningSection title="Contract Offers">
+            <PlanningStats
+              rows={[
+                ["Active contracts", activeSnapshot.activeContractCount.toString()],
+                ["Accepted offers", acceptedOfferCount.toString()],
+                ["Service level", `${activeSnapshot.serviceLevel.toFixed(0)}%`],
+                ["Storage in use", `${formatNumber(activeSnapshot.storageUsedCubicFeet)} cu ft`],
+                ["Current throughput", `${formatNumber(activeSnapshot.throughputCubicFeet)} cu ft`],
+                ["Top bottleneck", activeSnapshot.topBottleneckLabel ?? "None"],
+              ]}
+            />
+            <div className="contract-offer-list">
+              {contractOffers.map((offer) => (
+                <article
+                  className={`contract-offer-card ${offer.decision}`}
+                  key={offer.id}
+                >
+                  <header>
+                    <div>
+                      <strong>{offer.clientName}</strong>
+                      <small>
+                        {formatFreightClassName(offer.freightClassId)} • {offer.lengthMonths} month
+                        {offer.lengthMonths === 1 ? "" : "s"}
+                      </small>
+                    </div>
+                    <span className={`contract-offer-status ${offer.decision}`}>
+                      {offer.decision}
+                    </span>
+                  </header>
+                  <dl className="contract-offer-stats">
+                    <div>
+                      <dt>Monthly cube</dt>
+                      <dd>{formatNumber(offer.expectedMonthlyThroughputCubicFeet)} cu ft</dd>
+                    </div>
+                    <div>
+                      <dt>Forecast</dt>
+                      <dd>
+                        {formatNumber(offer.forecastRange.minMonthlyCubicFeet)} to{" "}
+                        {formatNumber(offer.forecastRange.maxMonthlyCubicFeet)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Revenue rate</dt>
+                      <dd>${offer.revenuePerCubicFoot.toFixed(2)} / cu ft</dd>
+                    </div>
+                    <div>
+                      <dt>Min service</dt>
+                      <dd>{offer.minimumServiceLevel}%</dd>
+                    </div>
+                    <div>
+                      <dt>Dwell penalty</dt>
+                      <dd>
+                        {Math.round(offer.dwellPenaltyThresholdTicks / 60)} min then $
+                        {offer.dwellPenaltyRatePerCubicFoot.toFixed(2)} / cu ft
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Challenge</dt>
+                      <dd>{offer.difficultyTag}</dd>
+                    </div>
+                  </dl>
+                  <p className="planning-note">{offer.operationalChallengeNote}</p>
+                  <div className="contract-offer-analysis">
+                    <strong>Analysis</strong>
+                    <small>
+                      Storage risk {offer.analysis.storageCapacityRisk}; labor risk{" "}
+                      {offer.analysis.laborCapacityRisk}; budget pressure {offer.analysis.budgetPressure}.
+                    </small>
+                    <small>
+                      Recommended storage:{" "}
+                      {offer.analysis.recommendedStorageZoneTypes
+                        .map(formatZoneTypeName)
+                        .join(", ")}
+                    </small>
+                    <small>
+                      Est. labor delta ${formatNumber(offer.analysis.estimatedMonthlyLaborCostDelta)} / month;
+                      operating delta ${formatNumber(offer.analysis.estimatedMonthlyOperatingCostDelta)} / month
+                    </small>
+                    {offer.analysis.notes.map((note) => (
+                      <small key={note}>{note}</small>
+                    ))}
+                  </div>
+                  <div className="contract-offer-actions">
+                    <button type="button" onClick={() => setOfferDecision(offer.id, "accepted")}>
+                      Accept
+                    </button>
+                    <button type="button" onClick={() => setOfferDecision(offer.id, "rejected")}>
+                      Reject
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
           </PlanningSection>
         );
       case "workforce":
@@ -332,4 +442,18 @@ function getRoleHint(roleId: LaborRole): string {
     case LaborRole.Management:
       return "Supports coordination and overload control.";
   }
+}
+
+function formatZoneTypeName(zoneType: string): string {
+  return zoneType
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function formatFreightClassName(freightClassId: string): string {
+  return freightClassId
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }

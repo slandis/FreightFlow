@@ -1,6 +1,7 @@
 export interface FreightBatch {
   id: string;
   trailerId: string;
+  contractId: string | null;
   freightClassId: string;
   cubicFeet: number;
   state:

@@ -90,7 +90,7 @@ export interface PlanningSnapshot {
   clientSatisfactionScore: number;
   customerSatisfactionScore: number;
   serviceLevel: number;
-  contractHealth: ContractSummary["health"];
+  contractHealth: ContractHealth;
   totalHeadcount: number;
   unassignedHeadcount: number;
   topBottleneckLabel: string | null;
@@ -101,6 +101,8 @@ export interface PlanningSnapshot {
   activeAlertCount: number;
   criticalAlertCount: number;
   projectedBudgetCostPerTick: number;
+  activeContractCount: number;
+  acceptedOfferCount: number;
 }
 
 export interface PlanningState {
@@ -132,19 +134,83 @@ export interface ScoreState {
   customerSatisfaction: ScoreMetric;
 }
 
-export interface ContractSummary {
+export type ContractHealth = "healthy" | "stable" | "at-risk" | "critical";
+export type ContractDecision = "undecided" | "accepted" | "rejected";
+export type ContractRiskLevel = "low" | "moderate" | "high";
+export type ContractDifficultyTag =
+  | "capacity"
+  | "speed"
+  | "specialization"
+  | "margin"
+  | "consistency";
+
+export interface ContractOfferAnalysis {
+  recommendedStorageZoneTypes: string[];
+  expectedAdditionalHeadcountByRole: Partial<Record<LaborRole, number>>;
+  storageCapacityRisk: ContractRiskLevel;
+  laborCapacityRisk: ContractRiskLevel;
+  budgetPressure: ContractRiskLevel;
+  estimatedMonthlyLaborCostDelta: number;
+  estimatedMonthlyOperatingCostDelta: number;
+  notes: string[];
+}
+
+export interface ContractOffer {
+  id: string;
+  monthKey: string;
+  clientName: string;
+  freightClassId: string;
+  lengthMonths: number;
+  expectedMonthlyThroughputCubicFeet: number;
+  expectedWeeklyThroughputCubicFeet: number;
+  revenuePerCubicFoot: number;
+  minimumServiceLevel: number;
+  dwellPenaltyThresholdTicks: number;
+  dwellPenaltyRatePerCubicFoot: number;
+  difficultyTag: ContractDifficultyTag;
+  operationalChallengeNote: string;
+  forecastRange: {
+    minMonthlyCubicFeet: number;
+    maxMonthlyCubicFeet: number;
+  };
+  analysis: ContractOfferAnalysis;
+  decision: ContractDecision;
+}
+
+export interface ActiveContract {
   id: string;
   name: string;
+  clientName: string;
+  freightClassId: string | null;
+  acceptedMonthKey: string;
+  acceptedTick: number;
+  acceptedMonthIndex: number;
+  endMonthIndex: number;
+  lengthMonths: number;
+  expectedMonthlyThroughputCubicFeet: number;
+  revenuePerCubicFoot: number;
   targetThroughputCubicFeetPerDay: number;
   minimumServiceLevel: number;
-  health: "healthy" | "stable" | "at-risk" | "critical";
+  dwellPenaltyThresholdTicks: number;
+  dwellPenaltyRatePerCubicFoot: number;
+  difficultyTag: ContractDifficultyTag;
+  operationalChallengeNote: string;
+  health: ContractHealth;
+  serviceLevel: number;
+  performanceScore: number;
+  penaltyCostToDate: number;
+  lastPenaltyTick: number | null;
 }
 
 export interface ContractState {
-  activeContracts: ContractSummary[];
+  pendingOffers: ContractOffer[];
+  activeContracts: ActiveContract[];
+  completedContracts: ActiveContract[];
   serviceLevel: number;
   missedDemandCubicFeet: number;
   fulfilledDemandCubicFeet: number;
+  nextOfferSequence: number;
+  nextActiveContractSequence: number;
 }
 
 export interface Alert {
@@ -209,18 +275,39 @@ export function createInitialScoreState(): ScoreState {
 
 export function createInitialContractState(): ContractState {
   return {
+    pendingOffers: [],
     activeContracts: [
       {
         id: "baseline-general-freight",
         name: "Baseline General Freight",
+        clientName: "General Freight Network",
+        freightClassId: null,
+        acceptedMonthKey: "Y1-M1",
+        acceptedTick: 0,
+        acceptedMonthIndex: 1,
+        endMonthIndex: Number.MAX_SAFE_INTEGER,
+        lengthMonths: 999,
+        expectedMonthlyThroughputCubicFeet: 270000,
+        revenuePerCubicFoot: 0.32,
         targetThroughputCubicFeetPerDay: 9000,
         minimumServiceLevel: 80,
+        dwellPenaltyThresholdTicks: 1440,
+        dwellPenaltyRatePerCubicFoot: 0.015,
+        difficultyTag: "consistency",
+        operationalChallengeNote: "Mixed freight keeps the base network moving but rewards steady service.",
         health: "stable",
+        serviceLevel: 100,
+        performanceScore: 100,
+        penaltyCostToDate: 0,
+        lastPenaltyTick: null,
       },
     ],
+    completedContracts: [],
     serviceLevel: 100,
     missedDemandCubicFeet: 0,
     fulfilledDemandCubicFeet: 0,
+    nextOfferSequence: 1,
+    nextActiveContractSequence: 1,
   };
 }
 
@@ -255,6 +342,10 @@ export function createInitialPlanningState(
 
 export function getMonthKey(calendar: SimulationCalendar): string {
   return `Y${calendar.year}-M${calendar.month}`;
+}
+
+export function getMonthIndex(calendar: SimulationCalendar): number {
+  return (calendar.year - 1) * 12 + calendar.month;
 }
 
 export function createLaborAssignmentPlan(labor: LaborState): LaborAssignmentPlan {

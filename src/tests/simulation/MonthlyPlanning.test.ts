@@ -4,6 +4,7 @@ import { AssignPlannedLaborCommand } from "../../game/simulation/commands/Assign
 import { ChangeSpeedCommand } from "../../game/simulation/commands/ChangeSpeedCommand";
 import { ConfirmMonthlyPlanCommand } from "../../game/simulation/commands/ConfirmMonthlyPlanCommand";
 import { PaintZoneCommand } from "../../game/simulation/commands/PaintZoneCommand";
+import { SetContractOfferDecisionCommand } from "../../game/simulation/commands/SetContractOfferDecisionCommand";
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
 import type { DomainEvent } from "../../game/simulation/events/DomainEvent";
 import { LaborRole, GameSpeed, TileZoneType } from "../../game/simulation/types/enums";
@@ -33,6 +34,7 @@ describe("monthly planning", () => {
     expect(state.planning.isPlanningActive).toBe(true);
     expect(state.planning.pendingPlan?.monthKey).toBe("Y1-M1");
     expect(state.planning.latestSnapshot?.monthKey).toBe("Y1-M1");
+    expect(state.contracts.pendingOffers).toHaveLength(4);
     expect(state.speed).toBe(GameSpeed.Slow);
   });
 
@@ -52,6 +54,7 @@ describe("monthly planning", () => {
     expect(state.planning.isPlanningActive).toBe(true);
     expect(state.planning.lastOpenedMonthKey).toBe("Y1-M2");
     expect(state.planning.pendingPlan?.monthKey).toBe("Y1-M2");
+    expect(state.contracts.pendingOffers).toHaveLength(4);
     expect(state.speed).toBe(GameSpeed.Slow);
     expect(openedEvents).toHaveLength(1);
 
@@ -155,6 +158,25 @@ describe("monthly planning", () => {
     );
     expect(state.debug.lastCommandType).toBe("confirm-monthly-plan");
     expect(state.debug.lastEventType).toBe("monthly-plan-confirmed");
+  });
+
+  it("activates accepted contract offers when the monthly plan is confirmed", () => {
+    const runner = createRunnerAtMonthEnd();
+    openPlanning(runner);
+    const offerId = runner.getState().contracts.pendingOffers[0]?.id;
+
+    expect(offerId).toBeTruthy();
+    expect(
+      runner.dispatch(new SetContractOfferDecisionCommand(offerId ?? "", "accepted")).success,
+    ).toBe(true);
+
+    const result = runner.dispatch(new ConfirmMonthlyPlanCommand());
+    const state = runner.getState();
+
+    expect(result.success).toBe(true);
+    expect(state.contracts.pendingOffers).toHaveLength(0);
+    expect(state.contracts.activeContracts.length).toBeGreaterThan(1);
+    expect(state.contracts.activeContracts.some((contract) => contract.id !== "baseline-general-freight")).toBe(true);
   });
 
   it("budget support affects score and cost paths", () => {

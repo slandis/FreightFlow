@@ -1,5 +1,7 @@
 import type { GameState, MonthlyPlan, PlanningSnapshot } from "../core/GameState";
 import { createLaborAssignmentPlan, getMonthKey } from "../core/GameState";
+import { generateMonthlyContractOffers } from "../contracts/contractOffers";
+import type { RandomService } from "../core/RandomService";
 import type { DomainEvent } from "../events/DomainEvent";
 import {
   cloneBudgetPlan,
@@ -11,7 +13,11 @@ import { GameSpeed } from "../types/enums";
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
 
 export class PlanningSystem {
-  update(state: GameState, createEvent: EventFactory): DomainEvent[] {
+  update(
+    state: GameState,
+    random: RandomService,
+    createEvent: EventFactory,
+  ): DomainEvent[] {
     const monthKey = getMonthKey(state.calendar);
 
     if (state.planning.isPlanningActive) {
@@ -25,12 +31,13 @@ export class PlanningSystem {
       return [];
     }
 
-    return this.openMonthlyPlanning(state, monthKey, createEvent);
+    return this.openMonthlyPlanning(state, monthKey, random, createEvent);
   }
 
   openMonthlyPlanning(
     state: GameState,
     monthKey: string,
+    random: RandomService,
     createEvent: EventFactory,
   ): DomainEvent[] {
     const pendingPlan: MonthlyPlan = {
@@ -46,6 +53,7 @@ export class PlanningSystem {
     state.planning.lastOpenedMonthKey = monthKey;
     state.planning.pendingPlan = pendingPlan;
     state.planning.latestSnapshot = snapshot;
+    state.contracts.pendingOffers = generateMonthlyContractOffers(state, monthKey, random);
     state.speed = GameSpeed.Slow;
     resetCurrentMonthEconomy(state);
 
@@ -66,7 +74,9 @@ export function createPlanningSnapshot(
 ): PlanningSnapshot {
   const storageZones = state.warehouseMap.zones.filter((zone) => zone.capacityCubicFeet > 0);
   const activeAlerts = state.alerts.alerts.filter((alert) => alert.active);
-  const contract = state.contracts.activeContracts[0];
+  const contract = [...state.contracts.activeContracts].sort(
+    (first, second) => contractHealthRank(second.health) - contractHealthRank(first.health),
+  )[0];
 
   return {
     monthKey,
@@ -108,6 +118,10 @@ export function createPlanningSnapshot(
     activeAlertCount: activeAlerts.length,
     criticalAlertCount: activeAlerts.filter((alert) => alert.severity === "critical").length,
     projectedBudgetCostPerTick: getBudgetCostPerTick(plan.budget),
+    activeContractCount: state.contracts.activeContracts.length,
+    acceptedOfferCount: state.contracts.pendingOffers.filter(
+      (offer) => offer.decision === "accepted",
+    ).length,
   };
 }
 
@@ -143,4 +157,19 @@ function resetCurrentMonthEconomy(state: GameState): void {
   state.economy.currentMonthLaborCost = 0;
   state.economy.currentMonthOperatingCost = 0;
   state.economy.currentMonthNet = 0;
+}
+
+function contractHealthRank(health: string): number {
+  switch (health) {
+    case "critical":
+      return 4;
+    case "at-risk":
+      return 3;
+    case "stable":
+      return 2;
+    case "healthy":
+      return 1;
+    default:
+      return 0;
+  }
 }

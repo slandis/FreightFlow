@@ -134,6 +134,7 @@ export class SimulationRunner {
       this.planningSystem.openMonthlyPlanning(
         this.state,
         this.state.planning.currentPlan.monthKey,
+        this.random,
         (type) => this.createEvent(type),
       );
     }
@@ -217,7 +218,7 @@ export class SimulationRunner {
     this.state.currentTick = this.clock.advance();
     this.state.calendar = this.clock.getCalendar();
     const difficultyMode = getDifficultyModeById(this.state.difficultyModeId);
-    const planningEvents = this.planningSystem.update(this.state, (type) =>
+    const planningEvents = this.planningSystem.update(this.state, this.random, (type) =>
       this.createEvent(type),
     );
     this.laborManager.recalculate(
@@ -234,6 +235,7 @@ export class SimulationRunner {
         this.random,
         (type) => this.createEvent(type),
         difficultyMode,
+        this.state.contracts.activeContracts,
       ),
       ...this.switchDriverSystem.process(
         this.state.freightFlow,

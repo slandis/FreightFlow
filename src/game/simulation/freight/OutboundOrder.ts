@@ -1,5 +1,6 @@
 export interface OutboundOrder {
   id: string;
+  contractId: string | null;
   freightClassId: string;
   requestedCubicFeet: number;
   fulfilledCubicFeet: number;
@@ -13,4 +14,5 @@ export interface OutboundOrder {
   remainingLoadCubicFeet: number;
   revenueRecognizedTick: number | null;
   recognizedRevenue: number;
+  recognizedPenalty: number;
 }

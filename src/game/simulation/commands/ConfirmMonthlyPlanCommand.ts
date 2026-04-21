@@ -1,4 +1,5 @@
 import type { Command, CommandContext } from "./Command";
+import { activateAcceptedContractOffers } from "../contracts/contractOffers";
 import { LaborManager } from "../labor/LaborManager";
 import { cloneBudgetPlan } from "../planning/BudgetPlan";
 import { validateMonthlyPlan } from "../systems/PlanningSystem";
@@ -32,6 +33,8 @@ export class ConfirmMonthlyPlanCommand implements Command<"confirm-monthly-plan"
       laborManager.calculateWorkloads(context.state.freightFlow),
       pendingPlan.budget,
     );
+
+    activateAcceptedContractOffers(context.state);
 
     context.state.planning.currentPlan = {
       monthKey: pendingPlan.monthKey,

@@ -30,6 +30,7 @@ The implementation should reach the following major outcomes in order:
 6. implement labor, queues, and bottlenecks
 7. implement planning, budgets, and KPI systems
 8. deliver a stable MVP suitable for playtesting
+9. add contract offer planning and live portfolio management
 
 ---
 
@@ -74,6 +75,7 @@ Recommended execution order:
 - Phase 10: UI/UX Expansion and Readability Pass
 - Phase 11: Save/Load, Testing, and Stability Pass
 - Phase 12: MVP Balancing and Playtest Preparation
+- Phase 13: Contract Offers and Portfolio Management
 
 ---
 
@@ -578,36 +580,82 @@ Balance for clarity first, realism second. The player must be able to learn the 
 
 ---
 
-## 18. Cross-Cutting Workstreams
+## 18. Phase 13: Contract Offers and Portfolio Management
+
+### Goal
+Turn contracts into explicit monthly business decisions with live portfolio tracking during play.
+
+### Tasks
+- generate 3-4 bounded contract offers when monthly planning opens
+- add a `Contracts` page to monthly planning
+- allow accept/reject decisions through authoritative planning commands
+- present each offer with length, freight class, expected throughput, revenue rate, service target, and dwell/well-time penalty terms
+- include lightweight labor, budget, storage, and operational-strain analysis for each offer
+- expand contract state so accepted offers become individually tracked active contracts
+- tag inbound freight, outbound orders, and useful trailer surfaces with `contractId`
+- attribute contract-aware throughput, service level, revenue, inventory, and dwell penalties
+- add a right-panel contract portfolio section with 3 cards per page and carousel pagination
+- expose per-contract KPI score, current inventory cube, rolling weekly/monthly throughput, and estimated labor/headcount per day
+- preserve offers, decisions, active contracts, and contract-tagged freight through save/load
+
+### Deliverables
+- monthly planning shows plausible contract offers tied to current warehouse conditions
+- accepted offers become active contracts on monthly plan confirmation
+- contract-tagged freight can be tracked through storage and shipment completion
+- active contracts update health, service level, penalties, and performance over time
+- the right operations panel exposes a readable live contract portfolio browser
+
+### Validation Checklist
+- planning opens with 3-4 offers and no impossible freight-class or throughput combinations
+- accept/reject decisions persist correctly until confirmation
+- accepted offers become active contracts and rejected offers do not
+- contract-tagged freight retains attribution through unload, storage, pick, load, and shipment
+- per-contract service level, KPI score, inventory, and penalty values update as play continues
+- the portfolio view pages active contracts in groups of 3 without losing live updates
+- save/load preserves pending offers, active contracts, completed contracts, and contract-attributed freight
+
+### Dependencies
+- monthly planning flow from Phase 9
+- contract/economy baseline from Phase 8
+- save/load support from Phase 11
+
+### Implementation Notes
+Keep offers plausible rather than generous: they should create explainable operational challenges instead of absurd requirements.
+For the first pass, estimated labor and cost attribution is acceptable if it stays consistent and decision-useful.
+
+---
+
+## 19. Cross-Cutting Workstreams
 
 These workstreams should run throughout implementation rather than only in a single phase.
 
-### 18.1 Config and Data Workstream
+### 19.1 Config and Data Workstream
 - maintain freight class definitions
 - maintain zone types and capacities
 - maintain labor role rates
 - maintain difficulty presets
+- maintain contract offer/client generation bands
 - validate all config changes
 
-### 18.2 Debugging and Telemetry Workstream
+### 19.2 Debugging and Telemetry Workstream
 - add logs for state transitions
 - add queue and path overlays
 - add KPI trend inspection tools
 - add event tracing for alerts and incidents
 
-### 18.3 UI Feedback Workstream
+### 19.3 UI Feedback Workstream
 - improve readability based on internal testing
 - reduce clutter and duplicate information
 - improve wording for invalid states and alerts
 
-### 18.4 Testing Workstream
+### 19.4 Testing Workstream
 - add unit tests whenever new formulas become stable
 - add integration tests whenever a full workflow completes
-- protect month transitions, queue processing, and save/load paths aggressively
+- protect month transitions, queue processing, contract acceptance, and save/load paths aggressively
 
 ---
 
-## 19. Suggested Team Breakdown
+## 20. Suggested Team Breakdown
 
 If multiple developers are involved, work can be divided broadly like this:
 
@@ -644,7 +692,7 @@ If solo-developed, this breakdown can still be used as swim lanes for task organ
 
 ---
 
-## 20. Dependency Map
+## 21. Dependency Map
 
 Below is the rough dependency order for major systems.
 
@@ -658,7 +706,7 @@ Below is the rough dependency order for major systems.
 - freight flow -> storage/inventory -> outbound flow -> labor pools -> queues -> congestion
 
 ### Strategic Dependencies
-- labor + economy + KPI systems -> monthly planning -> alerts and dashboards
+- labor + economy + KPI systems -> monthly planning -> contract offers/portfolio -> alerts and dashboards
 
 ### Stabilization Dependencies
 - all major systems -> save/load -> tests -> balance pass -> playtest build
@@ -667,7 +715,7 @@ This order should be respected as much as possible to avoid building features on
 
 ---
 
-## 21. Risks and Mitigations
+## 22. Risks and Mitigations
 
 ### Risk 1: Overengineering Too Early
 **Problem:** spending too long on abstractions before proving the game loop
@@ -699,9 +747,19 @@ This order should be respected as much as possible to avoid building features on
 
 **Mitigation:** prioritize alerts, overlays, bottleneck panels, and pause/slow-speed diagnosis tools
 
+### Risk 7: Contract Offers Feel Arbitrary
+**Problem:** monthly offers look random in a bad way and undermine business decision-making
+
+**Mitigation:** generate offers from bounded throughput/rate bands and include concise operational analysis explaining the challenge
+
+### Risk 8: Contract Attribution Adds Hidden Complexity
+**Problem:** contract-aware freight, revenue, and labor reporting become difficult to reason about or maintain
+
+**Mitigation:** tag freight/orders early, keep first-pass labor attribution estimated, and prefer selector/reporting aggregation over tick-heavy bookkeeping
+
 ---
 
-## 22. Suggested Milestone Review Questions
+## 23. Suggested Milestone Review Questions
 
 At the end of each phase, ask:
 - what new player-visible behavior exists now?
@@ -714,7 +772,7 @@ This prevents silent accumulation of technical debt and design drift.
 
 ---
 
-## 23. Recommended Immediate Next Actions
+## 24. Recommended Immediate Next Actions
 
 To begin implementation immediately, the first concrete actions should be:
 
@@ -730,7 +788,7 @@ These steps establish the first meaningful vertical slice and create momentum qu
 
 ---
 
-## 24. Summary
+## 25. Summary
 
 This implementation plan is designed to move the project from architecture and design into a practical build sequence.
 

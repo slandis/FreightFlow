@@ -13,6 +13,7 @@ function runTicks(runner: SimulationRunner, ticks: number): void {
 function createYardTrailer(id: string, arrivalTick: number): Trailer {
   return {
     id,
+    contractId: "baseline-general-freight",
     direction: "inbound",
     state: "yard",
     doorId: null,
@@ -119,6 +120,7 @@ describe("inbound freight flow", () => {
       freightFlow.freightBatches.push({
         id: `dock-batch-${index + 1}`,
         trailerId: `occupied-${index + 1}`,
+        contractId: "baseline-general-freight",
         freightClassId: "standard",
         cubicFeet: 5000,
         state: "on-dock",
@@ -162,6 +164,7 @@ describe("inbound freight flow", () => {
         freightFlow.freightBatches.push({
           id: `full-dock-${door.id}-${index}`,
           trailerId: `occupied-${door.id}-${index}`,
+          contractId: "baseline-general-freight",
           freightClassId: "standard",
           cubicFeet: 5000,
           state: "on-dock",

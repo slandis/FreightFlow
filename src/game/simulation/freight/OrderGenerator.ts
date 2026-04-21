@@ -29,17 +29,17 @@ export class OrderGenerator {
       return [];
     }
 
-    const availableInventory = getAvailableInventoryByFreightClass(freightFlow);
-    const availableFreightClassIds = Object.entries(availableInventory)
-      .filter(([, cubicFeet]) => cubicFeet > 0)
-      .map(([freightClassId]) => freightClassId);
+    const availableInventory = getAvailableInventoryByContractAndFreightClass(freightFlow);
+    const inventoryKeys = Object.entries(availableInventory).filter(
+      ([, cubicFeet]) => cubicFeet > 0,
+    );
 
-    if (availableFreightClassIds.length === 0) {
+    if (inventoryKeys.length === 0) {
       return [];
     }
 
-    const freightClassId =
-      availableFreightClassIds[random.nextInt(0, availableFreightClassIds.length - 1)];
+    const [inventoryKey] = inventoryKeys[random.nextInt(0, inventoryKeys.length - 1)];
+    const [contractId, freightClassId] = inventoryKey.split("::");
     const minimumCubicFeet = Math.max(
       1,
       Math.round(BASE_MIN_ORDER_CUBIC_FEET * difficultyMode.outboundVolumeMultiplier),
@@ -56,7 +56,7 @@ export class OrderGenerator {
         minimumCubicFeet,
         maximumCubicFeet,
       ),
-      availableInventory[freightClassId],
+      availableInventory[inventoryKey],
     );
     const orderId = createId("outbound-order", freightFlow.nextOutboundOrderSequence);
 
@@ -64,6 +64,7 @@ export class OrderGenerator {
     freightFlow.metrics.totalOutboundOrdersCreated += 1;
     freightFlow.outboundOrders.push({
       id: orderId,
+      contractId: contractId === "none" ? null : contractId,
       freightClassId,
       requestedCubicFeet,
       fulfilledCubicFeet: 0,
@@ -77,6 +78,7 @@ export class OrderGenerator {
       remainingLoadCubicFeet: requestedCubicFeet,
       revenueRecognizedTick: null,
       recognizedRevenue: 0,
+      recognizedPenalty: 0,
     });
 
     const event = {
@@ -90,7 +92,9 @@ export class OrderGenerator {
   }
 }
 
-function getAvailableInventoryByFreightClass(freightFlow: FreightFlowState): Record<string, number> {
+function getAvailableInventoryByContractAndFreightClass(
+  freightFlow: FreightFlowState,
+): Record<string, number> {
   const inventory: Record<string, number> = {};
 
   for (const batch of freightFlow.freightBatches) {
@@ -98,7 +102,8 @@ function getAvailableInventoryByFreightClass(freightFlow: FreightFlowState): Rec
       continue;
     }
 
-    inventory[batch.freightClassId] = (inventory[batch.freightClassId] ?? 0) + batch.cubicFeet;
+    const key = `${batch.contractId ?? "none"}::${batch.freightClassId}`;
+    inventory[key] = (inventory[key] ?? 0) + batch.cubicFeet;
   }
 
   return inventory;

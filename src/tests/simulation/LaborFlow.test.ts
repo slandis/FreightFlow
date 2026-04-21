@@ -21,6 +21,7 @@ function runTicks(runner: SimulationRunner, ticks: number): void {
 function createYardTrailer(overrides: Partial<Trailer> = {}): Trailer {
   return {
     id: "trailer-test",
+    contractId: "baseline-general-freight",
     direction: "inbound",
     state: "yard",
     doorId: null,
@@ -41,6 +42,7 @@ function createBatch(overrides: Partial<FreightBatch> = {}): FreightBatch {
   return {
     id: "freight-batch-test",
     trailerId: "trailer-test",
+    contractId: "baseline-general-freight",
     freightClassId: "standard",
     cubicFeet: 900,
     state: "on-dock",
@@ -60,6 +62,7 @@ function createBatch(overrides: Partial<FreightBatch> = {}): FreightBatch {
 function createOrder(overrides: Partial<OutboundOrder> = {}): OutboundOrder {
   return {
     id: "outbound-order-test",
+    contractId: "baseline-general-freight",
     freightClassId: "standard",
     requestedCubicFeet: 500,
     fulfilledCubicFeet: 0,
@@ -73,6 +76,7 @@ function createOrder(overrides: Partial<OutboundOrder> = {}): OutboundOrder {
     remainingLoadCubicFeet: 500,
     revenueRecognizedTick: null,
     recognizedRevenue: 0,
+    recognizedPenalty: 0,
     ...overrides,
   };
 }

@@ -9,6 +9,7 @@ function createDockBatch(freightClassId = "standard"): FreightBatch {
   return {
     id: "batch-test",
     trailerId: "trailer-test",
+    contractId: "baseline-general-freight",
     freightClassId,
     cubicFeet: 600,
     state: "on-dock",

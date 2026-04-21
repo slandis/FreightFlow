@@ -97,15 +97,20 @@ export class AlertSystem {
       state.scores.clientSatisfaction.value,
     );
 
-    const contract = state.contracts.activeContracts[0];
+    const mostAtRiskContract = [...state.contracts.activeContracts]
+      .sort((first, second) => first.serviceLevel - second.serviceLevel)[0];
 
-    if (contract && state.contracts.serviceLevel < contract.minimumServiceLevel) {
+    if (
+      mostAtRiskContract &&
+      mostAtRiskContract.serviceLevel < mostAtRiskContract.minimumServiceLevel
+    ) {
       candidates.push({
         key: "contract-service-level",
-        severity: state.contracts.serviceLevel < contract.minimumServiceLevel * 0.65
+        severity:
+          mostAtRiskContract.serviceLevel < mostAtRiskContract.minimumServiceLevel * 0.65
           ? "critical"
           : "warning",
-        message: "Client service level is below target.",
+        message: `${mostAtRiskContract.clientName} service level is below target.`,
       });
     }
 

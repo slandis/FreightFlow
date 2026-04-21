@@ -12,6 +12,7 @@ export type ActiveTool =
 
 export type PlanningPage =
   | "forecast"
+  | "contracts"
   | "workforce"
   | "condition"
   | "satisfaction"

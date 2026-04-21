@@ -1,10 +1,11 @@
 import { Fragment, type ReactNode, useEffect, useState } from "react";
 import { getDifficultyModeById } from "../../../game/simulation/config/difficulty";
+import { selectContractPortfolioCards } from "../../../game/simulation/selectors/contractSelectors";
 import { selectOperationalIssues } from "../../../game/simulation/selectors/diagnosticSelectors";
 import {
+  selectContractSummary,
   selectEconomySummary,
   selectScoreSummary,
-  selectContractSummary,
 } from "../../../game/simulation/selectors/kpiSelectors";
 import {
   selectBottleneckSummary,
@@ -14,10 +15,10 @@ import {
 import {
   selectAverageDoorDwell,
   selectAverageYardDwell,
-  selectDoorSummary,
-  selectDockFreightCubicFeet,
   selectDockCapacity,
+  selectDockFreightCubicFeet,
   selectDockStorageNeeds,
+  selectDoorSummary,
   selectInboundQueueSummary,
   selectInboundTrailerCount,
   selectOutboundQueueSummary,
@@ -56,10 +57,19 @@ export function RightOperationsPanel() {
   const economy = useSimulationState(selectEconomySummary);
   const scores = useSimulationState(selectScoreSummary);
   const contracts = useSimulationState(selectContractSummary);
-  const difficultyMode = useSimulationState((state) => getDifficultyModeById(state.difficultyModeId));
+  const contractPortfolioCards = useSimulationState(selectContractPortfolioCards);
+  const difficultyMode = useSimulationState((state) =>
+    getDifficultyModeById(state.difficultyModeId),
+  );
   const playtestReview = usePlaytestReview();
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
   const [activeIssueIndex, setActiveIssueIndex] = useState(0);
+  const [activeContractPage, setActiveContractPage] = useState(0);
+  const contractPageCount = Math.max(1, Math.ceil(contractPortfolioCards.length / 3));
+  const visibleContractCards = contractPortfolioCards.slice(
+    activeContractPage * 3,
+    activeContractPage * 3 + 3,
+  );
   const activeIssue =
     operationalIssues.length > 0
       ? operationalIssues[Math.min(activeIssueIndex, operationalIssues.length - 1)]
@@ -71,6 +81,9 @@ export function RightOperationsPanel() {
       operationalIssues.length === 0 ? 0 : Math.min(current, operationalIssues.length - 1),
     );
   }, [operationalIssues.length]);
+  useEffect(() => {
+    setActiveContractPage((current) => Math.min(current, Math.max(0, contractPageCount - 1)));
+  }, [contractPageCount]);
 
   const copyPlaytestReview = async () => {
     try {
@@ -102,7 +115,7 @@ export function RightOperationsPanel() {
                   }
                   type="button"
                 >
-                  ◀
+                  {"<"}
                 </button>
                 <small>
                   {activeIssueIndex + 1} / {operationalIssues.length}
@@ -114,7 +127,7 @@ export function RightOperationsPanel() {
                   }
                   type="button"
                 >
-                  ▶
+                  {">"}
                 </button>
               </div>
             ) : null}
@@ -137,7 +150,10 @@ export function RightOperationsPanel() {
             </button>
           ) : null}
           {operationalIssues.length > 1 ? (
-            <small>{operationalIssues.length - 1} more issue{operationalIssues.length === 2 ? "" : "s"} available.</small>
+            <small>
+              {operationalIssues.length - 1} more issue
+              {operationalIssues.length === 2 ? "" : "s"} available.
+            </small>
           ) : null}
         </section>
       ) : (
@@ -218,9 +234,86 @@ export function RightOperationsPanel() {
           <dd>${formatMoney(economy.currentMonthNet)}</dd>
           <dt>Service level</dt>
           <dd>{contracts.serviceLevel.toFixed(0)}%</dd>
-          <dt>Contract</dt>
-          <dd>{contracts.activeContracts[0]?.health ?? "none"}</dd>
+          <dt>Contracts</dt>
+          <dd>{contracts.activeContracts.length}</dd>
+          <dt>Portfolio</dt>
+          <dd>{describePortfolioHealth(contractPortfolioCards)}</dd>
         </dl>
+      </CollapsibleSection>
+      <CollapsibleSection title="Contracts">
+        <div className="panel-section-heading">
+          <span>
+            {contractPortfolioCards.length} active contract
+            {contractPortfolioCards.length === 1 ? "" : "s"}
+          </span>
+          {contractPortfolioCards.length > 3 ? (
+            <div className="issue-carousel-controls" aria-label="Contract pages">
+              <button
+                aria-label="Previous contract page"
+                onClick={() =>
+                  setActiveContractPage((current) =>
+                    current === 0 ? contractPageCount - 1 : current - 1,
+                  )
+                }
+                type="button"
+              >
+                {"<"}
+              </button>
+              <small>
+                {activeContractPage + 1} / {contractPageCount}
+              </small>
+              <button
+                aria-label="Next contract page"
+                onClick={() =>
+                  setActiveContractPage((current) => (current + 1) % contractPageCount)
+                }
+                type="button"
+              >
+                {">"}
+              </button>
+            </div>
+          ) : null}
+        </div>
+        {visibleContractCards.length > 0 ? (
+          <div className="contract-portfolio-list">
+            {visibleContractCards.map((contract) => (
+              <article className={`contract-portfolio-card ${contract.health}`} key={contract.id}>
+                <header>
+                  <div>
+                    <strong>{contract.clientName}</strong>
+                    <small>{contract.freightClassName}</small>
+                  </div>
+                  <span>{contract.health}</span>
+                </header>
+                <dl>
+                  <dt>KPI</dt>
+                  <dd>{contract.performanceScore.toFixed(0)}</dd>
+                  <dt>Service</dt>
+                  <dd>
+                    {contract.serviceLevel.toFixed(0)}% / {contract.minimumServiceLevel}%
+                  </dd>
+                  <dt>Inventory</dt>
+                  <dd>{contract.inventoryCubicFeet.toLocaleString()} cu ft</dd>
+                  <dt>7-day</dt>
+                  <dd>{contract.weeklyThroughputCubicFeet.toLocaleString()} cu ft</dd>
+                  <dt>30-day</dt>
+                  <dd>{contract.monthlyThroughputCubicFeet.toLocaleString()} cu ft</dd>
+                  <dt>Labor/day</dt>
+                  <dd>${formatMoney(contract.estimatedDailyLaborCost)}</dd>
+                  <dt>Headcount/day</dt>
+                  <dd>{contract.estimatedDailyHeadcount.toFixed(2)}</dd>
+                  <dt>Rate</dt>
+                  <dd>${contract.revenuePerCubicFoot.toFixed(2)} / cu ft</dd>
+                  <dt>Penalties</dt>
+                  <dd>${formatMoney(contract.penaltyCostToDate)}</dd>
+                </dl>
+                <small>{contract.operationalChallengeNote}</small>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p>No active contracts beyond the baseline network.</p>
+        )}
       </CollapsibleSection>
       <CollapsibleSection title="Scores">
         <dl>
@@ -247,10 +340,7 @@ export function RightOperationsPanel() {
           {laborSummary.totalHeadcount} total; {laborSummary.unassignedHeadcount} unassigned.
         </p>
         <p>
-          Top bottleneck:{" "}
-          {topBottleneck
-            ? `${topBottleneck.label} ${topBottleneck.pressure}`
-            : "none"}
+          Top bottleneck: {topBottleneck ? `${topBottleneck.label} ${topBottleneck.pressure}` : "none"}
         </p>
         <dl>
           {laborRoles.map((pool) => (
@@ -372,9 +462,7 @@ export function RightOperationsPanel() {
         )}
         <p>
           Hover:{" "}
-          {hoveredTile
-            ? `${hoveredTile.x}, ${hoveredTile.y} (${hoveredTile.zoneType})`
-            : "none"}
+          {hoveredTile ? `${hoveredTile.x}, ${hoveredTile.y} (${hoveredTile.zoneType})` : "none"}
         </p>
       </CollapsibleSection>
     </aside>
@@ -449,4 +537,26 @@ function formatTopScoreDriver(scores: ReturnType<typeof selectScoreSummary>): st
   }
 
   return `Top driver: ${drivers[0].label} (${drivers[0].impact.toFixed(2)})`;
+}
+
+function describePortfolioHealth(
+  contracts: ReturnType<typeof selectContractPortfolioCards>,
+): string {
+  if (contracts.length === 0) {
+    return "none";
+  }
+
+  if (contracts.some((contract) => contract.health === "critical")) {
+    return "critical";
+  }
+
+  if (contracts.some((contract) => contract.health === "at-risk")) {
+    return "at-risk";
+  }
+
+  if (contracts.some((contract) => contract.health === "stable")) {
+    return "stable";
+  }
+
+  return "healthy";
 }

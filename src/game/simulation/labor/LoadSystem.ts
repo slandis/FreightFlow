@@ -36,6 +36,7 @@ export class LoadSystem {
 
         freightFlow.trailers.push({
           id: trailerId,
+          contractId: order.contractId,
           direction: "outbound",
           state: "loading",
           doorId: door.id,

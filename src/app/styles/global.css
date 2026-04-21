@@ -910,6 +910,135 @@ button {
   resize: vertical;
 }
 
+.contract-offer-list,
+.contract-portfolio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.contract-offer-card,
+.contract-portfolio-card {
+  border: 1px solid rgba(238, 244, 242, 0.16);
+  border-radius: 10px;
+  padding: 12px;
+  background: rgba(238, 244, 242, 0.05);
+}
+
+.contract-offer-card header,
+.contract-portfolio-card header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.contract-offer-card header div,
+.contract-portfolio-card header div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.contract-offer-card small,
+.contract-portfolio-card small {
+  color: rgba(238, 244, 242, 0.72);
+}
+
+.contract-offer-status {
+  border: 1px solid rgba(238, 244, 242, 0.18);
+  border-radius: 999px;
+  padding: 2px 8px;
+  color: rgba(238, 244, 242, 0.76);
+  background: rgba(238, 244, 242, 0.08);
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.contract-offer-status.accepted {
+  border-color: rgba(95, 191, 143, 0.42);
+  background: rgba(95, 191, 143, 0.14);
+  color: #bfe9ce;
+}
+
+.contract-offer-status.rejected {
+  border-color: rgba(217, 108, 95, 0.38);
+  background: rgba(217, 108, 95, 0.12);
+  color: #ffd5cf;
+}
+
+.contract-offer-card.accepted,
+.contract-portfolio-card.healthy {
+  border-left: 3px solid #5fbf8f;
+}
+
+.contract-offer-card.rejected,
+.contract-portfolio-card.critical {
+  border-left: 3px solid #d96c5f;
+}
+
+.contract-portfolio-card.at-risk {
+  border-left: 3px solid #e6b655;
+}
+
+.contract-offer-card.undecided,
+.contract-portfolio-card.stable {
+  border-left: 3px solid #5ea3c6;
+}
+
+.contract-offer-stats,
+.contract-portfolio-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+  margin: 10px 0;
+}
+
+.contract-offer-stats div {
+  border: 1px solid rgba(238, 244, 242, 0.12);
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(12, 16, 18, 0.3);
+}
+
+.contract-offer-stats dt,
+.contract-portfolio-card dt {
+  color: rgba(238, 244, 242, 0.64);
+  font-size: 12px;
+}
+
+.contract-offer-stats dd,
+.contract-portfolio-card dd {
+  margin: 4px 0 0;
+  font-weight: 700;
+}
+
+.contract-offer-analysis {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid rgba(238, 244, 242, 0.12);
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+.contract-offer-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.contract-offer-actions button {
+  min-height: 32px;
+  border: 1px solid rgba(238, 244, 242, 0.22);
+  border-radius: 8px;
+  color: #eef4f2;
+  background: rgba(94, 163, 198, 0.18);
+  cursor: pointer;
+}
+
 @media (max-width: 760px) {
   .left-panel {
     top: calc(var(--top-hud-bottom) + 48px);

@@ -1,5 +1,6 @@
 export interface Trailer {
   id: string;
+  contractId: string | null;
   direction: "inbound" | "outbound";
   state:
     | "yard"

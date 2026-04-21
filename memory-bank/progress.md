@@ -248,3 +248,17 @@ Hyper Speed Responsiveness Polish: Completed
     - Preserved the monthly-planning guard so Hyper still stops accumulated frame time once planning opens.
     - Added regression coverage confirming grouped ticks only notify change subscribers once per batch.
     - Verification completed: `npm run test` passed with 110 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+
+Phase 13: Implemented
+    - Saved the finalized Phase 13 plan to `memory-bank/phase-13-plan.md` and folded the contract system into the main roadmap.
+    - Expanded authoritative contract state to support pending offers, multiple active contracts, completed contracts, richer contract health/performance fields, and planning snapshot contract counts.
+    - Added bounded monthly contract-offer generation with client, class, throughput, rate, service target, dwell-penalty, challenge, and operational-analysis details.
+    - Added planning-time contract accept/reject decisions through `SetContractOfferDecisionCommand` and finalized accepted offers into active contracts during monthly plan confirmation.
+    - Tagged inbound freight batches, outbound orders, and trailers with `contractId` so inventory, throughput, and shipment completion can be attributed back to contracts.
+    - Updated inbound generation, outbound demand creation, picking, loading, finance, and contract evaluation so active contracts now shape freight mix, revenue, service level, and dwell-penalty exposure.
+    - Reworked the contract system and related alerts from a single baseline contract assumption to multi-contract evaluation with per-contract health, performance score, and aggregate service pressure.
+    - Added a `Contracts` page to monthly planning that presents offer details, forecast ranges, penalty terms, challenge notes, and operational analysis before the player confirms the month.
+    - Added contract portfolio selectors and a paginated right-panel contract browser that shows 3 live contract cards per page with KPI score, service level, inventory cube, rolling throughput, estimated labor/day, estimated headcount/day, and penalty totals.
+    - Bumped the save schema version so the richer contract/planning state is preserved through save/load.
+    - Added and updated simulation/UI coverage for planning offer generation, offer acceptance, contract activation, attribution, alert behavior, and selector output.
+    - Verification completed: `npm run test` passed with 111 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
