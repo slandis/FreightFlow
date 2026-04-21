@@ -191,7 +191,7 @@ describe("storage and outbound freight flow", () => {
   it("does not generate outbound orders without stored inventory", () => {
     const runner = new SimulationRunner();
 
-    runTicks(runner, 180);
+    runTicks(runner, 60);
 
     expect(runner.getState().freightFlow.outboundOrders).toHaveLength(0);
   });
@@ -207,8 +207,8 @@ describe("storage and outbound freight flow", () => {
       createBatch({ state: "in-storage", storageZoneId: "standard-storage-001", storedTick: 1 }),
     );
 
-    runTicks(first, 180);
-    runTicks(second, 180);
+    runTicks(first, 60);
+    runTicks(second, 60);
 
     const firstOrder = first.getState().freightFlow.outboundOrders[0];
     const secondOrder = second.getState().freightFlow.outboundOrders[0];
@@ -297,7 +297,7 @@ describe("storage and outbound freight flow", () => {
     runTicks(runner, 3);
     expect(state.freightFlow.freightBatches[0].state).toBe("in-storage");
 
-    runTicks(runner, 177);
+    runTicks(runner, 57);
     expect(state.freightFlow.outboundOrders).toHaveLength(1);
 
     runUntilShipmentCompletes(runner);

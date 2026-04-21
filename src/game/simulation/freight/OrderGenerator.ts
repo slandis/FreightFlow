@@ -5,7 +5,7 @@ import type { DomainEvent } from "../events/DomainEvent";
 import { createId } from "../types/ids";
 import type { FreightFlowState } from "./FreightFlowState";
 
-const BASE_OUTBOUND_ORDER_INTERVAL_TICKS = 180;
+const BASE_OUTBOUND_ORDER_INTERVAL_TICKS = 60;
 const BASE_MIN_ORDER_CUBIC_FEET = 300;
 const BASE_MAX_ORDER_CUBIC_FEET = 900;
 const ORDER_DUE_TICKS = 720;
