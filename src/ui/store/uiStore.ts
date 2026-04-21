@@ -55,6 +55,8 @@ interface UiState {
   hoveredTile: TileSummary | null;
   selectedTile: TileSummary | null;
   isLaborDialogOpen: boolean;
+  isSaveLoadDialogOpen: boolean;
+  saveLoadMessage: string | null;
   activePlanningPage: PlanningPage;
   activeOverlayMode: OverlayMode;
   mapFocusRequest: MapFocusRequest | null;
@@ -62,6 +64,8 @@ interface UiState {
   setHoveredTile: (tile: TileSummary | null) => void;
   setSelectedTile: (tile: TileSummary | null) => void;
   setLaborDialogOpen: (isOpen: boolean) => void;
+  setSaveLoadDialogOpen: (isOpen: boolean) => void;
+  setSaveLoadMessage: (message: string | null) => void;
   setActivePlanningPage: (page: PlanningPage) => void;
   setActiveOverlayMode: (mode: OverlayMode) => void;
   requestMapFocus: (request: Omit<MapFocusRequest, "id">) => void;
@@ -73,6 +77,8 @@ export const useUiStore = create<UiState>((set) => ({
   hoveredTile: null,
   selectedTile: null,
   isLaborDialogOpen: false,
+  isSaveLoadDialogOpen: false,
+  saveLoadMessage: null,
   activePlanningPage: "forecast",
   activeOverlayMode: "invalid-storage",
   mapFocusRequest: null,
@@ -80,6 +86,8 @@ export const useUiStore = create<UiState>((set) => ({
   setHoveredTile: (tile) => set({ hoveredTile: tile }),
   setSelectedTile: (tile) => set({ selectedTile: tile }),
   setLaborDialogOpen: (isOpen) => set({ isLaborDialogOpen: isOpen }),
+  setSaveLoadDialogOpen: (isOpen) => set({ isSaveLoadDialogOpen: isOpen }),
+  setSaveLoadMessage: (message) => set({ saveLoadMessage: message }),
   setActivePlanningPage: (page) => set({ activePlanningPage: page }),
   setActiveOverlayMode: (mode) => set({ activeOverlayMode: mode }),
   requestMapFocus: (request) =>

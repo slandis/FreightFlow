@@ -222,6 +222,12 @@ export class SimulationRunner {
     return this.state;
   }
 
+  replaceState(nextState: GameState): void {
+    Object.assign(this.state, nextState);
+    this.clock.restore(nextState.currentTick, nextState.calendar);
+    this.notifyStateChanged();
+  }
+
   getRevision(): number {
     return this.revision;
   }

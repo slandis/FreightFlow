@@ -4,6 +4,7 @@ import { createGame } from "../../game/phaser/GameBootstrap";
 import { AlertsCenter } from "../components/alerts/AlertsCenter";
 import { LaborDialog } from "../components/dialogs/LaborDialog";
 import { MonthlyPlanningDialog } from "../components/dialogs/MonthlyPlanningDialog";
+import { SaveLoadDialog } from "../components/dialogs/SaveLoadDialog";
 import { TopHud } from "../components/hud/TopHud";
 import { BottomKpiBar } from "../components/panels/BottomKpiBar";
 import { LeftToolPanel } from "../components/panels/LeftToolPanel";
@@ -15,6 +16,7 @@ export function MainGameScreen() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const simulation = useSimulationRunner();
   const isLaborDialogOpen = useUiStore((state) => state.isLaborDialogOpen);
+  const isSaveLoadDialogOpen = useUiStore((state) => state.isSaveLoadDialogOpen);
   const isPlanningActive = useSimulationState((state) => state.planning.isPlanningActive);
 
   useEffect(() => {
@@ -38,6 +40,7 @@ export function MainGameScreen() {
       <BottomKpiBar />
       <AlertsCenter />
       {isLaborDialogOpen ? <LaborDialog /> : null}
+      {isSaveLoadDialogOpen ? <SaveLoadDialog /> : null}
       {isPlanningActive ? <MonthlyPlanningDialog /> : null}
     </main>
   );

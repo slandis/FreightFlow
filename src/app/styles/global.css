@@ -95,6 +95,14 @@ button {
   opacity: 0.55;
 }
 
+.hud-action {
+  min-height: 32px;
+  border: 1px solid rgba(238, 244, 242, 0.22);
+  color: #eef4f2;
+  background: rgba(95, 191, 143, 0.16);
+  cursor: pointer;
+}
+
 .left-panel {
   top: 76px;
   left: 12px;
@@ -537,6 +545,79 @@ button {
   color: #eef4f2;
   background: rgba(24, 33, 38, 0.96);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.36);
+}
+
+.save-load-dialog {
+  width: min(720px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  border: 1px solid rgba(238, 244, 242, 0.22);
+  border-radius: 8px;
+  padding: 18px;
+  color: #eef4f2;
+  background: rgba(24, 33, 38, 0.96);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.36);
+}
+
+.save-load-dialog header,
+.save-slot,
+.save-slot-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.save-load-dialog header p,
+.save-slot small {
+  margin: 4px 0 0;
+  color: rgba(238, 244, 242, 0.7);
+}
+
+.save-load-dialog button,
+.save-slot-actions button {
+  min-height: 32px;
+  border: 1px solid rgba(238, 244, 242, 0.22);
+  color: #eef4f2;
+  background: rgba(94, 163, 198, 0.18);
+  cursor: pointer;
+}
+
+.save-load-dialog button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.save-load-message {
+  border-left: 3px solid #e6b655;
+  padding-left: 8px;
+}
+
+.save-slot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.save-slot {
+  border-left: 3px solid #5fbf8f;
+  padding: 10px 0 10px 10px;
+}
+
+.save-slot div:first-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.save-slot-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.save-slot-error {
+  color: #ffd5cf;
 }
 
 .monthly-planning-dialog header,

@@ -37,6 +37,7 @@ export function TopHud() {
   const isPlanningActive = useSimulationState(selectIsPlanningActive);
   const mostSevereIssue = useSimulationState(selectMostSevereIssue);
   const activeOverlayMode = useUiStore((state) => state.activeOverlayMode);
+  const setSaveLoadDialogOpen = useUiStore((state) => state.setSaveLoadDialogOpen);
 
   return (
     <header className="top-hud">
@@ -64,6 +65,9 @@ export function TopHud() {
       {isPlanningActive ? <span className="hud-badge">Planning active</span> : null}
       <span className="hud-badge">Overlay: {formatOverlay(activeOverlayMode)}</span>
       <span>Tick: {currentTick}</span>
+      <button className="hud-action" onClick={() => setSaveLoadDialogOpen(true)} type="button">
+        Save/Load
+      </button>
       <div className="speed-controls" aria-label="Simulation speed">
         {speedButtons.map((button) => (
           <button

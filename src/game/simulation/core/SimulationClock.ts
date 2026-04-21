@@ -26,6 +26,11 @@ export class SimulationClock {
   getCalendar(): SimulationCalendar {
     return { ...this.calendar };
   }
+
+  restore(tick: number, calendar: SimulationCalendar): void {
+    this.tick = tick;
+    this.calendar = { ...calendar };
+  }
 }
 
 export function createInitialCalendar(): SimulationCalendar {

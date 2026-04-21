@@ -187,3 +187,17 @@ Phase 10: Completed
     - Added Vitest coverage for diagnostic selector issues, severity ordering, door utilization, and queue pressure.
     - Verification completed: `npm run test` passed with 87 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
     - Local dev server was verified at `http://127.0.0.1:5173` with HTTP 200.
+
+Phase 11: Completed
+    - Saved the finalized Phase 11 plan to `memory-bank/phase-11-plan.md`.
+    - Added a versioned save schema with slot metadata, serialized warehouse map data, and a JSON-compatible authoritative game-state payload.
+    - Implemented `GameStateSerializer` to serialize runtime state and reconstruct loaded games with a real `WarehouseMap`, rebuilt zones, restored zone usage, and paused resume behavior.
+    - Replaced the save/load stub with an injectable `SaveLoadService` that can save, load, list, delete, validate, and report explicit errors for missing, malformed, or unsupported save payloads.
+    - Upgraded `LocalSaveRepository` with an injected storage adapter, slot listing, delete support, malformed metadata handling, and three MVP save slots.
+    - Added `SimulationRunner.replaceState` and `SimulationClock.restore` so loaded state can replace the authoritative simulation while notifying React and Phaser subscribers immediately.
+    - Added a compact Save/Load dialog with slot metadata, Save, Load, and Delete actions, plus a top-HUD entry point.
+    - Expanded UI store state and styling for save/load dialog visibility and player-facing save/load result messages.
+    - Upgraded `ConfigRepository` with validation for config arrays, duplicate ids, freight-zone compatibility references, required labor roles, and core non-negative numeric balancing fields.
+    - Added persistence and config Vitest coverage for save payloads, reconstructed loads, invalid loads, slot listing/deletion, subscriber notification, monthly-planning saves, active freight lifecycle saves, and checked-in config validity.
+    - Verification completed: `npm run test` passed with 97 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+    - Local dev server was verified at `http://127.0.0.1:5173` with HTTP 200.
