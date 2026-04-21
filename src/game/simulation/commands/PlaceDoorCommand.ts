@@ -1,4 +1,9 @@
 import type { DoorNode } from "../world/DoorNode";
+import {
+  formatCurrencyAmount,
+  getDoorPlacementCost,
+  trySpendCapitalCost,
+} from "../economy/buildCosts";
 import type { Command, CommandContext } from "./Command";
 import { commandFailed, commandSucceeded } from "./Command";
 
@@ -38,6 +43,12 @@ export class PlaceDoorCommand implements Command<"place-door"> {
 
     if (existingDoor) {
       return commandFailed("A door already exists on this tile");
+    }
+
+    const cost = getDoorPlacementCost(this.mode);
+
+    if (!trySpendCapitalCost(context.state, cost)) {
+      return commandFailed(`Not enough cash to place a door (${formatCurrencyAmount(cost)})`);
     }
 
     const doorId = `door-${context.state.freightFlow.nextDoorSequence

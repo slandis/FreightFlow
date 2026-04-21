@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import freightClasses from "../../data/config/freightClasses.json";
+import { PlaceDoorCommand } from "../../game/simulation/commands/PlaceDoorCommand";
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
 import type { FreightFlowState } from "../../game/simulation/freight/FreightFlowState";
 import type { Trailer } from "../../game/simulation/freight/Trailer";
@@ -30,16 +31,12 @@ function createYardTrailer(id: string, arrivalTick: number): Trailer {
 }
 
 describe("inbound freight flow", () => {
-  it("creates initial flex doors and marks dock-edge door tiles", () => {
+  it("starts with no doors or active dock-edge door tiles", () => {
     const runner = new SimulationRunner();
     const state = runner.getState();
 
-    expect(state.freightFlow.doors).toHaveLength(8);
-    expect(state.freightFlow.doors.every((door) => door.mode === "flex")).toBe(true);
-
-    for (const door of state.freightFlow.doors) {
-      expect(state.warehouseMap.getTile(door.x, door.y)?.isActiveDoor).toBe(true);
-    }
+    expect(state.freightFlow.doors).toHaveLength(0);
+    expect(state.warehouseMap.getTile(8, 0)?.isActiveDoor).toBe(false);
   });
 
   it("does not spawn inbound trailers before tick 60", () => {
@@ -71,20 +68,17 @@ describe("inbound freight flow", () => {
     const runner = new SimulationRunner();
     const freightFlow = runner.getState().freightFlow;
 
+    runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    runner.dispatch(new PlaceDoorCommand(8, 0, "inbound"));
+    runner.dispatch(new PlaceDoorCommand(12, 0, "inbound"));
+
     freightFlow.trailers = [
       createYardTrailer("trailer-newer", 20),
       createYardTrailer("trailer-older", 10),
       createYardTrailer("trailer-extra", 30),
     ];
-    freightFlow.doors[0].state = "idle";
     freightFlow.doors[1].state = "reserved";
     freightFlow.doors[1].trailerId = "existing";
-    freightFlow.doors[2].state = "idle";
-    freightFlow.doors[3].state = "idle";
-    freightFlow.doors[4].state = "idle";
-    freightFlow.doors[5].state = "idle";
-    freightFlow.doors[6].state = "idle";
-    freightFlow.doors[7].state = "idle";
 
     runner.tick();
 
@@ -97,6 +91,7 @@ describe("inbound freight flow", () => {
     const runner = new SimulationRunner();
     const freightFlow = runner.getState().freightFlow;
 
+    runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
     freightFlow.trailers = [createYardTrailer("trailer-waiting", 0)];
     for (const door of freightFlow.doors) {
       door.state = "reserved";
@@ -112,6 +107,9 @@ describe("inbound freight flow", () => {
   it("uses another door when one dock area is out of capacity", () => {
     const runner = new SimulationRunner();
     const freightFlow = runner.getState().freightFlow;
+    runner.dispatch(new PlaceDoorCommand(8, 0, "inbound"));
+    runner.dispatch(new PlaceDoorCommand(12, 0, "inbound"));
+
     const fullTileIndexes = [7, 8, 9].map((x) =>
       runner.getState().warehouseMap.getTileIndex(x, 0),
     );
@@ -149,6 +147,9 @@ describe("inbound freight flow", () => {
     const runner = new SimulationRunner();
     const freightFlow = runner.getState().freightFlow;
     const eventTypes: string[] = [];
+
+    runner.dispatch(new PlaceDoorCommand(8, 0, "inbound"));
+    runner.dispatch(new PlaceDoorCommand(14, 0, "inbound"));
 
     runner.getEventBus().subscribe("alert-raised", (event) => {
       eventTypes.push(event.type);
@@ -199,6 +200,8 @@ describe("inbound freight flow", () => {
   it("switch movement takes eight ticks after door assignment", () => {
     const runner = new SimulationRunner();
 
+    runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+
     runTicks(runner, 60);
     const trailer = runner.getState().freightFlow.trailers[0];
 
@@ -216,6 +219,8 @@ describe("inbound freight flow", () => {
 
   it("unloading reduces remaining cubic feet and completes freight to dock", () => {
     const runner = new SimulationRunner();
+
+    runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
 
     runTicks(runner, 68);
     const freightFlow = runner.getState().freightFlow;
@@ -244,6 +249,7 @@ describe("inbound freight flow", () => {
 
   it("recalculates queues, dwell, and inbound KPIs as freight completes", () => {
     const runner = new SimulationRunner();
+    runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
 
     runTicks(runner, 60);
     expect(runner.getState().freightFlow.queues.switchingTrailers).toBe(1);
@@ -278,6 +284,8 @@ describe("inbound freight flow", () => {
   it("emits trailer and unload events through the shared event bus", () => {
     const runner = new SimulationRunner();
     const eventTypes: string[] = [];
+
+    runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
 
     runner.getEventBus().subscribeAll((event) => {
       if (

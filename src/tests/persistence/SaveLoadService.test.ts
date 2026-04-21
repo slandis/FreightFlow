@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { getDoorPlacementCost, getZonePaintCost } from "../../game/simulation/economy/buildCosts";
 import { PaintZoneCommand } from "../../game/simulation/commands/PaintZoneCommand";
 import { PlaceDoorCommand } from "../../game/simulation/commands/PlaceDoorCommand";
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
@@ -80,9 +81,15 @@ describe("SaveLoadService", () => {
 
     expect(result.success).toBe(true);
     expect(state.speed).toBe(GameSpeed.Paused);
-    expect(state.cash).toBe(100000);
+    expect(state.cash).toBe(
+      100000 -
+        getZonePaintCost(TileZoneType.Travel) -
+        getZonePaintCost(TileZoneType.StandardStorage) -
+        getDoorPlacementCost("inbound"),
+    );
     expect(state.warehouseMap.getTile(7, 5)?.zoneType).toBe(TileZoneType.StandardStorage);
     expect(state.warehouseMap.getTile(7, 5)?.validForStorage).toBe(true);
+    expect(state.economy.currentMonthCapitalCost).toBeGreaterThan(0);
     expect(state.freightFlow.doors.some((door) => door.x === 4 && door.mode === "inbound")).toBe(
       true,
     );

@@ -1,32 +1,12 @@
 import type { FreightFlowState } from "../freight/FreightFlowState";
 import type { WarehouseMap } from "./WarehouseMap";
-import type { DoorNode } from "./DoorNode";
-
-const INITIAL_DOOR_X_COORDINATES = [8, 14, 20, 26, 32, 38, 44, 50];
 
 export function createInitialFreightFlowState(map: WarehouseMap): FreightFlowState {
-  const doors: DoorNode[] = INITIAL_DOOR_X_COORDINATES.map((x, index) => {
-    const tile = map.getTile(x, 0);
-
-    if (tile) {
-      tile.isActiveDoor = true;
-    }
-
-    return {
-      id: `door-${(index + 1).toString().padStart(3, "0")}`,
-      x,
-      y: 0,
-      mode: "flex",
-      trailerId: null,
-      state: "idle",
-    };
-  });
-
   return {
     trailers: [],
     freightBatches: [],
     outboundOrders: [],
-    doors,
+    doors: [],
     queues: {
       yardTrailers: 0,
       switchingTrailers: 0,
@@ -49,6 +29,6 @@ export function createInitialFreightFlowState(map: WarehouseMap): FreightFlowSta
     nextTrailerSequence: 1,
     nextFreightBatchSequence: 1,
     nextOutboundOrderSequence: 1,
-    nextDoorSequence: doors.length + 1,
+    nextDoorSequence: 1,
   };
 }

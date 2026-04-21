@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PaintZoneCommand } from "../../game/simulation/commands/PaintZoneCommand";
+import { PlaceDoorCommand } from "../../game/simulation/commands/PlaceDoorCommand";
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
 import type { FreightBatch } from "../../game/simulation/freight/FreightBatch";
 import {
@@ -68,6 +69,7 @@ describe("diagnostic selectors", () => {
     const runner = new SimulationRunner();
     const state = runner.getState();
 
+    runner.dispatch(new PlaceDoorCommand(4, 0, "flex"));
     state.freightFlow.doors[0].state = "loading";
     state.freightFlow.queues.yardTrailers = 5;
     state.freightFlow.queues.dockFreightCubicFeet = 4500;
@@ -84,6 +86,9 @@ describe("diagnostic selectors", () => {
   it("surfaces dock-capacity blockage as a critical issue", () => {
     const runner = new SimulationRunner();
     const state = runner.getState();
+
+    runner.dispatch(new PlaceDoorCommand(8, 0, "inbound"));
+    runner.dispatch(new PlaceDoorCommand(14, 0, "inbound"));
 
     state.freightFlow.trailers.push({
       id: "trailer-blocked",

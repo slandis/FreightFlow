@@ -15,6 +15,18 @@ interface ZoneTypeConfig {
   name: string;
 }
 
+export interface StorageZoneSummary {
+  zoneId: string;
+  zoneName: string;
+  zoneType: TileZoneType;
+  usedCubicFeet: number;
+  capacityCubicFeet: number;
+  utilization: number;
+  tileCount: number;
+  validForStorage: boolean;
+  invalidReason: string | null;
+}
+
 export interface DockStorageNeed {
   freightClassId: string;
   freightClassName: string;
@@ -201,6 +213,30 @@ export function selectStorageCapacitySummary(state: GameState) {
     usedCubicFeet: storageZones.reduce((total, zone) => total + zone.usedCubicFeet, 0),
     capacityCubicFeet: storageZones.reduce((total, zone) => total + zone.capacityCubicFeet, 0),
   };
+}
+
+export function selectStorageZoneSummaries(state: GameState): StorageZoneSummary[] {
+  return state.warehouseMap.zones
+    .filter((zone) => zone.capacityCubicFeet > 0)
+    .map((zone) => ({
+      zoneId: zone.id,
+      zoneName: zoneNameByType.get(zone.zoneType) ?? zone.zoneType,
+      zoneType: zone.zoneType,
+      usedCubicFeet: zone.usedCubicFeet,
+      capacityCubicFeet: zone.capacityCubicFeet,
+      utilization:
+        zone.capacityCubicFeet > 0 ? zone.usedCubicFeet / zone.capacityCubicFeet : 0,
+      tileCount: zone.tileIndexes.length,
+      validForStorage: zone.validForStorage,
+      invalidReason: zone.invalidReason,
+    }))
+    .sort((first, second) => {
+      if (second.usedCubicFeet !== first.usedCubicFeet) {
+        return second.usedCubicFeet - first.usedCubicFeet;
+      }
+
+      return first.zoneName.localeCompare(second.zoneName);
+    });
 }
 
 export function selectStorageQueueCubicFeet(state: GameState): number {

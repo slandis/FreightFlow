@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AssignLaborCommand } from "../../game/simulation/commands/AssignLaborCommand";
 import { PaintZoneCommand } from "../../game/simulation/commands/PaintZoneCommand";
+import { PlaceDoorCommand } from "../../game/simulation/commands/PlaceDoorCommand";
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
 import type { FreightBatch } from "../../game/simulation/freight/FreightBatch";
 import type { OutboundOrder } from "../../game/simulation/freight/OutboundOrder";
@@ -135,6 +136,7 @@ describe("labor pools and queue processing", () => {
     const runner = new SimulationRunner();
     const state = runner.getState();
 
+    runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
     runner.dispatch(new AssignLaborCommand(LaborRole.SwitchDriver, 0));
     state.freightFlow.trailers.push(createYardTrailer());
 
@@ -218,6 +220,7 @@ describe("labor pools and queue processing", () => {
     expect(pickRunner.getState().freightFlow.outboundOrders[0].state).toBe("open");
 
     const loadRunner = new SimulationRunner();
+    loadRunner.dispatch(new PlaceDoorCommand(4, 0, "outbound"));
     loadRunner.dispatch(new AssignLaborCommand(LaborRole.Load, 0));
     loadRunner.getState().freightFlow.freightBatches.push(
       createBatch({

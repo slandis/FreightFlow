@@ -197,6 +197,8 @@ Enable player editing of warehouse layout through travel and storage zoning.
 - implement tile painting input in Phaser
 - implement `PaintZoneCommand`
 - implement erase/unassign behavior
+- add command-time capital costs for travel, storage, and erase actions
+- define per-tile storage cost factors so specialized storage is more expensive than standard storage
 - create zone overlay renderer
 - create travel tile representation
 - add immediate validation for storage tiles within 3 tiles of travel
@@ -206,6 +208,7 @@ Enable player editing of warehouse layout through travel and storage zoning.
 ### Deliverables
 - travel tiles can be painted
 - storage zones can be painted
+- travel, storage, and erase actions immediately deduct cash when the player can afford them
 - zones visually update on the map
 - invalid zones are visibly marked
 - right-side panel can inspect a selected tile/zone
@@ -215,6 +218,8 @@ Enable player editing of warehouse layout through travel and storage zoning.
 - repainting overwrites previous zone assignment correctly
 - invalid zone feedback appears immediately after edits
 - outer dock edge remains protected from unintended reassignment
+- no-op or protected edits do not charge cash
+- insufficient cash blocks the zone edit without mutating the map
 
 ### Dependencies
 - tile hit testing from Phase 2
@@ -222,6 +227,7 @@ Enable player editing of warehouse layout through travel and storage zoning.
 
 ### Implementation Notes
 At first, zone aggregation may be rebuilt fully after each paint operation. Optimize later only if necessary.
+Build/edit costs should be calculated in the simulation layer against only the tiles that actually change, so drag-painting never partially applies because of per-tile UI logic.
 
 ---
 
@@ -270,6 +276,7 @@ Create the first fully simulated freight workflow from yard arrival to dock unlo
 - add trailer yard queue representation
 - create active door model and initial door assignment logic
 - add player-facing door placement/removal commands for dock-edge tiles
+- charge cash immediately when players place doors while keeping removal free and non-refundable
 - support flex, inbound, outbound, and remove-door tools from the left tool panel
 - validate door edits through simulation commands, including dock-edge-only placement, duplicate prevention, and idle-only removal
 - render door states and trailer markers
@@ -282,6 +289,7 @@ Create the first fully simulated freight workflow from yard arrival to dock unlo
 - inbound trailers appear over time
 - trailers can be assigned to doors
 - players can add or remove idle dock-edge doors
+- door placement spends cash immediately and fails loudly when the player cannot afford it
 - newly placed doors mark their tiles active, render immediately, and participate in inbound/outbound assignment
 - trailers progress through yard -> door -> unload stages
 - queue sizes and dwell times are tracked
@@ -291,6 +299,7 @@ Create the first fully simulated freight workflow from yard arrival to dock unlo
 - only available doors receive new inbound work
 - placed doors are available to freight assignment immediately
 - busy doors cannot be removed while reserved, occupied, loading, or unloading
+- door removal remains free and provides no refund
 - dwell times increment as expected
 - visible map state reflects trailer progression
 
@@ -397,6 +406,7 @@ Introduce secondary management systems that affect performance and long-term out
 - implement `ContractSystem` baseline
 - wire throughput to revenue
 - wire payroll and budgets to cost
+- add a separate capital-cost bucket for one-time build/edit spending
 - surface key scores in HUD and panels
 - add alert generation for critical thresholds
 
@@ -405,6 +415,7 @@ Introduce secondary management systems that affect performance and long-term out
 - morale, condition, safety, and satisfaction update over time
 - KPI metrics are visible and reactive
 - critical operational failures trigger alerts
+- one-time build/edit spending is tracked separately from recurring operating cost
 
 ### Validation Checklist
 - throughput affects revenue correctly
@@ -413,6 +424,7 @@ Introduce secondary management systems that affect performance and long-term out
 - low morale or safety can be observed affecting outcomes
 - baseline labor, budget, and fixed operating costs stay within a believable range relative to baseline contract revenue
 - economy constants are shared across finance, planning analysis, and contract analysis to avoid scale drift
+- capital spending persists through save/load without being folded into recurring operating cost
 
 ### Dependencies
 - throughput loop functioning end to end
@@ -421,6 +433,7 @@ Introduce secondary management systems that affect performance and long-term out
 ### Implementation Notes
 Early formulas can be intentionally simple as long as cause and effect are visible.
 Keep recurring labor, budget, and fixed operating cost constants on the same unit scale as baseline freight revenue so the default operation is strained but viable.
+Capital spending for map edits should hit cash immediately through authoritative commands and be recorded separately from recurring monthly operating expenses.
 
 ---
 
@@ -491,6 +504,7 @@ Make the game understandable during normal play without heavy developer interpre
 - improve map readability and visual hierarchy
 - add selector-driven operational issues so alerts and panels share the same simulation-authored diagnosis
 - add UI-only overlay and focus state for React-to-Phaser map diagnosis
+- add per-zone storage-capacity summaries in the operations panel so storage utilization is visible without map-art overlays
 
 ### Deliverables
 - main screen supports most player decisions
@@ -500,6 +514,7 @@ Make the game understandable during normal play without heavy developer interpre
 - dense operational diagnostics can be expanded only when needed
 - map overlays can be switched between storage, zone, travel, capacity, door, and queue views
 - alerts and urgent panel issues can focus relevant map tiles when a location exists
+- storage zones can be scanned from the HUD by utilization, capacity, validity, and zone id
 
 ### Validation Checklist
 - player can identify a broken area quickly
@@ -509,6 +524,7 @@ Make the game understandable during normal play without heavy developer interpre
 - warnings correspond to real simulation conditions
 - diagnostic selectors have focused unit coverage
 - production build and local browser smoke check pass
+- storage-zone summaries match authoritative zone usage and validity state
 
 ### Dependencies
 - underlying systems must already exist
@@ -516,6 +532,7 @@ Make the game understandable during normal play without heavy developer interpre
 ### Implementation Notes
 This phase is critical. A good simulation with poor readability will test badly.
 Diagnostic rendering should remain mode-aware and disposable: Phaser redraws from the latest simulation snapshot and UI overlay mode, while React only requests overlays or map focus.
+When map-art experiments are too noisy or visually ambiguous, prefer selector-driven HUD diagnostics such as compact progress bars over adding decorative rendering complexity.
 
 ---
 

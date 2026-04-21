@@ -39,7 +39,7 @@ describe("monthly planning", () => {
     expect(state.planning.queuedPlan).toBeNull();
     expect(state.planning.latestSnapshot?.monthKey).toBe("Y1-M1");
     expect(state.contracts.pendingOffers).toHaveLength(4);
-    expect(state.speed).toBe(GameSpeed.Slow);
+    expect(state.speed).toBe(GameSpeed.Paused);
   });
 
   it("opens planning once at the month boundary and shifts speed to slow", () => {

@@ -443,6 +443,64 @@ button {
   margin-top: 2px;
 }
 
+.storage-zone-capacity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.storage-zone-capacity-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border-left: 3px solid #5fbf8f;
+  padding-left: 8px;
+}
+
+.storage-zone-capacity-list li.busy {
+  border-left-color: #e6b655;
+}
+
+.storage-zone-capacity-list li.invalid {
+  border-left-color: #d96c5f;
+}
+
+.storage-zone-capacity-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.storage-zone-capacity-header div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.storage-zone-capacity-header small,
+.storage-zone-capacity-list small {
+  color: rgba(238, 244, 242, 0.72);
+}
+
+.storage-zone-capacity-bar {
+  position: relative;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.storage-zone-capacity-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(95, 191, 143, 0.88), rgba(230, 182, 85, 0.88));
+}
+
 .bottom-kpi-bar {
   right: 12px;
   bottom: 12px;

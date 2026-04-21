@@ -25,6 +25,7 @@ import {
   selectOutboundQueueSummary,
   selectOutboundShippedCubicFeet,
   selectStorageCapacitySummary,
+  selectStorageZoneSummaries,
   selectStorageQueueCubicFeet,
   selectTotalStoredCubicFeet,
 } from "../../../game/simulation/selectors/queueSelectors";
@@ -50,6 +51,7 @@ export function RightOperationsPanel() {
   const averageDoorDwell = useSimulationState(selectAverageDoorDwell);
   const storedCubicFeet = useSimulationState(selectTotalStoredCubicFeet);
   const storageCapacity = useSimulationState(selectStorageCapacitySummary);
+  const storageZones = useSimulationState(selectStorageZoneSummaries);
   const storageQueueCubicFeet = useSimulationState(selectStorageQueueCubicFeet);
   const outboundQueues = useSimulationState(selectOutboundQueueSummary);
   const outboundShippedCubicFeet = useSimulationState(selectOutboundShippedCubicFeet);
@@ -443,6 +445,49 @@ export function RightOperationsPanel() {
           </ul>
         ) : (
           <p>Dock is clear.</p>
+        )}
+      </CollapsibleSection>
+      <CollapsibleSection title="Storage Zones">
+        {storageZones.length > 0 ? (
+          <ul className="storage-zone-capacity-list">
+            {storageZones.map((zone) => (
+              <li
+                className={!zone.validForStorage ? "invalid" : zone.utilization >= 0.85 ? "busy" : ""}
+                key={zone.zoneId}
+              >
+                <div className="storage-zone-capacity-header">
+                  <div>
+                    <strong>{zone.zoneName}</strong>
+                    <small>
+                      {zone.tileCount} tile{zone.tileCount === 1 ? "" : "s"} · {zone.zoneId}
+                    </small>
+                  </div>
+                  <span>{Math.round(zone.utilization * 100)}%</span>
+                </div>
+                <div
+                  aria-label={`${zone.zoneName} utilization`}
+                  aria-valuemax={100}
+                  aria-valuemin={0}
+                  aria-valuenow={Math.round(zone.utilization * 100)}
+                  className="storage-zone-capacity-bar"
+                  role="progressbar"
+                >
+                  <div
+                    className="storage-zone-capacity-fill"
+                    style={{ width: `${Math.max(0, Math.min(100, zone.utilization * 100))}%` }}
+                  />
+                </div>
+                <small>
+                  {zone.usedCubicFeet.toLocaleString()} / {zone.capacityCubicFeet.toLocaleString()} cu ft
+                </small>
+                {!zone.validForStorage ? (
+                  <small>{zone.invalidReason ?? "Storage zone is invalid"}</small>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No storage zones assigned.</p>
         )}
       </CollapsibleSection>
       <CollapsibleSection defaultOpen title={selectedTile ? "Selected Tile" : "Hover Tile"}>

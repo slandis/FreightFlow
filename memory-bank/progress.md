@@ -258,6 +258,19 @@ Phase 13: Implemented
     - Updated inbound generation, outbound demand creation, picking, loading, finance, and contract evaluation so active contracts now shape freight mix, revenue, service level, and dwell-penalty exposure.
     - Reworked the contract system and related alerts from a single baseline contract assumption to multi-contract evaluation with per-contract health, performance score, and aggregate service pressure.
     - Added a `Contracts` page to monthly planning that presents offer details, forecast ranges, penalty terms, challenge notes, and operational analysis before the player confirms the month.
+
+Build Costing: Completed
+    - Added `src/data/config/buildCosts.json` as the source of truth for travel, erase, storage-by-type, and door-placement costs.
+    - Added simulation-side build-cost helpers in `src/game/simulation/economy/buildCosts.ts` so cost calculation stays authoritative and shared across commands and UI labels.
+    - Added separate capital-spend tracking to economy state with lifetime and current-month totals plus the last capital-spend tick.
+    - Updated `PaintZoneCommand` and `PaintZoneAreaCommand` to charge only for tiles that actually change, including erase costs through the existing unassigned-zone path.
+    - Added per-storage-type pricing so specialized storage costs more than standard storage.
+    - Updated `PlaceDoorCommand` to spend cash immediately on successful door placement while keeping door removal free and non-refundable.
+    - Added insufficient-cash failures for map edits so paint and door commands do not mutate simulation state when the player cannot afford the action.
+    - Updated the left tool panel to show tile and door pricing directly in tool descriptions.
+    - Bumped the save schema to version `4` so the new economy shape is treated as a new save format.
+    - Added regression coverage for travel/storage/erase charging, changed-tile-only area pricing, unaffordable edits, door-placement spending, and save/load preservation of capital costs.
+    - Verification completed: targeted `npm test -- --run src/tests/simulation/PaintZoneCommand.test.ts src/tests/simulation/DoorPlacement.test.ts src/tests/persistence/SaveLoadService.test.ts` passed.
     - Added contract portfolio selectors and a paginated right-panel contract browser that shows 3 live contract cards per page with KPI score, service level, inventory cube, rolling throughput, estimated labor/day, estimated headcount/day, and penalty totals.
     - Bumped the save schema version so the richer contract/planning state is preserved through save/load.
     - Added and updated simulation/UI coverage for planning offer generation, offer acceptance, contract activation, attribution, alert behavior, and selector output.
@@ -295,3 +308,11 @@ Economy Scale Rebalance: Completed
     - Added regression coverage to keep baseline fixed labor and operating costs within a believable range relative to baseline contract revenue.
     - Added and updated economy and labor-analysis coverage so finance, planning analysis, and contract analysis all reflect the rebalanced cost scale consistently.
     - Verification completed: `npm test` passed with 127 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+
+Storage Zone Capacity Display: Completed
+    - Removed the prototype standard-storage tile-art experiment from Phaser rendering, preload, and tests after it proved visually noisy and not useful enough for gameplay readability.
+    - Added selector-driven `selectStorageZoneSummaries` output so the UI can read authoritative zone id, zone type, tile count, used cube, total capacity, utilization, and validity state directly from the simulation.
+    - Added a new `Storage Zones` section to the right Operations panel with compact progress bars, utilization percentages, used-versus-capacity totals, and invalid-zone messaging.
+    - Kept the map renderer simple and unchanged so storage visualization now improves clarity without increasing render complexity or asset maintenance.
+    - Added focused storage-flow coverage for zone summary and utilization calculations.
+    - Verification completed: `npm test` passed with 131 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.

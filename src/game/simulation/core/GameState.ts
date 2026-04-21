@@ -39,15 +39,18 @@ export interface EconomyState {
   lifetimeRevenue: number;
   lifetimeLaborCost: number;
   lifetimeOperatingCost: number;
+  lifetimeCapitalCost: number;
   lifetimeNet: number;
   currentMonthRevenue: number;
   currentMonthLaborCost: number;
   currentMonthOperatingCost: number;
+  currentMonthCapitalCost: number;
   currentMonthNet: number;
   revenuePerTick: number;
   laborCostPerTick: number;
   operatingCostPerTick: number;
   lastRevenueTick: number | null;
+  lastCapitalSpendTick: number | null;
 }
 
 export interface BudgetPlan {
@@ -253,15 +256,18 @@ export function createInitialEconomyState(): EconomyState {
     lifetimeRevenue: 0,
     lifetimeLaborCost: 0,
     lifetimeOperatingCost: 0,
+    lifetimeCapitalCost: 0,
     lifetimeNet: 0,
     currentMonthRevenue: 0,
     currentMonthLaborCost: 0,
     currentMonthOperatingCost: 0,
+    currentMonthCapitalCost: 0,
     currentMonthNet: 0,
     revenuePerTick: 0,
     laborCostPerTick: 0,
     operatingCostPerTick: 0,
     lastRevenueTick: null,
+    lastCapitalSpendTick: null,
   };
 }
 

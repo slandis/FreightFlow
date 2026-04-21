@@ -1,4 +1,10 @@
 import { useState, type ReactNode } from "react";
+import {
+  formatCurrencyAmount,
+  getDoorPlacementCost,
+  getEraseCost,
+  getZonePaintCost,
+} from "../../../game/simulation/economy/buildCosts";
 import { TileZoneType } from "../../../game/simulation/types/enums";
 import type { ActiveTool, OverlayMode } from "../../store/uiStore";
 import { useUiStore } from "../../store/uiStore";
@@ -19,7 +25,7 @@ const toolOptions: ToolOption[] = [
   {
     id: "erase",
     label: "Erase",
-    description: "Return tiles to unassigned",
+    description: `Return tiles to unassigned · ${formatCurrencyAmount(getEraseCost())}/tile`,
   },
 ];
 
@@ -27,32 +33,44 @@ const storageOptions: ToolOption[] = [
   {
     id: TileZoneType.Travel,
     label: "Travel",
-    description: "Operational access lanes",
+    description: `Operational access lanes · ${formatCurrencyAmount(
+      getZonePaintCost(TileZoneType.Travel),
+    )}/tile`,
   },
   {
     id: TileZoneType.StandardStorage,
     label: "Standard Storage",
-    description: "General freight",
+    description: `General freight · ${formatCurrencyAmount(
+      getZonePaintCost(TileZoneType.StandardStorage),
+    )}/tile`,
   },
   {
     id: TileZoneType.BulkStorage,
     label: "Bulk Storage",
-    description: "High-volume freight",
+    description: `High-volume freight · ${formatCurrencyAmount(
+      getZonePaintCost(TileZoneType.BulkStorage),
+    )}/tile`,
   },
   {
     id: TileZoneType.FastTurnStorage,
     label: "Fast-Turn Storage",
-    description: "Small quick-moving freight",
+    description: `Small quick-moving freight · ${formatCurrencyAmount(
+      getZonePaintCost(TileZoneType.FastTurnStorage),
+    )}/tile`,
   },
   {
     id: TileZoneType.OversizeStorage,
     label: "Oversize Storage",
-    description: "Irregular freight",
+    description: `Irregular freight · ${formatCurrencyAmount(
+      getZonePaintCost(TileZoneType.OversizeStorage),
+    )}/tile`,
   },
   {
     id: TileZoneType.SpecialHandlingStorage,
     label: "Special Handling",
-    description: "Care-sensitive freight",
+    description: `Care-sensitive freight · ${formatCurrencyAmount(
+      getZonePaintCost(TileZoneType.SpecialHandlingStorage),
+    )}/tile`,
   },
 ];
 
@@ -60,22 +78,28 @@ const doorOptions: ToolOption[] = [
   {
     id: "door-flex",
     label: "Flex Door",
-    description: "Place inbound/outbound dock door",
+    description: `Place inbound/outbound dock door · ${formatCurrencyAmount(
+      getDoorPlacementCost("flex"),
+    )} each`,
   },
   {
     id: "door-inbound",
     label: "Inbound Door",
-    description: "Place receiving-only dock door",
+    description: `Place receiving-only dock door · ${formatCurrencyAmount(
+      getDoorPlacementCost("inbound"),
+    )} each`,
   },
   {
     id: "door-outbound",
     label: "Outbound Door",
-    description: "Place shipping-only dock door",
+    description: `Place shipping-only dock door · ${formatCurrencyAmount(
+      getDoorPlacementCost("outbound"),
+    )} each`,
   },
   {
     id: "door-remove",
     label: "Remove Door",
-    description: "Remove idle dock doors",
+    description: "Remove idle dock doors · no refund",
   },
 ];
 

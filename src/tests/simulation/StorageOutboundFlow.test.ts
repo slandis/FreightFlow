@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { PaintZoneCommand } from "../../game/simulation/commands/PaintZoneCommand";
+import { PlaceDoorCommand } from "../../game/simulation/commands/PlaceDoorCommand";
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
 import type { FreightBatch } from "../../game/simulation/freight/FreightBatch";
 import type { OutboundOrder } from "../../game/simulation/freight/OutboundOrder";
-import { selectDockStorageNeeds } from "../../game/simulation/selectors/queueSelectors";
+import {
+  selectDockStorageNeeds,
+  selectStorageZoneSummaries,
+} from "../../game/simulation/selectors/queueSelectors";
 import { TileZoneType } from "../../game/simulation/types/enums";
 
 function runTicks(runner: SimulationRunner, ticks: number): void {
@@ -172,6 +176,29 @@ describe("storage and outbound freight flow", () => {
     });
   });
 
+  it("summarizes storage zones with utilization for the operations panel", () => {
+    const runner = new SimulationRunner();
+    const state = runner.getState();
+
+    paintStandardStorage(runner);
+    state.freightFlow.freightBatches.push(createBatch());
+
+    runTicks(runner, 3);
+
+    const zones = selectStorageZoneSummaries(state);
+
+    expect(zones).toHaveLength(1);
+    expect(zones[0]).toMatchObject({
+      zoneName: "Standard Storage",
+      zoneType: TileZoneType.StandardStorage,
+      usedCubicFeet: 900,
+      capacityCubicFeet: 1100,
+      tileCount: 2,
+      validForStorage: true,
+    });
+    expect(zones[0].utilization).toBeCloseTo(900 / 1100, 6);
+  });
+
   it("leaves freight on the dock when storage is invalid or full", () => {
     const invalidRunner = new SimulationRunner();
     invalidRunner.dispatch(new PaintZoneCommand(6, 5, TileZoneType.StandardStorage));
@@ -257,6 +284,8 @@ describe("storage and outbound freight flow", () => {
     const runner = new SimulationRunner();
     const state = runner.getState();
 
+    runner.dispatch(new PlaceDoorCommand(4, 0, "outbound"));
+
     state.freightFlow.freightBatches.push(
       createBatch({
         state: "picked",
@@ -294,6 +323,7 @@ describe("storage and outbound freight flow", () => {
     const runner = new SimulationRunner({ seed: 3 });
     const state = runner.getState();
 
+    runner.dispatch(new PlaceDoorCommand(4, 0, "flex"));
     paintStandardStorage(runner);
     state.freightFlow.freightBatches.push(createBatch());
 

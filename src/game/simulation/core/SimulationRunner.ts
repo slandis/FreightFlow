@@ -142,8 +142,9 @@ export class SimulationRunner {
         monthKey: this.state.planning.currentPlan.monthKey,
         regenerateOffers: true,
         resetCurrentMonthEconomy: true,
-        setSpeedToSlow: true,
+        setSpeedToSlow: false,
       });
+      this.state.speed = GameSpeed.Paused;
     }
   }
 

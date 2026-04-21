@@ -31,15 +31,18 @@ describe("SimulationRunner", () => {
     expect(runner.getState().calendar.minute).toBe(0);
   });
 
-  it("starts with a 64x64 warehouse map and dock edges", () => {
+  it("starts with a 64x64 warehouse map, protected dock edges, and no assigned doors", () => {
     const runner = new SimulationRunner();
-    const map = runner.getState().warehouseMap;
+    const state = runner.getState();
+    const map = state.warehouseMap;
 
     expect(map.width).toBe(64);
     expect(map.height).toBe(64);
     expect(map.tiles).toHaveLength(4096);
     expect(map.getTile(0, 0)?.zoneType).toBe(TileZoneType.Dock);
     expect(map.getTile(1, 1)?.zoneType).toBe(TileZoneType.Unassigned);
+    expect(state.freightFlow.doors).toHaveLength(0);
+    expect(map.getTile(8, 0)?.isActiveDoor).toBe(false);
   });
 
   it("dispatches commands against the authoritative state", () => {

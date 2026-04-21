@@ -1,0 +1,12 @@
+{
+  "travelPerTile": 50,
+  "erasePerTile": 15,
+  "storagePerTile": {
+    "standard-storage": 80,
+    "bulk-storage": 110,
+    "fast-turn-storage": 95,
+    "oversize-storage": 140,
+    "special-handling-storage": 180
+  },
+  "doorPlacement": 2500
+}

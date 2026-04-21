@@ -1,4 +1,9 @@
 import { TileZoneType } from "../types/enums";
+import {
+  estimatePaintSelectionCost,
+  formatCurrencyAmount,
+  trySpendCapitalCost,
+} from "../economy/buildCosts";
 import { isStorageZoneType } from "../world/ZoneManager";
 import type { Command, CommandContext } from "./Command";
 import { commandFailed, commandSucceeded } from "./Command";
@@ -28,11 +33,25 @@ export class PaintZoneAreaCommand implements Command<"paint-zone-area"> {
       return commandSucceeded();
     }
 
-    const changed = context.state.warehouseMap.paintTiles(this.tiles, this.zoneType);
+    const estimate = estimatePaintSelectionCost(
+      context.state.warehouseMap,
+      this.tiles,
+      this.zoneType,
+    );
 
-    if (!changed) {
+    if (estimate.changedTileCount === 0) {
       return commandSucceeded();
     }
+
+    if (!trySpendCapitalCost(context.state, estimate.cost)) {
+      return commandFailed(
+        `Not enough cash to assign ${estimate.changedTileCount} tiles (${formatCurrencyAmount(
+          estimate.cost,
+        )})`,
+      );
+    }
+
+    context.state.warehouseMap.paintTiles(estimate.changedTiles, this.zoneType);
 
     const events = context.state.warehouseMap.zones
       .filter((zone) => isStorageZoneType(zone.zoneType) && !zone.validForStorage)

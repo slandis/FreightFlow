@@ -1,4 +1,8 @@
 import { describe, expect, it } from "vitest";
+import {
+  getEraseCost,
+  getZonePaintCost,
+} from "../../game/simulation/economy/buildCosts";
 import { PaintZoneAreaCommand } from "../../game/simulation/commands/PaintZoneAreaCommand";
 import { PaintZoneCommand } from "../../game/simulation/commands/PaintZoneCommand";
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
@@ -7,21 +11,32 @@ import { TileZoneType } from "../../game/simulation/types/enums";
 describe("PaintZoneCommand", () => {
   it("paints an interior tile in the authoritative warehouse map", () => {
     const runner = new SimulationRunner();
+    const startingCash = runner.getState().cash;
 
     const result = runner.dispatch(new PaintZoneCommand(4, 4, TileZoneType.Travel));
 
     expect(result.success).toBe(true);
     expect(runner.getState().warehouseMap.getTile(4, 4)?.zoneType).toBe(TileZoneType.Travel);
+    expect(runner.getState().cash).toBe(startingCash - getZonePaintCost(TileZoneType.Travel));
+    expect(runner.getState().economy.currentMonthCapitalCost).toBe(
+      getZonePaintCost(TileZoneType.Travel),
+    );
   });
 
   it("erases painted interior tiles back to unassigned", () => {
     const runner = new SimulationRunner();
+    const startingCash = runner.getState().cash;
 
     runner.dispatch(new PaintZoneCommand(4, 4, TileZoneType.Travel));
     runner.dispatch(new PaintZoneCommand(4, 4, TileZoneType.Unassigned));
 
     expect(runner.getState().warehouseMap.getTile(4, 4)?.zoneType).toBe(
       TileZoneType.Unassigned,
+    );
+    expect(runner.getState().cash).toBe(
+      startingCash -
+        getZonePaintCost(TileZoneType.Travel) -
+        getEraseCost(),
     );
   });
 
@@ -36,12 +51,18 @@ describe("PaintZoneCommand", () => {
 
   it("repainting overwrites the previous interior assignment", () => {
     const runner = new SimulationRunner();
+    const startingCash = runner.getState().cash;
 
     runner.dispatch(new PaintZoneCommand(8, 8, TileZoneType.StandardStorage));
     runner.dispatch(new PaintZoneCommand(8, 8, TileZoneType.BulkStorage));
 
     expect(runner.getState().warehouseMap.getTile(8, 8)?.zoneType).toBe(
       TileZoneType.BulkStorage,
+    );
+    expect(runner.getState().cash).toBe(
+      startingCash -
+        getZonePaintCost(TileZoneType.StandardStorage) -
+        getZonePaintCost(TileZoneType.BulkStorage),
     );
   });
 
@@ -101,6 +122,7 @@ describe("PaintZoneCommand", () => {
 
   it("paints a multi-tile area with one authoritative command", () => {
     const runner = new SimulationRunner();
+    const startingCash = runner.getState().cash;
 
     const result = runner.dispatch(
       new PaintZoneAreaCommand(
@@ -119,10 +141,14 @@ describe("PaintZoneCommand", () => {
     expect(runner.getState().warehouseMap.getTile(5, 4)?.zoneType).toBe(TileZoneType.Travel);
     expect(runner.getState().warehouseMap.getTile(4, 5)?.zoneType).toBe(TileZoneType.Travel);
     expect(runner.getState().warehouseMap.getTile(5, 5)?.zoneType).toBe(TileZoneType.Travel);
+    expect(runner.getState().cash).toBe(
+      startingCash - getZonePaintCost(TileZoneType.Travel) * 4,
+    );
   });
 
   it("keeps dock edge tiles protected during area painting", () => {
     const runner = new SimulationRunner();
+    const startingCash = runner.getState().cash;
 
     runner.dispatch(
       new PaintZoneAreaCommand(
@@ -136,6 +162,40 @@ describe("PaintZoneCommand", () => {
 
     expect(runner.getState().warehouseMap.getTile(0, 0)?.zoneType).toBe(TileZoneType.Dock);
     expect(runner.getState().warehouseMap.getTile(1, 1)?.zoneType).toBe(TileZoneType.Travel);
+    expect(runner.getState().cash).toBe(
+      startingCash - getZonePaintCost(TileZoneType.Travel),
+    );
+  });
+
+  it("charges area paint only for tiles that actually change", () => {
+    const runner = new SimulationRunner();
+    const startingCash = runner.getState().cash;
+
+    runner.dispatch(new PaintZoneCommand(4, 4, TileZoneType.Travel));
+    runner.dispatch(
+      new PaintZoneAreaCommand(
+        [
+          { x: 4, y: 4 },
+          { x: 4, y: 4 },
+          { x: 5, y: 5 },
+        ],
+        TileZoneType.Travel,
+      ),
+    );
+
+    expect(runner.getState().cash).toBe(
+      startingCash - getZonePaintCost(TileZoneType.Travel) * 2,
+    );
+  });
+
+  it("fails loudly when the player cannot afford the edit", () => {
+    const runner = new SimulationRunner({ startingCash: 25 });
+
+    const result = runner.dispatch(new PaintZoneCommand(4, 4, TileZoneType.StandardStorage));
+
+    expect(result.success).toBe(false);
+    expect(result.errors).toEqual(["Not enough cash to assign 1 tile ($80)"]);
+    expect(runner.getState().warehouseMap.getTile(4, 4)?.zoneType).toBe(TileZoneType.Unassigned);
   });
 
   it("updates command and invalidation event debug metadata", () => {

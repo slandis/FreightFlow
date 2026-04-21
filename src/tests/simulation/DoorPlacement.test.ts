@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { getDoorPlacementCost } from "../../game/simulation/economy/buildCosts";
 import { PlaceDoorCommand } from "../../game/simulation/commands/PlaceDoorCommand";
 import { RemoveDoorCommand } from "../../game/simulation/commands/RemoveDoorCommand";
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
@@ -26,6 +27,7 @@ function createYardTrailer(id: string): Trailer {
 describe("door placement", () => {
   it("places an idle door on a dock-edge tile and marks the tile active", () => {
     const runner = new SimulationRunner();
+    const startingCash = runner.getState().cash;
     const result = runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
     const door = runner.getState().freightFlow.doors.find((candidateDoor) => candidateDoor.x === 4);
 
@@ -38,12 +40,26 @@ describe("door placement", () => {
       trailerId: null,
     });
     expect(runner.getState().warehouseMap.getTile(4, 0)?.isActiveDoor).toBe(true);
+    expect(runner.getState().cash).toBe(startingCash - getDoorPlacementCost("inbound"));
+    expect(runner.getState().economy.currentMonthCapitalCost).toBe(getDoorPlacementCost("inbound"));
     expect(runner.getState().debug.lastCommandType).toBe("place-door");
     expect(runner.getState().debug.lastEventType).toBe("door-placed");
   });
 
+  it("fails door placement when the player cannot afford it", () => {
+    const runner = new SimulationRunner({ startingCash: 1000 });
+
+    const result = runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+
+    expect(result.success).toBe(false);
+    expect(result.errors).toEqual(["Not enough cash to place a door ($2,500)"]);
+    expect(runner.getState().freightFlow.doors).toHaveLength(0);
+    expect(runner.getState().warehouseMap.getTile(4, 0)?.isActiveDoor).toBe(false);
+  });
+
   it("rejects interior, duplicate, and invalid-mode door placement", () => {
     const runner = new SimulationRunner();
+    runner.dispatch(new PlaceDoorCommand(8, 0, "flex"));
 
     expect(runner.dispatch(new PlaceDoorCommand(4, 4, "flex")).success).toBe(false);
     expect(runner.dispatch(new PlaceDoorCommand(8, 0, "flex")).success).toBe(false);
@@ -67,6 +83,7 @@ describe("door placement", () => {
 
   it("does not remove busy doors", () => {
     const runner = new SimulationRunner();
+    runner.dispatch(new PlaceDoorCommand(4, 0, "flex"));
     const door = runner.getState().freightFlow.doors[0];
 
     door.state = "reserved";
@@ -81,6 +98,7 @@ describe("door placement", () => {
 
   it("does not remove a door that is supporting occupied dock space", () => {
     const runner = new SimulationRunner();
+    runner.dispatch(new PlaceDoorCommand(4, 0, "flex"));
     const door = runner.getState().freightFlow.doors[0];
     const dockTileIndex = runner.getState().warehouseMap.getTileIndex(door.x, door.y);
 
