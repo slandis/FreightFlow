@@ -12,6 +12,11 @@ const doorColors: Record<DoorNode["state"], number> = {
   unloading: 0x6aa076,
   loading: 0x8d70a8,
 };
+const doorModeBorderColors: Record<DoorNode["mode"], number> = {
+  inbound: 0x5ea3c6,
+  outbound: 0x6aa076,
+  flex: 0x8d70a8,
+};
 const dockCapacityIndicatorColors = {
   available: 0xeef4f2,
   warning: 0xf2c14e,
@@ -53,7 +58,7 @@ export class DoorRenderer {
       const dockUsageRatio = dockUsageRatioByDoorId.get(door.id) ?? 0;
 
       this.layer.fillStyle(doorColors[door.state], 0.95);
-      this.layer.lineStyle(2, 0x182126, 0.9);
+      this.layer.lineStyle(2, doorModeBorderColors[door.mode], 1);
       this.layer.fillRoundedRect(center.x - 12, markerY - 8, 24, 16, 3);
       this.layer.strokeRoundedRect(center.x - 12, markerY - 8, 24, 16, 3);
 

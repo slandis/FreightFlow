@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { PaintZoneAreaCommand } from "../../game/simulation/commands/PaintZoneAreaCommand";
 import { PaintZoneCommand } from "../../game/simulation/commands/PaintZoneCommand";
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
 import { TileZoneType } from "../../game/simulation/types/enums";
@@ -96,6 +97,45 @@ describe("PaintZoneCommand", () => {
     expect(bulkZones).toHaveLength(1);
     expect(bulkZones[0].tileIndexes).toHaveLength(1);
     expect(bulkZones[0].capacityCubicFeet).toBe(900);
+  });
+
+  it("paints a multi-tile area with one authoritative command", () => {
+    const runner = new SimulationRunner();
+
+    const result = runner.dispatch(
+      new PaintZoneAreaCommand(
+        [
+          { x: 4, y: 4 },
+          { x: 5, y: 4 },
+          { x: 4, y: 5 },
+          { x: 5, y: 5 },
+        ],
+        TileZoneType.Travel,
+      ),
+    );
+
+    expect(result.success).toBe(true);
+    expect(runner.getState().warehouseMap.getTile(4, 4)?.zoneType).toBe(TileZoneType.Travel);
+    expect(runner.getState().warehouseMap.getTile(5, 4)?.zoneType).toBe(TileZoneType.Travel);
+    expect(runner.getState().warehouseMap.getTile(4, 5)?.zoneType).toBe(TileZoneType.Travel);
+    expect(runner.getState().warehouseMap.getTile(5, 5)?.zoneType).toBe(TileZoneType.Travel);
+  });
+
+  it("keeps dock edge tiles protected during area painting", () => {
+    const runner = new SimulationRunner();
+
+    runner.dispatch(
+      new PaintZoneAreaCommand(
+        [
+          { x: 0, y: 0 },
+          { x: 1, y: 1 },
+        ],
+        TileZoneType.Travel,
+      ),
+    );
+
+    expect(runner.getState().warehouseMap.getTile(0, 0)?.zoneType).toBe(TileZoneType.Dock);
+    expect(runner.getState().warehouseMap.getTile(1, 1)?.zoneType).toBe(TileZoneType.Travel);
   });
 
   it("updates command and invalidation event debug metadata", () => {

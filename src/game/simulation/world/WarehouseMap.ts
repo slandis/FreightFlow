@@ -65,6 +65,27 @@ export class WarehouseMap {
     return true;
   }
 
+  paintTiles(tiles: Array<{ x: number; y: number }>, zoneType: TileZoneType): boolean {
+    let changed = false;
+
+    for (const coordinates of tiles) {
+      const tile = this.getTile(coordinates.x, coordinates.y);
+
+      if (!tile || tile.isDockEdge || tile.zoneType === zoneType) {
+        continue;
+      }
+
+      tile.zoneType = zoneType;
+      changed = true;
+    }
+
+    if (changed) {
+      this.rebuildZones();
+    }
+
+    return changed;
+  }
+
   rebuildZones(): void {
     this.zones = this.zoneManager.rebuildZones(this);
   }

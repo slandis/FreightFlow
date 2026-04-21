@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { useUiStore, type TileSummary } from "../../../ui/store/uiStore";
 import { PaintZoneCommand } from "../../simulation/commands/PaintZoneCommand";
+import { PaintZoneAreaCommand } from "../../simulation/commands/PaintZoneAreaCommand";
 import { PlaceDoorCommand } from "../../simulation/commands/PlaceDoorCommand";
 import { RemoveDoorCommand } from "../../simulation/commands/RemoveDoorCommand";
 import type { SimulationRunner } from "../../simulation/core/SimulationRunner";
@@ -10,6 +11,7 @@ import type { Tile } from "../../simulation/world/Tile";
 import type { DoorNode } from "../../simulation/world/DoorNode";
 import { screenToTile } from "../rendering/isometric";
 import type { TileRenderer } from "../rendering/TileRenderer";
+import { getRectangularPaintSelection } from "./paintSelection";
 
 const MIN_ZOOM = 0.45;
 const MAX_ZOOM = 1.8;
@@ -24,8 +26,8 @@ export class MapInputController {
   private hasDragged = false;
   private lastPointerX = 0;
   private lastPointerY = 0;
-  private lastPaintedTile: Tile | null = null;
-  private readonly paintedTileKeys = new Set<string>();
+  private paintStartTile: Tile | null = null;
+  private paintPreviewTiles: Tile[] = [];
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -56,14 +58,16 @@ export class MapInputController {
     this.isPanning = pointer.rightButtonDown() || pointer.middleButtonDown();
     this.isPainting = false;
     this.isDoorEditing = false;
-    this.lastPaintedTile = null;
-    this.paintedTileKeys.clear();
+    this.paintStartTile = null;
+    this.paintPreviewTiles = [];
+    this.renderer.highlightPaintPreview([]);
 
     this.updateHoveredTile(pointer);
 
     if (!this.isPanning && this.getPointerButton(pointer) === 0 && this.isPaintToolActive()) {
       this.isPainting = true;
-      this.paintHoveredTile();
+      this.paintStartTile = this.hoveredTile;
+      this.updatePaintPreview();
     }
 
     if (!this.isPanning && this.getPointerButton(pointer) === 0 && this.isDoorToolActive()) {
@@ -91,7 +95,7 @@ export class MapInputController {
     this.updateHoveredTile(pointer);
 
     if (this.isPainting && pointer.leftButtonDown()) {
-      this.paintHoveredTile();
+      this.updatePaintPreview();
     }
   }
 
@@ -104,9 +108,11 @@ export class MapInputController {
     }
 
     if (this.isPainting) {
+      this.applyPaintSelection();
       this.isPainting = false;
-      this.lastPaintedTile = null;
-      this.paintedTileKeys.clear();
+      this.paintStartTile = null;
+      this.paintPreviewTiles = [];
+      this.renderer.highlightPaintPreview([]);
       return;
     }
 
@@ -167,6 +173,7 @@ export class MapInputController {
 
   refreshHighlights(): void {
     this.renderer.highlightHover(this.hoveredTile);
+    this.renderer.highlightPaintPreview(this.paintPreviewTiles);
     this.renderer.highlightSelection(this.selectedTile);
     useUiStore.getState().setHoveredTile(
       this.hoveredTile ? this.createTileSummary(this.hoveredTile) : null,
@@ -176,52 +183,42 @@ export class MapInputController {
     );
   }
 
-  private paintHoveredTile(): void {
-    const zoneType = this.getActivePaintZoneType();
-
-    if (!this.hoveredTile || !zoneType) {
+  private updatePaintPreview(): void {
+    if (!this.paintStartTile || !this.hoveredTile) {
       return;
     }
 
-    const tilesToPaint = this.lastPaintedTile
-      ? this.interpolateTiles(this.lastPaintedTile, this.hoveredTile)
-      : [this.hoveredTile];
-
-    for (const tile of tilesToPaint) {
-      const key = `${tile.x},${tile.y}`;
-
-      if (this.paintedTileKeys.has(key)) {
-        continue;
-      }
-
-      this.paintedTileKeys.add(key);
-      this.simulation.dispatch(new PaintZoneCommand(tile.x, tile.y, zoneType));
-    }
-
-    this.lastPaintedTile = this.hoveredTile;
+    this.paintPreviewTiles = getRectangularPaintSelection(
+      this.map,
+      this.paintStartTile,
+      this.hoveredTile,
+    );
+    this.renderer.highlightPaintPreview(this.paintPreviewTiles);
   }
 
-  private interpolateTiles(startTile: Tile, endTile: Tile): Tile[] {
-    const tiles: Tile[] = [];
-    const deltaX = endTile.x - startTile.x;
-    const deltaY = endTile.y - startTile.y;
-    const steps = Math.max(Math.abs(deltaX), Math.abs(deltaY));
+  private applyPaintSelection(): void {
+    const zoneType = this.getActivePaintZoneType();
 
-    if (steps === 0) {
-      return [endTile];
+    if (!zoneType) {
+      return;
     }
 
-    for (let step = 0; step <= steps; step += 1) {
-      const x = Math.round(startTile.x + (deltaX * step) / steps);
-      const y = Math.round(startTile.y + (deltaY * step) / steps);
-      const tile = this.map.getTile(x, y);
-
-      if (tile) {
-        tiles.push(tile);
-      }
+    if (this.paintPreviewTiles.length === 0) {
+      return;
     }
 
-    return tiles;
+    if (this.paintPreviewTiles.length === 1) {
+      const tile = this.paintPreviewTiles[0];
+      this.simulation.dispatch(new PaintZoneCommand(tile.x, tile.y, zoneType));
+      return;
+    }
+
+    this.simulation.dispatch(
+      new PaintZoneAreaCommand(
+        this.paintPreviewTiles.map((tile) => ({ x: tile.x, y: tile.y })),
+        zoneType,
+      ),
+    );
   }
 
   private isPaintToolActive(): boolean {

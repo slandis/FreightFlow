@@ -19,6 +19,7 @@ const tileFillColors: Record<TileZoneType, number> = {
 export class TileRenderer {
   private readonly baseLayer: Phaser.GameObjects.Graphics;
   private readonly hoverLayer: Phaser.GameObjects.Graphics;
+  private readonly paintPreviewLayer: Phaser.GameObjects.Graphics;
   private readonly selectionLayer: Phaser.GameObjects.Graphics;
 
   constructor(
@@ -28,9 +29,11 @@ export class TileRenderer {
   ) {
     this.baseLayer = scene.add.graphics();
     this.hoverLayer = scene.add.graphics();
+    this.paintPreviewLayer = scene.add.graphics();
     this.selectionLayer = scene.add.graphics();
     this.baseLayer.setDepth(0);
     this.hoverLayer.setDepth(20);
+    this.paintPreviewLayer.setDepth(25);
     this.selectionLayer.setDepth(30);
   }
 
@@ -60,6 +63,14 @@ export class TileRenderer {
     }
 
     this.drawTile(this.selectionLayer, tile, 0x000000, 0, 0xf0c85a, 3);
+  }
+
+  highlightPaintPreview(tiles: Tile[]): void {
+    this.paintPreviewLayer.clear();
+
+    for (const tile of tiles) {
+      this.drawTile(this.paintPreviewLayer, tile, 0xf0c85a, 0.18, 0xf6db8f, 1.8);
+    }
   }
 
   getOrigin(): IsometricOrigin {
