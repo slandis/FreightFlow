@@ -17,6 +17,7 @@ export interface FreightBatch {
     | "complete";
   createdTick: number;
   unloadedTick: number | null;
+  storageStartedTick?: number | null;
   storageZoneId: string | null;
   outboundOrderId: string | null;
   storedTick: number | null;

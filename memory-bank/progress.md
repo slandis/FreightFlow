@@ -262,3 +262,15 @@ Phase 13: Implemented
     - Bumped the save schema version so the richer contract/planning state is preserved through save/load.
     - Added and updated simulation/UI coverage for planning offer generation, offer acceptance, contract activation, attribution, alert behavior, and selector output.
     - Verification completed: `npm run test` passed with 111 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+
+Phase 14: Implemented
+    - Saved the finalized Phase 14 plan to `memory-bank/phase-14-plan.md`.
+    - Expanded authoritative labor state with month-to-date analytics counters for all seven labor roles, including processed cube, task counts, task ticks, headcount ticks, and role-level labor cost accumulation.
+    - Instrumented switch, unload, storage, pick, and load workflows so completed work now records direct labor-analysis metrics at the same simulation boundaries that move freight forward.
+    - Added estimated support-role attribution for sanitation and management so the analysis dialog can report support productivity without pretending they process discrete freight directly.
+    - Reset labor analytics on monthly planning rollover and preserved the new analytics state through save/load with a save schema bump to version 3.
+    - Expanded labor selectors with per-role analysis metrics, labor-wide profitability summary, selector-driven staffing suggestions, and an ideal-KPI forecast headcount model based on accepted-contract throughput.
+    - Reworked the labor dialog into `Assignments` and `Analysis` views, keeping live headcount controls while adding summary cards, suggestion cards, a current-versus-ideal staffing forecast chart, and detailed role metrics.
+    - Implemented a dependency-free forecast chart using the existing React/CSS surface instead of adding a new charting library.
+    - Added focused coverage for labor-analysis recording, suggestion behavior, forecast calculations, month rollover reset, and analytics serialization.
+    - Verification completed: `npm run test` passed with 116 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.

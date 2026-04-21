@@ -3,6 +3,7 @@ import { createLaborAssignmentPlan, getMonthKey } from "../core/GameState";
 import { generateMonthlyContractOffers } from "../contracts/contractOffers";
 import type { RandomService } from "../core/RandomService";
 import type { DomainEvent } from "../events/DomainEvent";
+import { LaborAnalyticsRecorder } from "../labor/LaborAnalyticsRecorder";
 import {
   cloneBudgetPlan,
   getBudgetCostPerTick,
@@ -11,6 +12,8 @@ import {
 import { GameSpeed } from "../types/enums";
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
+
+const laborAnalyticsRecorder = new LaborAnalyticsRecorder();
 
 export class PlanningSystem {
   update(
@@ -56,6 +59,7 @@ export class PlanningSystem {
     state.contracts.pendingOffers = generateMonthlyContractOffers(state, monthKey, random);
     state.speed = GameSpeed.Slow;
     resetCurrentMonthEconomy(state);
+    laborAnalyticsRecorder.resetForMonth(state.labor, monthKey, state.currentTick);
 
     const event = {
       ...createEvent("monthly-planning-opened"),

@@ -647,6 +647,16 @@ button {
   margin-top: 12px;
 }
 
+.labor-dialog-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.labor-dialog-tabs .active {
+  background: rgba(95, 191, 143, 0.2);
+}
+
 .labor-role {
   border-left: 3px solid #5fbf8f;
   padding: 8px 0 8px 10px;
@@ -671,6 +681,160 @@ button {
   gap: 6px;
   align-items: center;
   text-align: center;
+}
+
+.labor-analysis-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.labor-analysis-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.labor-summary-card,
+.labor-suggestion-card,
+.labor-forecast-panel,
+.labor-analysis-role {
+  border: 1px solid rgba(238, 244, 242, 0.14);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.labor-summary-card p,
+.labor-suggestion-card p,
+.labor-panel-heading p,
+.labor-analysis-role p {
+  margin: 6px 0;
+  color: rgba(238, 244, 242, 0.78);
+}
+
+.labor-summary-card strong,
+.labor-suggestion-card strong,
+.labor-panel-heading strong,
+.labor-analysis-role strong {
+  display: block;
+}
+
+.labor-summary-card p {
+  margin: 8px 0 4px;
+  font-size: 1.35rem;
+  color: #eef4f2;
+}
+
+.labor-suggestion-list {
+  display: grid;
+  gap: 10px;
+}
+
+.labor-forecast-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.labor-forecast-row {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.labor-forecast-labels small,
+.labor-analysis-role-meta span,
+.labor-analysis-metric small {
+  color: rgba(238, 244, 242, 0.72);
+}
+
+.labor-forecast-bars {
+  position: relative;
+  height: 22px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.labor-forecast-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 999px;
+}
+
+.labor-forecast-bar-current {
+  background: rgba(94, 163, 198, 0.5);
+}
+
+.labor-forecast-bar-ideal {
+  border: 1px solid rgba(255, 214, 115, 0.92);
+  background: rgba(255, 214, 115, 0.28);
+}
+
+.labor-analysis-role-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.labor-analysis-role {
+  border-left: 3px solid #5fbf8f;
+}
+
+.labor-analysis-role.busy {
+  border-left-color: #e6b655;
+}
+
+.labor-analysis-role.strained,
+.labor-analysis-role.critical {
+  border-left-color: #d96c5f;
+}
+
+.labor-analysis-role-header,
+.labor-analysis-role-meta {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.labor-analysis-role-meta {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.labor-analysis-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.labor-analysis-metric {
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(12, 16, 18, 0.26);
+}
+
+.labor-analysis-metric strong {
+  margin-top: 4px;
+}
+
+@media (max-width: 900px) {
+  .labor-analysis-summary-grid,
+  .labor-analysis-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .labor-forecast-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .monthly-planning-dialog {

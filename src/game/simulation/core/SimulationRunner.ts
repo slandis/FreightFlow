@@ -10,6 +10,7 @@ import {
   createInitialEconomyState,
   createInitialPlanningState,
   createInitialScoreState,
+  getMonthKey,
   type SimulationCalendar,
 } from "./GameState";
 import { RandomService } from "./RandomService";
@@ -20,6 +21,7 @@ import { createInitialFreightFlowState } from "../world/DoorManager";
 import { FreightGenerator } from "../freight/FreightGenerator";
 import { OrderGenerator } from "../freight/OrderGenerator";
 import { LaborManager } from "../labor/LaborManager";
+import { LaborAnalyticsRecorder } from "../labor/LaborAnalyticsRecorder";
 import { LoadSystem } from "../labor/LoadSystem";
 import { PickSystem } from "../labor/PickSystem";
 import { StorageSystem } from "../labor/StorageSystem";
@@ -64,6 +66,7 @@ export class SimulationRunner {
   private readonly pickSystem = new PickSystem();
   private readonly loadSystem = new LoadSystem();
   private readonly laborManager = new LaborManager();
+  private readonly laborAnalyticsRecorder = new LaborAnalyticsRecorder();
   private readonly queueManager = new QueueManager();
   private readonly conditionSystem = new ConditionSystem();
   private readonly moraleSystem = new MoraleSystem();
@@ -84,8 +87,8 @@ export class SimulationRunner {
     this.clock = new SimulationClock(options.initialCalendar);
     this.random = new RandomService(options.seed);
     const warehouseMap = new WarehouseMap(MAP_WIDTH, MAP_HEIGHT);
-    const labor = this.laborManager.createInitialLaborState();
     const calendar = this.clock.getCalendar();
+    const labor = this.laborManager.createInitialLaborState(getMonthKey(calendar));
     const difficultyMode = getDifficultyModeById(
       options.difficultyModeId ?? DEFAULT_DIFFICULTY_MODE_ID,
     );
@@ -226,6 +229,7 @@ export class SimulationRunner {
       this.laborManager.calculateWorkloads(this.state.freightFlow),
       this.state.planning.currentPlan.budget,
     );
+    this.laborAnalyticsRecorder.recordTick(this.state.labor);
 
     const events = [
       ...planningEvents,
@@ -243,6 +247,7 @@ export class SimulationRunner {
         this.state.currentTick,
         (type) => this.createEvent(type),
         this.laborManager.getAssignedHeadcount(this.state.labor, LaborRole.SwitchDriver),
+        this.state.labor,
       ),
       ...this.unloadSystem.process(
         this.state.freightFlow,
@@ -250,6 +255,7 @@ export class SimulationRunner {
         this.state.currentTick,
         (type) => this.createEvent(type),
         this.laborManager.getProcessingCapacity(this.state.labor, LaborRole.Unload),
+        this.state.labor,
       ),
       ...this.storageSystem.process(
         this.state.freightFlow,
@@ -257,6 +263,7 @@ export class SimulationRunner {
         this.state.currentTick,
         (type) => this.createEvent(type),
         this.laborManager.getProcessingCapacity(this.state.labor, LaborRole.Storage),
+        this.state.labor,
       ),
       ...this.orderGenerator.generateOutbound(
         this.state.freightFlow,
@@ -270,12 +277,14 @@ export class SimulationRunner {
         this.state.currentTick,
         (type) => this.createEvent(type),
         this.laborManager.getProcessingCapacity(this.state.labor, LaborRole.Pick),
+        this.state.labor,
       ),
       ...this.loadSystem.process(
         this.state.freightFlow,
         this.state.currentTick,
         (type) => this.createEvent(type),
         this.laborManager.getProcessingCapacity(this.state.labor, LaborRole.Load),
+        this.state.labor,
       ),
     ];
 

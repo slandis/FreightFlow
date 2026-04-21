@@ -1,8 +1,12 @@
 import type { DomainEvent } from "../events/DomainEvent";
 import type { FreightFlowState } from "../freight/FreightFlowState";
+import type { LaborState } from "./LaborPool";
+import { LaborAnalyticsRecorder } from "./LaborAnalyticsRecorder";
 import { createId } from "../types/ids";
+import { LaborRole } from "../types/enums";
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
+const laborAnalyticsRecorder = new LaborAnalyticsRecorder();
 
 export class LoadSystem {
   process(
@@ -10,6 +14,7 @@ export class LoadSystem {
     currentTick: number,
     createEvent: EventFactory,
     loadCapacityCubicFeet: number,
+    labor: LaborState,
   ): DomainEvent[] {
     const events: DomainEvent[] = [];
     let remainingCapacity = loadCapacityCubicFeet;
@@ -31,6 +36,7 @@ export class LoadSystem {
         order.state = "loading";
         order.outboundTrailerId = trailerId;
         order.remainingLoadCubicFeet = order.fulfilledCubicFeet;
+        order.loadStartedTick = currentTick;
         door.state = "loading";
         door.trailerId = trailerId;
 
@@ -99,6 +105,12 @@ export class LoadSystem {
       order.state = "complete";
       trailer.state = "complete";
       trailer.completedTick = currentTick;
+      laborAnalyticsRecorder.recordCompletedWork(
+        labor,
+        LaborRole.Load,
+        order.fulfilledCubicFeet,
+        currentTick - (order.loadStartedTick ?? currentTick),
+      );
       freightFlow.metrics.totalOutboundOrdersCompleted += 1;
       freightFlow.metrics.totalOutboundCubicFeetShipped += order.fulfilledCubicFeet;
 

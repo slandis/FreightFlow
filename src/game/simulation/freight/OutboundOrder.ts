@@ -11,7 +11,9 @@ export interface OutboundOrder {
   outboundTrailerId: string | null;
   blockedReason: string | null;
   remainingPickCubicFeet: number;
+  pickStartedTick?: number | null;
   remainingLoadCubicFeet: number;
+  loadStartedTick?: number | null;
   revenueRecognizedTick: number | null;
   recognizedRevenue: number;
   recognizedPenalty: number;

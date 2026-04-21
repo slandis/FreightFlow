@@ -41,10 +41,28 @@ export interface LaborPressureSummary {
   topBottleneck: LaborBottleneck | null;
 }
 
+export interface LaborRoleAnalytics {
+  roleId: LaborRole;
+  directCubicFeetProcessed: number;
+  attributedCubicFeetProcessed: number;
+  completedTaskCount: number;
+  totalTaskTicks: number;
+  totalLaborCost: number;
+  totalHeadcountTicks: number;
+  activeHeadcountTicks: number;
+}
+
+export interface LaborAnalyticsState {
+  monthKey: string;
+  startedTick: number;
+  roles: LaborRoleAnalytics[];
+}
+
 export interface LaborState {
   totalHeadcount: number;
   unassignedHeadcount: number;
   pools: LaborPool[];
   modifiers: LaborModifiers;
   pressure: LaborPressureSummary;
+  analytics: LaborAnalyticsState;
 }

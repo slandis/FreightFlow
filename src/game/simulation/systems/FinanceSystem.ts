@@ -2,9 +2,9 @@ import freightClasses from "../../../data/config/freightClasses.json";
 import type { ActiveContract } from "../core/GameState";
 import type { GameState } from "../core/GameState";
 import type { DomainEvent } from "../events/DomainEvent";
+import { LABOR_COST_PER_WORKER_PER_TICK } from "../labor/laborCost";
 import { getBudgetCostPerTick } from "../planning/BudgetPlan";
 
-const LABOR_COST_PER_WORKER_PER_TICK = 2;
 const BASE_OPERATING_COST_PER_TICK = 20;
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;

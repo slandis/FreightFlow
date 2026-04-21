@@ -1,0 +1,1 @@
+export const LABOR_COST_PER_WORKER_PER_TICK = 2;

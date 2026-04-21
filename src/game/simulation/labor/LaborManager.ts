@@ -7,6 +7,7 @@ import {
   getTrainingProductivityBonus,
 } from "../planning/BudgetPlan";
 import { LaborRole } from "../types/enums";
+import { LaborAnalyticsRecorder } from "./LaborAnalyticsRecorder";
 import type {
   LaborBottleneck,
   LaborModifiers,
@@ -38,7 +39,9 @@ const roleSortOrder = new Map<LaborRole, number>(
 );
 
 export class LaborManager {
-  createInitialLaborState(): LaborState {
+  private readonly analyticsRecorder = new LaborAnalyticsRecorder();
+
+  createInitialLaborState(monthKey: string): LaborState {
     const pools = laborRoles.map((role) => {
       const roleId = role.id as LaborRole;
 
@@ -64,6 +67,7 @@ export class LaborManager {
         criticalCount: 0,
         topBottleneck: null,
       },
+      analytics: this.analyticsRecorder.createInitialAnalytics(monthKey),
     };
 
     this.recalculate(labor);

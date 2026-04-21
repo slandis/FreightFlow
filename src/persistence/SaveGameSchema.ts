@@ -14,7 +14,7 @@ import type { LaborState } from "../game/simulation/labor/LaborPool";
 import type { GameSpeed, TileZoneType } from "../game/simulation/types/enums";
 import type { Zone } from "../game/simulation/world/Zone";
 
-export const SAVE_SCHEMA_VERSION = 2;
+export const SAVE_SCHEMA_VERSION = 3;
 export const SAVE_SLOT_IDS = ["slot-1", "slot-2", "slot-3"] as const;
 
 export type SaveSchemaVersion = typeof SAVE_SCHEMA_VERSION;

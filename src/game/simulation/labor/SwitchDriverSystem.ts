@@ -1,9 +1,13 @@
 import type { DomainEvent } from "../events/DomainEvent";
 import type { FreightFlowState } from "../freight/FreightFlowState";
 import { findAvailableInboundDoorAssignment } from "../dock/dockCapacity";
+import type { LaborState } from "./LaborPool";
+import { LaborAnalyticsRecorder } from "./LaborAnalyticsRecorder";
+import { LaborRole } from "../types/enums";
 import type { WarehouseMap } from "../world/WarehouseMap";
 
 const SWITCH_MOVEMENT_TICKS = 8;
+const laborAnalyticsRecorder = new LaborAnalyticsRecorder();
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
 
@@ -14,6 +18,7 @@ export class SwitchDriverSystem {
     currentTick: number,
     createEvent: EventFactory,
     assignedHeadcount: number,
+    labor: LaborState,
   ): DomainEvent[] {
     if (assignedHeadcount <= 0) {
       return [];
@@ -27,7 +32,13 @@ export class SwitchDriverSystem {
         createEvent,
         assignedHeadcount,
       ),
-      ...this.processSwitchMovements(freightFlow, currentTick, createEvent, assignedHeadcount),
+      ...this.processSwitchMovements(
+        freightFlow,
+        currentTick,
+        createEvent,
+        assignedHeadcount,
+        labor,
+      ),
     ];
   }
 
@@ -88,6 +99,7 @@ export class SwitchDriverSystem {
     currentTick: number,
     createEvent: EventFactory,
     assignedHeadcount: number,
+    labor: LaborState,
   ): DomainEvent[] {
     const events: DomainEvent[] = [];
     let remainingDriverCapacity = assignedHeadcount;
@@ -118,6 +130,13 @@ export class SwitchDriverSystem {
       if (door) {
         door.state = "occupied";
       }
+
+      laborAnalyticsRecorder.recordCompletedWork(
+        labor,
+        LaborRole.SwitchDriver,
+        trailer.remainingUnloadCubicFeet,
+        currentTick - (trailer.doorAssignedTick ?? currentTick),
+      );
 
       for (const batch of freightFlow.freightBatches) {
         if (trailer.freightBatchIds.includes(batch.id)) {

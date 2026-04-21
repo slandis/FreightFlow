@@ -1,9 +1,13 @@
 import { findAvailableDockTileIndexForDoor } from "../dock/dockCapacity";
 import type { DomainEvent } from "../events/DomainEvent";
 import type { FreightFlowState } from "../freight/FreightFlowState";
+import type { LaborState } from "./LaborPool";
+import { LaborAnalyticsRecorder } from "./LaborAnalyticsRecorder";
+import { LaborRole } from "../types/enums";
 import type { WarehouseMap } from "../world/WarehouseMap";
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
+const laborAnalyticsRecorder = new LaborAnalyticsRecorder();
 
 export class UnloadSystem {
   process(
@@ -12,6 +16,7 @@ export class UnloadSystem {
     currentTick: number,
     createEvent: EventFactory,
     unloadCapacityCubicFeet: number,
+    labor: LaborState,
   ): DomainEvent[] {
     const events: DomainEvent[] = [];
     let remainingCapacity = unloadCapacityCubicFeet;
@@ -62,6 +67,18 @@ export class UnloadSystem {
 
       trailer.state = "complete";
       trailer.completedTick = currentTick;
+      laborAnalyticsRecorder.recordCompletedWork(
+        labor,
+        LaborRole.Unload,
+        trailer.freightBatchIds.reduce((total, batchId) => {
+          const batch = freightFlow.freightBatches.find(
+            (candidateBatch) => candidateBatch.id === batchId,
+          );
+
+          return total + (batch?.cubicFeet ?? 0);
+        }, 0),
+        currentTick - (trailer.unloadStartedTick ?? currentTick),
+      );
 
       const door = freightFlow.doors.find((candidateDoor) => candidateDoor.id === trailer.doorId);
 

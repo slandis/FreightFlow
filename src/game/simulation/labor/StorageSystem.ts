@@ -2,10 +2,14 @@ import freightClasses from "../../../data/config/freightClasses.json";
 import type { DomainEvent } from "../events/DomainEvent";
 import type { FreightBatch } from "../freight/FreightBatch";
 import type { FreightFlowState } from "../freight/FreightFlowState";
+import type { LaborState } from "./LaborPool";
+import { LaborAnalyticsRecorder } from "./LaborAnalyticsRecorder";
+import { LaborRole } from "../types/enums";
 import type { WarehouseMap } from "../world/WarehouseMap";
 import type { Zone } from "../world/Zone";
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
+const laborAnalyticsRecorder = new LaborAnalyticsRecorder();
 
 const compatibleZonesByFreightClass = new Map<string, Set<string>>(
   freightClasses.map((freightClass) => [
@@ -21,6 +25,7 @@ export class StorageSystem {
     currentTick: number,
     createEvent: EventFactory,
     storageCapacityCubicFeet: number,
+    labor: LaborState,
   ): DomainEvent[] {
     const events: DomainEvent[] = [];
     let remainingCapacity = storageCapacityCubicFeet;
@@ -41,6 +46,7 @@ export class StorageSystem {
       batch.state = "storing";
       batch.storageZoneId = zone.id;
       batch.remainingStorageCubicFeet = batch.cubicFeet;
+      batch.storageStartedTick = currentTick;
       zone.usedCubicFeet += batch.cubicFeet;
     }
 
@@ -62,6 +68,12 @@ export class StorageSystem {
       batch.storedTick = currentTick;
       batch.remainingStorageCubicFeet = null;
       batch.dockTileIndex = null;
+      laborAnalyticsRecorder.recordCompletedWork(
+        labor,
+        LaborRole.Storage,
+        batch.cubicFeet,
+        currentTick - (batch.storageStartedTick ?? currentTick),
+      );
 
       const event = {
         ...createEvent("freight-stored"),

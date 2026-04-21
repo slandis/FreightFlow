@@ -1,9 +1,13 @@
 import type { DomainEvent } from "../events/DomainEvent";
 import type { FreightFlowState } from "../freight/FreightFlowState";
+import type { LaborState } from "./LaborPool";
+import { LaborAnalyticsRecorder } from "./LaborAnalyticsRecorder";
+import { LaborRole } from "../types/enums";
 
 const INVENTORY_UNAVAILABLE_REASON = "Inventory unavailable";
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
+const laborAnalyticsRecorder = new LaborAnalyticsRecorder();
 
 export class PickSystem {
   process(
@@ -11,6 +15,7 @@ export class PickSystem {
     currentTick: number,
     createEvent: EventFactory,
     pickCapacityCubicFeet: number,
+    labor: LaborState,
   ): DomainEvent[] {
     const events: DomainEvent[] = [];
     let remainingCapacity = pickCapacityCubicFeet;
@@ -56,6 +61,7 @@ export class PickSystem {
         order.freightBatchIds = reservedBatches.map((batch) => batch.id);
         order.fulfilledCubicFeet = reservedCubicFeet;
         order.remainingPickCubicFeet = reservedCubicFeet;
+        order.pickStartedTick = currentTick;
         order.remainingLoadCubicFeet = reservedCubicFeet;
         order.blockedReason = null;
 
@@ -87,6 +93,12 @@ export class PickSystem {
       }
 
       order.state = "picked";
+      laborAnalyticsRecorder.recordCompletedWork(
+        labor,
+        LaborRole.Pick,
+        order.fulfilledCubicFeet,
+        currentTick - (order.pickStartedTick ?? order.createdTick),
+      );
 
       for (const batch of freightFlow.freightBatches) {
         if (!order.freightBatchIds.includes(batch.id)) {
