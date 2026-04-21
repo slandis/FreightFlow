@@ -24,6 +24,12 @@ export function BottomKpiBar() {
   return (
     <footer className="bottom-kpi-bar">
       <KpiPill
+        label="Dock"
+        onClick={() => setActiveOverlayMode("door-utilization")}
+        tooltip="Freight currently on dock awaiting storage movement."
+        value={`${queues.dockFreightCubicFeet.toLocaleString()} cu ft`}
+      />
+      <KpiPill
         label="Inbound"
         onClick={() => setActiveOverlayMode("queue-pressure")}
         tooltip="Total inbound cubic feet processed this month."
@@ -88,31 +94,10 @@ export function BottomKpiBar() {
         value={`${laborSummary.totalHeadcount - laborSummary.unassignedHeadcount}/${laborSummary.totalHeadcount}`}
       />
       <KpiPill
-        label="Bottleneck"
-        tooltip="The labor pool currently applying the most operational pressure."
-        value={laborSummary.topBottleneck ? laborSummary.topBottleneck.label : "none"}
-      />
-      <KpiPill
         label="Yard"
         onClick={() => setActiveOverlayMode("queue-pressure")}
         tooltip={`Queue pressure is ${queuePressure.severity}.`}
         value={queues.yardTrailers.toLocaleString()}
-      />
-      <KpiPill
-        label="Switching"
-        tooltip="Trailers currently assigned to switch movement."
-        value={queues.switchingTrailers.toLocaleString()}
-      />
-      <KpiPill
-        label="Unload"
-        tooltip="Trailers waiting for unload labor and door work."
-        value={queues.unloadTrailers.toLocaleString()}
-      />
-      <KpiPill
-        label="Dock"
-        onClick={() => setActiveOverlayMode("door-utilization")}
-        tooltip="Freight currently on dock awaiting storage movement."
-        value={`${queues.dockFreightCubicFeet.toLocaleString()} cu ft`}
       />
     </footer>
   );

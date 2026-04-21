@@ -8,7 +8,6 @@ import {
 import { TileZoneType } from "../../../game/simulation/types/enums";
 import type { ActiveTool, OverlayMode } from "../../store/uiStore";
 import { useUiStore } from "../../store/uiStore";
-import { MetricTooltip } from "../tooltips/MetricTooltip";
 
 interface ToolOption {
   id: ActiveTool;
@@ -146,11 +145,16 @@ export function LeftToolPanel() {
   const activeOverlayMode = useUiStore((state) => state.activeOverlayMode);
   const setActiveTool = useUiStore((state) => state.setActiveTool);
   const setActiveOverlayMode = useUiStore((state) => state.setActiveOverlayMode);
+  const [openSection, setOpenSection] = useState("tools");
 
   return (
     <aside className="left-panel" aria-label="Zone tools">
       <strong>Build</strong>
-      <LeftPanelSection defaultOpen title="Tools">
+      <LeftPanelSection
+        isOpen={openSection === "tools"}
+        onToggle={() => setOpenSection((current) => (current === "tools" ? "" : "tools"))}
+        title="Tools"
+      >
         <div className="tool-group" aria-label="Primary tools">
           {toolOptions.map((tool) => (
             <ToolButton
@@ -162,7 +166,11 @@ export function LeftToolPanel() {
           ))}
         </div>
       </LeftPanelSection>
-      <LeftPanelSection defaultOpen title="Storage">
+      <LeftPanelSection
+        isOpen={openSection === "storage"}
+        onToggle={() => setOpenSection((current) => (current === "storage" ? "" : "storage"))}
+        title="Storage"
+      >
         <div className="tool-group" aria-label="Storage assignment tools">
           {storageOptions.map((tool) => (
             <ToolButton
@@ -174,7 +182,11 @@ export function LeftToolPanel() {
           ))}
         </div>
       </LeftPanelSection>
-      <LeftPanelSection title="Doors">
+      <LeftPanelSection
+        isOpen={openSection === "doors"}
+        onToggle={() => setOpenSection((current) => (current === "doors" ? "" : "doors"))}
+        title="Doors"
+      >
         <div className="tool-group" aria-label="Door assignment tools">
           {doorOptions.map((tool) => (
             <ToolButton
@@ -186,18 +198,21 @@ export function LeftToolPanel() {
           ))}
         </div>
       </LeftPanelSection>
-      <LeftPanelSection title="Overlays">
+      <LeftPanelSection
+        isOpen={openSection === "overlays"}
+        onToggle={() => setOpenSection((current) => (current === "overlays" ? "" : "overlays"))}
+        title="Overlays"
+      >
         <div className="overlay-control-grid" aria-label="Map overlays">
           {overlays.map((overlay) => (
-            <MetricTooltip content={overlay.description} key={overlay.id} label={overlay.label}>
-              <button
-                className={overlay.id === activeOverlayMode ? "active" : ""}
-                onClick={() => setActiveOverlayMode(overlay.id)}
-                type="button"
-              >
-                <span>{overlay.label}</span>
-              </button>
-            </MetricTooltip>
+            <button
+              className={overlay.id === activeOverlayMode ? "active" : ""}
+              key={overlay.id}
+              onClick={() => setActiveOverlayMode(overlay.id)}
+              type="button"
+            >
+              <span>{overlay.label}</span>
+            </button>
           ))}
         </div>
       </LeftPanelSection>
@@ -215,32 +230,30 @@ function ToolButton({
   tool: ToolOption;
 }) {
   return (
-    <MetricTooltip content={tool.description} label={tool.label}>
-      <button className={active ? "active" : ""} onClick={onClick} type="button">
-        <span>{tool.label}</span>
-        <small>{tool.description}</small>
-      </button>
-    </MetricTooltip>
+    <button className={active ? "active" : ""} onClick={onClick} type="button">
+      <span>{tool.label}</span>
+      <small>{tool.description}</small>
+    </button>
   );
 }
 
 function LeftPanelSection({
   children,
-  defaultOpen = false,
+  isOpen,
+  onToggle,
   title,
 }: {
   children: ReactNode;
-  defaultOpen?: boolean;
+  isOpen: boolean;
+  onToggle: () => void;
   title: string;
 }) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-
   return (
     <section className={`left-panel-section ${isOpen ? "open" : ""}`}>
       <button
         aria-expanded={isOpen}
         className="left-panel-section-toggle"
-        onClick={() => setIsOpen((current) => !current)}
+        onClick={onToggle}
         type="button"
       >
         <span>{title}</span>

@@ -316,3 +316,13 @@ Storage Zone Capacity Display: Completed
     - Kept the map renderer simple and unchanged so storage visualization now improves clarity without increasing render complexity or asset maintenance.
     - Added focused storage-flow coverage for zone summary and utilization calculations.
     - Verification completed: `npm test` passed with 131 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+
+HUD Layout Polish: Completed
+    - Simplified the bottom KPI bar by removing the Bottleneck, Switching, and Unload indicators.
+    - Moved the Dock indicator to the far left of the bottom HUD for faster scanning.
+    - Gave the remaining KPI pills equal fixed widths so the bottom HUD no longer expands and contracts with changing values.
+    - Corrected the resulting side-panel spacing regression by reserving bottom-HUD clearance in the left and right panel layout calculations.
+    - Removed hover tooltips from the left HUD tool and overlay controls because their inline labels already carried the needed information and the popups were blocking clicks.
+    - Converted the left HUD sections into accordion behavior so expanding one section collapses the others.
+    - Set the top-HUD overlay badge to a fixed width sized to the longest current overlay label so it no longer shifts the surrounding header content.
+    - Verification completed: `npm run build` passed after each HUD layout adjustment. The build still emits the expected Phaser bundle-size warning.

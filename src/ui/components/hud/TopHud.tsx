@@ -81,7 +81,7 @@ export const TopHud = forwardRef<HTMLElement>(function TopHud(_props, ref) {
         <span>Difficulty: {difficultyMode.name}</span>
       </MetricTooltip>
       {isPlanningActive ? <span className="hud-badge">Planning active</span> : null}
-      <span className="hud-badge">Overlay: {formatOverlay(activeOverlayMode)}</span>
+      <span className="hud-badge hud-badge-overlay">Overlay: {formatOverlay(activeOverlayMode)}</span>
       <span>Tick: {currentTick}</span>
       <button className="hud-action" onClick={() => setSaveLoadDialogOpen(true)} type="button">
         Save/Load
