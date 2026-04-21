@@ -61,6 +61,7 @@ export class StorageSystem {
       batch.state = "in-storage";
       batch.storedTick = currentTick;
       batch.remainingStorageCubicFeet = null;
+      batch.dockTileIndex = null;
 
       const event = {
         ...createEvent("freight-stored"),

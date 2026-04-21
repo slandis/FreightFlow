@@ -1,5 +1,7 @@
 import type { DomainEvent } from "../events/DomainEvent";
 import type { FreightFlowState } from "../freight/FreightFlowState";
+import { findAvailableInboundDoorAssignment } from "../dock/dockCapacity";
+import type { WarehouseMap } from "../world/WarehouseMap";
 
 const SWITCH_MOVEMENT_TICKS = 8;
 
@@ -8,6 +10,7 @@ type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
 export class SwitchDriverSystem {
   process(
     freightFlow: FreightFlowState,
+    warehouseMap: WarehouseMap,
     currentTick: number,
     createEvent: EventFactory,
     assignedHeadcount: number,
@@ -19,6 +22,7 @@ export class SwitchDriverSystem {
     return [
       ...this.assignYardTrailersToDoors(
         freightFlow,
+        warehouseMap,
         currentTick,
         createEvent,
         assignedHeadcount,
@@ -29,6 +33,7 @@ export class SwitchDriverSystem {
 
   private assignYardTrailersToDoors(
     freightFlow: FreightFlowState,
+    warehouseMap: WarehouseMap,
     currentTick: number,
     createEvent: EventFactory,
     assignedHeadcount: number,
@@ -46,18 +51,20 @@ export class SwitchDriverSystem {
         break;
       }
 
-      const door = freightFlow.doors.find(
-        (candidateDoor) =>
-          candidateDoor.state === "idle" &&
-          (candidateDoor.mode === "inbound" || candidateDoor.mode === "flex"),
+      const assignment = findAvailableInboundDoorAssignment(
+        warehouseMap,
+        freightFlow,
+        trailer,
       );
 
-      if (!door) {
+      if (!assignment) {
         break;
       }
 
+      const { door, dockTileIndex } = assignment;
       trailer.state = "switching-to-door";
       trailer.doorId = door.id;
+      trailer.dockTileIndex = dockTileIndex;
       trailer.doorAssignedTick = currentTick;
       trailer.remainingSwitchTicks = SWITCH_MOVEMENT_TICKS;
       door.state = "reserved";

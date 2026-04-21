@@ -24,6 +24,7 @@ function createYardTrailer(id: string, arrivalTick: number): Trailer {
     remainingSwitchTicks: 0,
     remainingUnloadCubicFeet: 1000,
     remainingLoadCubicFeet: 0,
+    dockTileIndex: null,
   };
 }
 
@@ -105,6 +106,91 @@ describe("inbound freight flow", () => {
 
     expect(freightFlow.trailers[0].state).toBe("yard");
     expect(freightFlow.queues.yardTrailers).toBe(1);
+  });
+
+  it("uses another door when one dock area is out of capacity", () => {
+    const runner = new SimulationRunner();
+    const freightFlow = runner.getState().freightFlow;
+    const fullTileIndexes = [7, 8, 9].map((x) =>
+      runner.getState().warehouseMap.getTileIndex(x, 0),
+    );
+
+    fullTileIndexes.forEach((dockTileIndex, index) => {
+      freightFlow.freightBatches.push({
+        id: `dock-batch-${index + 1}`,
+        trailerId: `occupied-${index + 1}`,
+        freightClassId: "standard",
+        cubicFeet: 5000,
+        state: "on-dock",
+        createdTick: 0,
+        unloadedTick: 0,
+        storageZoneId: null,
+        outboundOrderId: null,
+        storedTick: null,
+        remainingStorageCubicFeet: 5000,
+        pickedTick: null,
+        loadedTick: null,
+        dockTileIndex,
+      });
+    });
+
+    freightFlow.trailers = [createYardTrailer("trailer-waiting", 0)];
+
+    runner.tick();
+
+    expect(freightFlow.trailers[0].doorId).toBe(freightFlow.doors[1].id);
+    expect(freightFlow.doors[0].trailerId).toBeNull();
+    expect(freightFlow.doors[1].trailerId).toBe("trailer-waiting");
+  });
+
+  it("keeps inbound trailers in the yard and raises a critical alert when dock capacity is full", () => {
+    const runner = new SimulationRunner();
+    const freightFlow = runner.getState().freightFlow;
+    const eventTypes: string[] = [];
+
+    runner.getEventBus().subscribe("alert-raised", (event) => {
+      eventTypes.push(event.type);
+    });
+
+    for (const door of freightFlow.doors) {
+      const tileIndexes = [door.x - 1, door.x, door.x + 1]
+        .map((x) => runner.getState().warehouseMap.getTile(x, 0))
+        .filter((tile): tile is NonNullable<typeof tile> => Boolean(tile))
+        .map((tile) => runner.getState().warehouseMap.getTileIndex(tile.x, tile.y));
+
+      tileIndexes.forEach((dockTileIndex, index) => {
+        freightFlow.freightBatches.push({
+          id: `full-dock-${door.id}-${index}`,
+          trailerId: `occupied-${door.id}-${index}`,
+          freightClassId: "standard",
+          cubicFeet: 5000,
+          state: "on-dock",
+          createdTick: 0,
+          unloadedTick: 0,
+          storageZoneId: null,
+          outboundOrderId: null,
+          storedTick: null,
+          remainingStorageCubicFeet: 5000,
+          pickedTick: null,
+          loadedTick: null,
+          dockTileIndex,
+        });
+      });
+    }
+
+    freightFlow.trailers = [createYardTrailer("trailer-blocked", 0)];
+
+    runner.tick();
+
+    expect(freightFlow.trailers[0].state).toBe("yard");
+    expect(
+      runner
+        .getState()
+        .alerts.alerts.some(
+          (alert) => alert.key === "dock-capacity-blocked" && alert.severity === "critical",
+        ),
+    ).toBe(true);
+    expect(eventTypes).toContain("alert-raised");
   });
 
   it("switch movement takes eight ticks after door assignment", () => {

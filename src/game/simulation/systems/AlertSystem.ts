@@ -1,4 +1,5 @@
 import type { Alert, AlertSeverity, GameState } from "../core/GameState";
+import { countAvailableInboundDoorAssignments } from "../dock/dockCapacity";
 import type { DomainEvent } from "../events/DomainEvent";
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
@@ -105,6 +106,17 @@ export class AlertSystem {
           ? "critical"
           : "warning",
         message: "Client service level is below target.",
+      });
+    }
+
+    if (
+      state.freightFlow.queues.yardTrailers > 0 &&
+      countAvailableInboundDoorAssignments(state) === 0
+    ) {
+      candidates.push({
+        key: "dock-capacity-blocked",
+        severity: "critical",
+        message: "Inbound trailers are blocked from the dock.",
       });
     }
 

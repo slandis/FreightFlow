@@ -34,6 +34,7 @@ export class MainScene extends Phaser.Scene {
     );
     const doorRenderer = new DoorRenderer(
       this,
+      map,
       this.simulation.getState().freightFlow,
       renderer.getOrigin(),
     );

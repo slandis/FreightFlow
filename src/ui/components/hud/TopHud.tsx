@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useState } from "react";
 import {
   useSimulationController,
   useSimulationRunner,
@@ -34,7 +34,7 @@ const speedButtons: Array<{ speed: GameSpeed; label: string }> = [
   { speed: GameSpeed.Hyper, label: "Hyper" },
 ];
 
-export function TopHud() {
+export const TopHud = forwardRef<HTMLElement>(function TopHud(_props, ref) {
   const { restartSimulation } = useSimulationController();
   const simulation = useSimulationRunner();
   const calendar = useSimulationState(selectCalendar);
@@ -55,7 +55,7 @@ export function TopHud() {
   }, [difficultyMode.id]);
 
   return (
-    <header className="top-hud">
+    <header className="top-hud" ref={ref}>
       <MetricTooltip content="Current in-game calendar time.">
         <span>{formatCalendarTime(calendar)}</span>
       </MetricTooltip>
@@ -123,7 +123,7 @@ export function TopHud() {
       </div>
     </header>
   );
-}
+});
 
 function formatOverlay(mode: string): string {
   return mode

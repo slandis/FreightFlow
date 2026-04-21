@@ -217,3 +217,27 @@ Phase 12: Implemented
     - Added focused Vitest coverage for difficulty behavior, tutorial hint selection, month-review telemetry formatting, and save metadata.
     - Verification completed: `npm run test` passed with 105 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
     - Manual browser verification and structured internal playtest sessions are still recommended to finish the full Phase 12 checklist.
+
+Phase 12 HUD Accessibility Polish: Completed
+    - Reworked the left tool palette into four collapsible sections: `Tools`, `Storage`, `Doors`, and `Overlays`.
+    - Anchored both the left and right HUD panels below the measured bottom edge of the top HUD instead of relying on fixed top offsets.
+    - Exposed the top HUD element for measurement and updated the main game shell layout to keep side panels responsive as the top HUD height changes.
+    - Removed the duplicate lower-right Issues panel to reduce clutter.
+    - Converted the right-panel issue summary into a carousel with previous/next controls, issue counts, and retained focus actions.
+    - Verification completed: `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+
+Dock Capacity Polish: Completed
+    - Added authoritative dock-capacity support with a default `5,000` cubic feet for each dock-edge tile within one tile of an active door.
+    - Extended inbound trailer and freight-batch state with dock-tile reservations so door assignment respects real dock space instead of only door availability.
+    - Updated switch, unload, storage, and outbound freight flows so trailers only claim doors with enough nearby dock capacity for the full unload.
+    - Kept trailers in the yard when no eligible door has enough dock space and added a critical alert for inbound trailers blocked by full dock capacity.
+    - Prevented removing an idle door when it is still the only support for occupied dock-space capacity.
+    - Added dock-capacity summaries to operations diagnostics so players can see used versus total dock space directly in the right HUD panel.
+    - Expanded simulation coverage for alternate-door fallback, full-dock blockage alerts, protected door removal, and the new dock reservation fields.
+    - Verification completed: `npm run test` passed with 109 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+
+Dock Capacity Indicator Polish: Completed
+    - Added a dock-capacity warning light to each dock indicator in Phaser without removing the existing door-state colors.
+    - Dock indicators now stay white under normal load, turn yellow when any supported dock tile is more than 75% full, and turn red when a supported dock tile is full.
+    - Wired the door renderer to live warehouse-map dock-capacity data so the warning light updates as trailers reserve, unload, and clear dock space.
+    - Verification completed: `npm run test` passed with 109 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.

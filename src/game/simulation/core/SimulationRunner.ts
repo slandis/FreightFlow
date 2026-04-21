@@ -163,12 +163,14 @@ export class SimulationRunner {
       ),
       ...this.switchDriverSystem.process(
         this.state.freightFlow,
+        this.state.warehouseMap,
         this.state.currentTick,
         (type) => this.createEvent(type),
         this.laborManager.getAssignedHeadcount(this.state.labor, LaborRole.SwitchDriver),
       ),
       ...this.unloadSystem.process(
         this.state.freightFlow,
+        this.state.warehouseMap,
         this.state.currentTick,
         (type) => this.createEvent(type),
         this.laborManager.getProcessingCapacity(this.state.labor, LaborRole.Unload),

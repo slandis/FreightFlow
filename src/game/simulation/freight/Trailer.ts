@@ -18,4 +18,5 @@ export interface Trailer {
   remainingSwitchTicks: number;
   remainingUnloadCubicFeet: number;
   remainingLoadCubicFeet: number;
+  dockTileIndex: number | null;
 }

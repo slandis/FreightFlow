@@ -20,6 +20,7 @@ function createDockBatch(freightClassId = "standard"): FreightBatch {
     remainingStorageCubicFeet: 600,
     pickedTick: null,
     loadedTick: null,
+    dockTileIndex: null,
   };
 }
 

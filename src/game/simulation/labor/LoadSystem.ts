@@ -47,6 +47,7 @@ export class LoadSystem {
           remainingSwitchTicks: 0,
           remainingUnloadCubicFeet: 0,
           remainingLoadCubicFeet: order.fulfilledCubicFeet,
+          dockTileIndex: null,
         });
 
         for (const batch of freightFlow.freightBatches) {

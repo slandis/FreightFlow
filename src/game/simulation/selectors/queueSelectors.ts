@@ -1,4 +1,5 @@
 import type { GameState } from "../core/GameState";
+import { selectDockCapacitySummary } from "../dock/dockCapacity";
 import freightClasses from "../../../data/config/freightClasses.json";
 import zoneTypes from "../../../data/config/zoneTypes.json";
 import type { TileZoneType } from "../types/enums";
@@ -63,6 +64,10 @@ export function selectDoorSummary(state: GameState) {
     unloadingDoors,
     loadingDoors,
   };
+}
+
+export function selectDockCapacity(state: GameState) {
+  return selectDockCapacitySummary(state);
 }
 
 export function selectDockFreightCubicFeet(state: GameState): number {

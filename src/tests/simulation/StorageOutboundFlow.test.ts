@@ -27,6 +27,7 @@ function createBatch(overrides: Partial<FreightBatch> = {}): FreightBatch {
     remainingStorageCubicFeet: null,
     pickedTick: null,
     loadedTick: null,
+    dockTileIndex: null,
     ...overrides,
   };
 }

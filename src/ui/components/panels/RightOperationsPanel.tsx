@@ -1,6 +1,6 @@
-import { Fragment, type ReactNode, useState } from "react";
+import { Fragment, type ReactNode, useEffect, useState } from "react";
 import { getDifficultyModeById } from "../../../game/simulation/config/difficulty";
-import { selectMostSevereIssue } from "../../../game/simulation/selectors/diagnosticSelectors";
+import { selectOperationalIssues } from "../../../game/simulation/selectors/diagnosticSelectors";
 import {
   selectEconomySummary,
   selectScoreSummary,
@@ -16,6 +16,7 @@ import {
   selectAverageYardDwell,
   selectDoorSummary,
   selectDockFreightCubicFeet,
+  selectDockCapacity,
   selectDockStorageNeeds,
   selectInboundQueueSummary,
   selectInboundTrailerCount,
@@ -35,10 +36,11 @@ export function RightOperationsPanel() {
   const setLaborDialogOpen = useUiStore((state) => state.setLaborDialogOpen);
   const requestMapFocus = useUiStore((state) => state.requestMapFocus);
   const inspectedTile = selectedTile ?? hoveredTile;
-  const mostSevereIssue = useSimulationState(selectMostSevereIssue);
+  const operationalIssues = useSimulationState(selectOperationalIssues);
   const queues = useSimulationState(selectInboundQueueSummary);
   const doors = useSimulationState(selectDoorSummary);
   const dockFreightCubicFeet = useSimulationState(selectDockFreightCubicFeet);
+  const dockCapacity = useSimulationState(selectDockCapacity);
   const dockStorageNeeds = useSimulationState(selectDockStorageNeeds);
   const inboundTrailerCount = useSimulationState(selectInboundTrailerCount);
   const averageYardDwell = useSimulationState(selectAverageYardDwell);
@@ -57,6 +59,18 @@ export function RightOperationsPanel() {
   const difficultyMode = useSimulationState((state) => getDifficultyModeById(state.difficultyModeId));
   const playtestReview = usePlaytestReview();
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
+  const [activeIssueIndex, setActiveIssueIndex] = useState(0);
+  const activeIssue =
+    operationalIssues.length > 0
+      ? operationalIssues[Math.min(activeIssueIndex, operationalIssues.length - 1)]
+      : null;
+  const activeIssueFocusTarget = activeIssue?.focusTarget;
+
+  useEffect(() => {
+    setActiveIssueIndex((current) =>
+      operationalIssues.length === 0 ? 0 : Math.min(current, operationalIssues.length - 1),
+    );
+  }, [operationalIssues.length]);
 
   const copyPlaytestReview = async () => {
     try {
@@ -70,18 +84,50 @@ export function RightOperationsPanel() {
   return (
     <aside className="right-panel" aria-label="Operations">
       <strong>Operations</strong>
-      {mostSevereIssue ? (
-        <section className={`issue-summary ${mostSevereIssue.severity}`}>
-          <span>{mostSevereIssue.severity}</span>
-          <strong>{mostSevereIssue.title}</strong>
-          <small>{mostSevereIssue.recommendedAction}</small>
-          {mostSevereIssue.focusTarget ? (
+      {activeIssue ? (
+        <section className={`issue-summary ${activeIssue.severity}`}>
+          <div className="issue-summary-header">
+            <div>
+              <span>{activeIssue.severity}</span>
+              <strong>{activeIssue.title}</strong>
+            </div>
+            {operationalIssues.length > 1 ? (
+              <div className="issue-carousel-controls" aria-label="Issue carousel">
+                <button
+                  aria-label="Previous issue"
+                  onClick={() =>
+                    setActiveIssueIndex((current) =>
+                      current === 0 ? operationalIssues.length - 1 : current - 1,
+                    )
+                  }
+                  type="button"
+                >
+                  ◀
+                </button>
+                <small>
+                  {activeIssueIndex + 1} / {operationalIssues.length}
+                </small>
+                <button
+                  aria-label="Next issue"
+                  onClick={() =>
+                    setActiveIssueIndex((current) => (current + 1) % operationalIssues.length)
+                  }
+                  type="button"
+                >
+                  ▶
+                </button>
+              </div>
+            ) : null}
+          </div>
+          <small>{activeIssue.detail}</small>
+          <small>{activeIssue.recommendedAction}</small>
+          {activeIssueFocusTarget ? (
             <button
               onClick={() =>
                 requestMapFocus({
-                  reason: mostSevereIssue.focusTarget?.label ?? mostSevereIssue.title,
-                  x: mostSevereIssue.focusTarget?.x ?? 0,
-                  y: mostSevereIssue.focusTarget?.y ?? 0,
+                  reason: activeIssueFocusTarget.label,
+                  x: activeIssueFocusTarget.x,
+                  y: activeIssueFocusTarget.y,
                   zoom: 0.94,
                 })
               }
@@ -89,6 +135,9 @@ export function RightOperationsPanel() {
             >
               Focus
             </button>
+          ) : null}
+          {operationalIssues.length > 1 ? (
+            <small>{operationalIssues.length - 1} more issue{operationalIssues.length === 2 ? "" : "s"} available.</small>
           ) : null}
         </section>
       ) : (
@@ -121,6 +170,11 @@ export function RightOperationsPanel() {
           <dd>{queues.unloadTrailers}</dd>
           <dt>Dock freight</dt>
           <dd>{dockFreightCubicFeet.toLocaleString()} cu ft</dd>
+          <dt>Dock cap</dt>
+          <dd>
+            {dockCapacity.usedCubicFeet.toLocaleString()} /{" "}
+            {dockCapacity.totalCapacityCubicFeet.toLocaleString()} cu ft
+          </dd>
           <dt>Avg yard dwell</dt>
           <dd>{averageYardDwell.toFixed(1)} ticks</dd>
           <dt>Avg door dwell</dt>

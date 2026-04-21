@@ -22,4 +22,5 @@ export interface FreightBatch {
   remainingStorageCubicFeet: number | null;
   pickedTick: number | null;
   loadedTick: number | null;
+  dockTileIndex: number | null;
 }

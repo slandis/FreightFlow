@@ -33,6 +33,7 @@ function createBatch(overrides: Partial<FreightBatch> = {}): FreightBatch {
     remainingStorageCubicFeet: null,
     pickedTick: 2,
     loadedTick: 3,
+    dockTileIndex: null,
     ...overrides,
   };
 }
@@ -71,6 +72,7 @@ function createYardTrailer(overrides: Partial<Trailer> = {}): Trailer {
     remainingSwitchTicks: 0,
     remainingUnloadCubicFeet: 900,
     remainingLoadCubicFeet: 0,
+    dockTileIndex: null,
     ...overrides,
   };
 }

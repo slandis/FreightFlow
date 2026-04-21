@@ -125,18 +125,27 @@ export function selectFocusableIssueTargets(state: GameState): FocusTarget[] {
 function selectAlertIssues(state: GameState): OperationalIssue[] {
   return state.alerts.alerts
     .filter((alert) => alert.active)
-    .map((alert) => ({
-      id: `alert-${alert.key}`,
-      severity: alert.severity,
-      category: alert.key.includes("cash")
-        ? "finance"
-        : alert.key.includes("service")
-          ? "planning"
-          : "score",
-      title: alert.message,
-      detail: "A tracked business health threshold needs attention.",
-      recommendedAction: getAlertRecommendation(alert.key),
-    }));
+    .map((alert) => {
+      const isDockCapacityAlert = alert.key === "dock-capacity-blocked";
+
+      return {
+        id: `alert-${alert.key}`,
+        severity: alert.severity,
+        category: isDockCapacityAlert
+          ? "door"
+          : alert.key.includes("cash")
+            ? "finance"
+            : alert.key.includes("service")
+              ? "planning"
+              : "score",
+        title: alert.message,
+        detail: isDockCapacityAlert
+          ? "Every inbound-capable door is either busy or out of nearby dock space for the next trailer."
+          : "A tracked business health threshold needs attention.",
+        recommendedAction: getAlertRecommendation(alert.key),
+        focusTarget: isDockCapacityAlert ? selectDockFocusTarget(state) : undefined,
+      };
+    });
 }
 
 function selectStorageIssues(state: GameState): OperationalIssue[] {
@@ -200,22 +209,8 @@ function selectLaborIssues(state: GameState): OperationalIssue[] {
 
 function selectDoorIssues(state: GameState): OperationalIssue[] {
   const issues: OperationalIssue[] = [];
-  const hasWaitingInbound = state.freightFlow.queues.yardTrailers > 0;
   const hasWaitingOutbound = state.freightFlow.queues.loadQueueCubicFeet > 0;
-  const hasInboundDoor = state.freightFlow.doors.some(isInboundReadyDoor);
   const hasOutboundDoor = state.freightFlow.doors.some(isOutboundReadyDoor);
-
-  if (hasWaitingInbound && !hasInboundDoor) {
-    issues.push({
-      id: "no-inbound-door",
-      severity: "warning",
-      category: "door",
-      title: "No inbound door is ready",
-      detail: "Inbound trailers are waiting without an idle inbound-capable door.",
-      recommendedAction: "Place or free an inbound or flex door.",
-      focusTarget: selectDockFocusTarget(state),
-    });
-  }
 
   if (hasWaitingOutbound && !hasOutboundDoor) {
     issues.push({
@@ -270,6 +265,10 @@ function selectFinanceIssues(state: GameState): OperationalIssue[] {
 }
 
 function getAlertRecommendation(key: string): string {
+  if (key === "dock-capacity-blocked") {
+    return "Free dock space near an inbound or flex door, or place another inbound-capable door.";
+  }
+
   if (key.includes("cash")) {
     return "Improve outbound throughput or reduce spending.";
   }

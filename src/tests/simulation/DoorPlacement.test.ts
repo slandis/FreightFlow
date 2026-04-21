@@ -18,6 +18,7 @@ function createYardTrailer(id: string): Trailer {
     remainingSwitchTicks: 0,
     remainingUnloadCubicFeet: 900,
     remainingLoadCubicFeet: 0,
+    dockTileIndex: null,
   };
 }
 
@@ -75,6 +76,36 @@ describe("door placement", () => {
     expect(result.success).toBe(false);
     expect(result.errors).toEqual(["Cannot remove a busy door"]);
     expect(runner.getState().warehouseMap.getTile(door.x, door.y)?.isActiveDoor).toBe(true);
+  });
+
+  it("does not remove a door that is supporting occupied dock space", () => {
+    const runner = new SimulationRunner();
+    const door = runner.getState().freightFlow.doors[0];
+    const dockTileIndex = runner.getState().warehouseMap.getTileIndex(door.x, door.y);
+
+    runner.getState().freightFlow.freightBatches.push({
+      id: "dock-batch-test",
+      trailerId: "trailer-test",
+      freightClassId: "standard",
+      cubicFeet: 1200,
+      state: "on-dock",
+      createdTick: 0,
+      unloadedTick: 0,
+      storageZoneId: null,
+      outboundOrderId: null,
+      storedTick: null,
+      remainingStorageCubicFeet: 1200,
+      pickedTick: null,
+      loadedTick: null,
+      dockTileIndex,
+    });
+
+    const result = runner.dispatch(new RemoveDoorCommand(door.x, door.y));
+
+    expect(result.success).toBe(false);
+    expect(result.errors).toEqual([
+      "Cannot remove a door that is supporting occupied dock space",
+    ]);
   });
 
   it("uses placed inbound doors for trailer assignment", () => {

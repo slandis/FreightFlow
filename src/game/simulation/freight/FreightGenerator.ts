@@ -64,6 +64,7 @@ export class FreightGenerator {
       remainingSwitchTicks: 0,
       remainingUnloadCubicFeet: cubicFeet,
       remainingLoadCubicFeet: 0,
+      dockTileIndex: null,
     });
     freightFlow.freightBatches.push({
       id: freightBatchId,
@@ -79,6 +80,7 @@ export class FreightGenerator {
       remainingStorageCubicFeet: null,
       pickedTick: null,
       loadedTick: null,
+      dockTileIndex: null,
     });
     freightFlow.metrics.totalInboundTrailersArrived += 1;
 

@@ -1,5 +1,6 @@
 import type { Command, CommandContext } from "./Command";
 import { commandFailed, commandSucceeded } from "./Command";
+import { wouldDoorRemovalOrphanDockCapacity } from "../dock/dockCapacity";
 
 export class RemoveDoorCommand implements Command<"remove-door"> {
   readonly type = "remove-door";
@@ -26,6 +27,16 @@ export class RemoveDoorCommand implements Command<"remove-door"> {
 
     if (door.state !== "idle" || door.trailerId !== null) {
       return commandFailed("Cannot remove a busy door");
+    }
+
+    if (
+      wouldDoorRemovalOrphanDockCapacity(
+        context.state.warehouseMap,
+        context.state.freightFlow,
+        door,
+      )
+    ) {
+      return commandFailed("Cannot remove a door that is supporting occupied dock space");
     }
 
     context.state.freightFlow.doors.splice(doorIndex, 1);

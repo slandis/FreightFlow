@@ -1,11 +1,14 @@
+import { findAvailableDockTileIndexForDoor } from "../dock/dockCapacity";
 import type { DomainEvent } from "../events/DomainEvent";
 import type { FreightFlowState } from "../freight/FreightFlowState";
+import type { WarehouseMap } from "../world/WarehouseMap";
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
 
 export class UnloadSystem {
   process(
     freightFlow: FreightFlowState,
+    warehouseMap: WarehouseMap,
     currentTick: number,
     createEvent: EventFactory,
     unloadCapacityCubicFeet: number,
@@ -15,10 +18,23 @@ export class UnloadSystem {
 
     for (const trailer of freightFlow.trailers) {
       if (trailer.state === "at-door" && unloadCapacityCubicFeet > 0) {
+        const door = freightFlow.doors.find((candidateDoor) => candidateDoor.id === trailer.doorId);
+
+        if (door && trailer.dockTileIndex === null) {
+          trailer.dockTileIndex = findAvailableDockTileIndexForDoor(
+            warehouseMap,
+            freightFlow,
+            door,
+            trailer.remainingUnloadCubicFeet,
+          );
+        }
+
+        if (trailer.dockTileIndex === null) {
+          continue;
+        }
+
         trailer.state = "unloading";
         trailer.unloadStartedTick = currentTick;
-
-        const door = freightFlow.doors.find((candidateDoor) => candidateDoor.id === trailer.doorId);
 
         if (door) {
           door.state = "unloading";
@@ -60,6 +76,7 @@ export class UnloadSystem {
         }
 
         batch.state = "on-dock";
+        batch.dockTileIndex = trailer.dockTileIndex;
         batch.unloadedTick = currentTick;
         freightFlow.metrics.totalUnloadedCubicFeet += batch.cubicFeet;
 
@@ -72,6 +89,8 @@ export class UnloadSystem {
 
         events.push(event);
       }
+
+      trailer.dockTileIndex = null;
     }
 
     return events;
