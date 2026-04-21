@@ -5,6 +5,7 @@ export interface DifficultyModeConfig {
   id: string;
   name: string;
   startingCash: number;
+  initialHeadcount: number;
   forecastAccuracy: number;
   demandVolatility: number;
   inboundIntervalMultiplier: number;

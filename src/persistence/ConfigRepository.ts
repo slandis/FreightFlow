@@ -185,6 +185,7 @@ function validateDifficultyModes(value: unknown, errors: string[]): void {
 
     for (const field of [
       "startingCash",
+      "initialHeadcount",
       "forecastAccuracy",
       "demandVolatility",
       "inboundIntervalMultiplier",

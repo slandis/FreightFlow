@@ -326,3 +326,12 @@ HUD Layout Polish: Completed
     - Converted the left HUD sections into accordion behavior so expanding one section collapses the others.
     - Set the top-HUD overlay badge to a fixed width sized to the longest current overlay label so it no longer shifts the surrounding header content.
     - Verification completed: `npm run build` passed after each HUD layout adjustment. The build still emits the expected Phaser bundle-size warning.
+
+Run Types Expansion: Completed
+    - Expanded the available difficulty presets from two to four by adding `Demanding` and `Brutal` on top of the existing `Relaxed` and `Standard` modes.
+    - Added `initialHeadcount` to difficulty configuration so each run type now defines both its economic starting point and its opening labor pool.
+    - Set starting headcount by mode to `Relaxed: 14`, `Standard: 12`, `Demanding: 9`, and `Brutal: 8`.
+    - Updated simulation startup so the selected run mode determines initial labor headcount instead of using one fixed shared default.
+    - Scaled starting labor-role assignments to fit the selected mode's total headcount while preserving the existing role-balance pattern as closely as possible.
+    - Updated config validation and simulation coverage for the new run modes and the reduced standard-mode baseline headcount.
+    - Verification completed: `npm test` passed with 132 tests. The existing Vite build warning remains unchanged.

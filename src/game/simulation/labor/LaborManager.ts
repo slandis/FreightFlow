@@ -41,14 +41,15 @@ const roleSortOrder = new Map<LaborRole, number>(
 export class LaborManager {
   private readonly analyticsRecorder = new LaborAnalyticsRecorder();
 
-  createInitialLaborState(monthKey: string): LaborState {
+  createInitialLaborState(monthKey: string, totalHeadcount: number = DEFAULT_TOTAL_HEADCOUNT): LaborState {
+    const initialAssignments = createInitialAssignments(totalHeadcount);
     const pools = laborRoles.map((role) => {
       const roleId = role.id as LaborRole;
 
       return {
         roleId,
-        assignedHeadcount: defaultAssignments[roleId] ?? 0,
-        availableHeadcount: defaultAssignments[roleId] ?? 0,
+        assignedHeadcount: initialAssignments[roleId] ?? 0,
+        availableHeadcount: initialAssignments[roleId] ?? 0,
         baseRate: role.baseRate,
         effectiveRate: 0,
         activeWorkload: 0,
@@ -58,7 +59,7 @@ export class LaborManager {
     });
 
     const labor: LaborState = {
-      totalHeadcount: DEFAULT_TOTAL_HEADCOUNT,
+      totalHeadcount,
       unassignedHeadcount: 0,
       pools,
       modifiers: this.calculateModifiers(pools, createDefaultBudgetPlan()),
@@ -335,6 +336,73 @@ export class LaborManager {
   private getPool(labor: LaborState, roleId: LaborRole): LaborPool | undefined {
     return labor.pools.find((pool) => pool.roleId === roleId);
   }
+}
+
+function createInitialAssignments(totalHeadcount: number): Record<LaborRole, number> {
+  const roles = Object.values(LaborRole);
+  const baselineAssignments = { ...defaultAssignments };
+
+  if (totalHeadcount >= DEFAULT_TOTAL_HEADCOUNT) {
+    return baselineAssignments;
+  }
+
+  const minimumAssignments = roles.reduce(
+    (assignments, roleId) => {
+      assignments[roleId] = totalHeadcount >= roles.length ? 1 : 0;
+      return assignments;
+    },
+    {} as Record<LaborRole, number>,
+  );
+
+  let remainingHeadcount = Math.max(
+    0,
+    totalHeadcount - roles.reduce((total, roleId) => total + minimumAssignments[roleId], 0),
+  );
+
+  if (remainingHeadcount === 0) {
+    return minimumAssignments;
+  }
+
+  const upgradeWeights = roles.map((roleId) => ({
+    roleId,
+    weight: Math.max(0, (baselineAssignments[roleId] ?? 0) - minimumAssignments[roleId]),
+  }));
+  const totalWeight = upgradeWeights.reduce((total, entry) => total + entry.weight, 0);
+
+  if (totalWeight <= 0) {
+    return minimumAssignments;
+  }
+
+  const weightedAllocations = upgradeWeights.map((entry, index) => {
+    const exact = (remainingHeadcount * entry.weight) / totalWeight;
+
+    return {
+      roleId: entry.roleId,
+      base: Math.floor(exact),
+      remainder: exact - Math.floor(exact),
+      index,
+    };
+  });
+
+  for (const allocation of weightedAllocations) {
+    minimumAssignments[allocation.roleId] += allocation.base;
+    remainingHeadcount -= allocation.base;
+  }
+
+  weightedAllocations
+    .sort((first, second) => {
+      if (second.remainder !== first.remainder) {
+        return second.remainder - first.remainder;
+      }
+
+      return first.index - second.index;
+    })
+    .slice(0, remainingHeadcount)
+    .forEach((allocation) => {
+      minimumAssignments[allocation.roleId] += 1;
+    });
+
+  return minimumAssignments;
 }
 
 function supportPressure(assignedHeadcount: number): LaborPressure {

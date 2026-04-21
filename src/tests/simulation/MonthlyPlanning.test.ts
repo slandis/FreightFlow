@@ -35,7 +35,7 @@ describe("monthly planning", () => {
 
     expect(state.planning.isPlanningActive).toBe(true);
     expect(state.planning.pendingPlan?.monthKey).toBe("Y1-M1");
-    expect(state.planning.pendingPlan?.totalHeadcount).toBe(18);
+    expect(state.planning.pendingPlan?.totalHeadcount).toBe(12);
     expect(state.planning.queuedPlan).toBeNull();
     expect(state.planning.latestSnapshot?.monthKey).toBe("Y1-M1");
     expect(state.contracts.pendingOffers).toHaveLength(4);
@@ -123,7 +123,7 @@ describe("monthly planning", () => {
     const runner = createRunnerAtMonthEnd();
     openPlanning(runner);
 
-    const result = runner.dispatch(new AssignPlannedLaborCommand(LaborRole.Load, 18));
+    const result = runner.dispatch(new AssignPlannedLaborCommand(LaborRole.Load, 13));
 
     expect(result.success).toBe(false);
     expect(result.errors[0]).toBe("Planned labor assignments exceed total headcount");
@@ -133,7 +133,7 @@ describe("monthly planning", () => {
     const runner = createRunnerAtMonthEnd();
     openPlanning(runner);
 
-    const result = runner.dispatch(new SetPlannedTotalHeadcountCommand(17));
+    const result = runner.dispatch(new SetPlannedTotalHeadcountCommand(11));
 
     expect(result.success).toBe(false);
     expect(result.errors[0]).toBe("Planned total headcount cannot be lower than assigned labor");
@@ -172,7 +172,7 @@ describe("monthly planning", () => {
     expect(queuedState.planning.queuedPlan?.monthKey).toBe("Y1-M2");
     expect(queuedState.planning.queuedPlan?.totalHeadcount).toBe(20);
     expect(queuedState.planning.currentPlan.monthKey).toBe("Y1-M1");
-    expect(queuedState.planning.currentPlan.totalHeadcount).toBe(18);
+    expect(queuedState.planning.currentPlan.totalHeadcount).toBe(12);
     expect(queuedState.planning.currentPlan.budget).not.toEqual(budget);
     expect(queuedState.planning.lastConfirmedMonthKey).toBe("Y1-M1");
     expect(queuedState.debug.lastCommandType).toBe("confirm-monthly-plan");
@@ -193,7 +193,7 @@ describe("monthly planning", () => {
     ).toBe(
       1,
     );
-    expect(state.labor.unassignedHeadcount).toBe(3);
+    expect(state.labor.unassignedHeadcount).toBe(8);
     expect(confirmedEvents).toHaveLength(1);
   });
 
@@ -286,7 +286,7 @@ describe("monthly planning", () => {
     expect(result.success).toBe(true);
     expect(state.planning.isPlanningActive).toBe(true);
     expect(state.planning.pendingPlan?.monthKey).toBe("Y1-M1");
-    expect(state.planning.pendingPlan?.totalHeadcount).toBe(18);
+    expect(state.planning.pendingPlan?.totalHeadcount).toBe(12);
     expect(state.planning.latestSnapshot?.currentMonthRevenue).toBe(1234);
     expect(state.economy.currentMonthRevenue).toBe(1234);
     expect(state.contracts.pendingOffers).toHaveLength(0);

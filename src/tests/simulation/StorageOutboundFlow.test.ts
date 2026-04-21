@@ -73,13 +73,13 @@ describe("storage and outbound freight flow", () => {
     paintStandardStorage(runner);
     state.freightFlow.freightBatches.push(createBatch());
 
-    runTicks(runner, 3);
+    runTicks(runner, 5);
 
     const batch = state.freightFlow.freightBatches[0];
     const zone = state.warehouseMap.zones.find((candidateZone) => candidateZone.id === batch.storageZoneId);
 
     expect(batch.state).toBe("in-storage");
-    expect(batch.storedTick).toBe(3);
+    expect(batch.storedTick).toBe(5);
     expect(zone?.usedCubicFeet).toBe(900);
     expect(state.freightFlow.inventoryByFreightClass.standard).toBe(900);
   });
@@ -183,7 +183,7 @@ describe("storage and outbound freight flow", () => {
     paintStandardStorage(runner);
     state.freightFlow.freightBatches.push(createBatch());
 
-    runTicks(runner, 3);
+    runTicks(runner, 5);
 
     const zones = selectStorageZoneSummaries(state);
 
@@ -327,7 +327,7 @@ describe("storage and outbound freight flow", () => {
     paintStandardStorage(runner);
     state.freightFlow.freightBatches.push(createBatch());
 
-    runTicks(runner, 3);
+    runTicks(runner, 5);
     expect(state.freightFlow.freightBatches[0].state).toBe("in-storage");
 
     runTicks(runner, 57);

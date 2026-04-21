@@ -94,12 +94,12 @@ describe("labor pools and queue processing", () => {
     const summary = selectLaborSummary(runner.getState());
     const roles = selectLaborRoleDetails(runner.getState());
 
-    expect(summary.totalHeadcount).toBe(18);
+    expect(summary.totalHeadcount).toBe(12);
     expect(summary.unassignedHeadcount).toBe(0);
     expect(roles).toHaveLength(7);
     expect(
       roles.reduce((total, role) => total + role.assignedHeadcount, 0),
-    ).toBe(18);
+    ).toBe(12);
   });
 
   it("assigns labor in real time and fails loudly above total headcount", () => {
@@ -112,7 +112,7 @@ describe("labor pools and queue processing", () => {
       }
     });
 
-    const success = runner.dispatch(new AssignLaborCommand(LaborRole.Load, 2));
+    const success = runner.dispatch(new AssignLaborCommand(LaborRole.Load, 1));
     const failure = runner.dispatch(new AssignLaborCommand(LaborRole.Load, 5));
 
     expect(success.success).toBe(true);
@@ -201,7 +201,7 @@ describe("labor pools and queue processing", () => {
     paintStandardStorage(runner);
     state.freightFlow.freightBatches.push(createBatch());
 
-    runTicks(runner, 3);
+    runTicks(runner, 5);
 
     expect(state.freightFlow.freightBatches[0].state).toBe("in-storage");
     expect(state.freightFlow.inventoryByFreightClass.standard).toBe(900);

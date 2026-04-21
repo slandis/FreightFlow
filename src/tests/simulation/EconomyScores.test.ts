@@ -110,7 +110,7 @@ describe("core scores and economy", () => {
     runner.tick();
 
     const economy = selectEconomySummary(runner.getState());
-    expect(economy.currentMonthLaborCost).toBeCloseTo(18 * LABOR_COST_PER_WORKER_PER_TICK, 6);
+    expect(economy.currentMonthLaborCost).toBeCloseTo(12 * LABOR_COST_PER_WORKER_PER_TICK, 6);
     expect(economy.currentMonthOperatingCost).toBeGreaterThan(0);
     expect(runner.getState().cash).toBeLessThan(100000);
   });

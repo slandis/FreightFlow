@@ -31,6 +31,7 @@ const validConfig = {
       id: "relaxed",
       name: "Relaxed",
       startingCash: 250000,
+      initialHeadcount: 14,
       forecastAccuracy: 0.9,
       demandVolatility: 0.12,
       inboundIntervalMultiplier: 1.08,

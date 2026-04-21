@@ -19,6 +19,13 @@ describe("difficulty modes", () => {
 
     expect(runner.getState().difficultyModeId).toBe("relaxed");
     expect(runner.getState().cash).toBe(225000);
+    expect(runner.getState().labor.totalHeadcount).toBe(14);
+  });
+
+  it("applies configured starting headcount for each difficulty mode", () => {
+    expect(new SimulationRunner({ difficultyModeId: "standard" }).getState().labor.totalHeadcount).toBe(12);
+    expect(new SimulationRunner({ difficultyModeId: "demanding" }).getState().labor.totalHeadcount).toBe(9);
+    expect(new SimulationRunner({ difficultyModeId: "brutal" }).getState().labor.totalHeadcount).toBe(8);
   });
 
   it("creates inbound pressure more slowly on relaxed than standard", () => {

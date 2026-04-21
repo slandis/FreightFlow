@@ -92,9 +92,12 @@ export class SimulationRunner {
     this.random = new RandomService(options.seed);
     const warehouseMap = new WarehouseMap(MAP_WIDTH, MAP_HEIGHT);
     const calendar = this.clock.getCalendar();
-    const labor = this.laborManager.createInitialLaborState(getMonthKey(calendar));
     const difficultyMode = getDifficultyModeById(
       options.difficultyModeId ?? DEFAULT_DIFFICULTY_MODE_ID,
+    );
+    const labor = this.laborManager.createInitialLaborState(
+      getMonthKey(calendar),
+      difficultyMode.initialHeadcount,
     );
     this.state = {
       currentTick: 0,
