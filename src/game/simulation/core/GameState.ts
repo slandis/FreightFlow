@@ -165,6 +165,7 @@ export interface AlertState {
 export interface GameState {
   currentTick: number;
   calendar: SimulationCalendar;
+  difficultyModeId: string;
   speed: GameSpeed;
   cash: number;
   kpis: KpiState;

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ApplyBudgetPlanCommand } from "../../../game/simulation/commands/ApplyBudgetPlanCommand";
 import { AssignPlannedLaborCommand } from "../../../game/simulation/commands/AssignPlannedLaborCommand";
 import { ConfirmMonthlyPlanCommand } from "../../../game/simulation/commands/ConfirmMonthlyPlanCommand";
+import { getDifficultyModeById } from "../../../game/simulation/config/difficulty";
 import type { BudgetPlan } from "../../../game/simulation/core/GameState";
 import { selectPlanningState } from "../../../game/simulation/selectors/planningSelectors";
 import { LaborRole } from "../../../game/simulation/types/enums";
@@ -49,6 +50,7 @@ const roleOrder = Object.values(LaborRole);
 export function MonthlyPlanningDialog() {
   const simulation = useSimulation();
   const planning = useSimulationState(selectPlanningState);
+  const difficultyMode = useSimulationState((state) => getDifficultyModeById(state.difficultyModeId));
   const activePage = useUiStore((state) => state.activePlanningPage);
   const setActivePlanningPage = useUiStore((state) => state.setActivePlanningPage);
   const [error, setError] = useState<string | null>(null);
@@ -151,6 +153,8 @@ export function MonthlyPlanningDialog() {
                 ["Throughput", `${formatNumber(activeSnapshot.throughputCubicFeet)} cu ft`],
                 ["Inbound", `${formatNumber(activeSnapshot.inboundCubicFeet)} cu ft`],
                 ["Outbound", `${formatNumber(activeSnapshot.outboundCubicFeet)} cu ft`],
+                ["Difficulty", difficultyMode.name],
+                ["Forecast accuracy", `${Math.round(difficultyMode.forecastAccuracy * 100)}%`],
                 ["Service level", `${activeSnapshot.serviceLevel.toFixed(0)}%`],
                 ["Contract health", activeSnapshot.contractHealth],
               ]}

@@ -1,4 +1,5 @@
 import type { GameState, ScoreDriver } from "../core/GameState";
+import { scaleNegativeScoreImpact } from "../config/difficulty";
 import { getMaintenanceSupport } from "../planning/BudgetPlan";
 import { updateScore } from "./ScoreUtils";
 
@@ -31,31 +32,46 @@ export class ConditionSystem {
       drivers.push({ label: "Sanitation coverage", impact: 0.08 });
       delta += 0.08;
     } else {
-      const impact = state.labor.modifiers.sanitationPressure === "critical" ? -1.4 : -0.55;
+      const impact = scaleNegativeScoreImpact(
+        state.labor.modifiers.sanitationPressure === "critical" ? -1.4 : -0.55,
+        state.difficultyModeId,
+      );
       drivers.push({ label: "Sanitation understaffed", impact });
       delta += impact;
     }
 
     if (state.labor.modifiers.congestionPenalty > 0) {
-      const impact = -state.labor.modifiers.congestionPenalty * 1.8;
+      const impact = scaleNegativeScoreImpact(
+        -state.labor.modifiers.congestionPenalty * 1.8,
+        state.difficultyModeId,
+      );
       drivers.push({ label: "Congestion pressure", impact });
       delta += impact;
     }
 
     if (invalidStorageZones > 0) {
-      const impact = -Math.min(0.8, invalidStorageZones * 0.12);
+      const impact = scaleNegativeScoreImpact(
+        -Math.min(0.8, invalidStorageZones * 0.12),
+        state.difficultyModeId,
+      );
       drivers.push({ label: "Invalid storage zones", impact });
       delta += impact;
     }
 
     if (storageUtilization > 0.85) {
-      const impact = -(storageUtilization - 0.85) * 2;
+      const impact = scaleNegativeScoreImpact(
+        -(storageUtilization - 0.85) * 2,
+        state.difficultyModeId,
+      );
       drivers.push({ label: "High storage utilization", impact });
       delta += impact;
     }
 
     if (queuePressure > 0) {
-      const impact = -Math.min(0.6, queuePressure * 0.15);
+      const impact = scaleNegativeScoreImpact(
+        -Math.min(0.6, queuePressure * 0.15),
+        state.difficultyModeId,
+      );
       drivers.push({ label: "Queue pressure", impact });
       delta += impact;
     }

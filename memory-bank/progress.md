@@ -201,3 +201,19 @@ Phase 11: Completed
     - Added persistence and config Vitest coverage for save payloads, reconstructed loads, invalid loads, slot listing/deletion, subscriber notification, monthly-planning saves, active freight lifecycle saves, and checked-in config validity.
     - Verification completed: `npm run test` passed with 97 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
     - Local dev server was verified at `http://127.0.0.1:5173` with HTTP 200.
+
+Phase 12: Implemented
+    - Wired real difficulty presets into simulation startup instead of leaving `difficultyModes.json` as validation-only data.
+    - Added two Phase 12 presets: `Relaxed` for onboarding and recovery, and `Standard` for tighter cash and pressure.
+    - Applied difficulty effects to starting cash, inbound cadence/volume, outbound cadence/volume, score decay severity, contract service pressure, save metadata, and live HUD/planning displays.
+    - Added a top-HUD new-run flow so playtesters can restart directly into a chosen difficulty without leaving the main game shell.
+    - Tuned freight revenue, storage capacities, and labor role base rates so config changes now create clearer throughput and bottleneck differences.
+    - Updated productive labor throughput to respect configured role base rates instead of treating most labor config as cosmetic.
+    - Added a lightweight tutorial coach card with one-time-per-run hints for first planning, invalid storage, blocked dock freight, missing doors, critical labor bottlenecks, and negative monthly net.
+    - Kept tutorial state out of authoritative saves so onboarding remains a lightweight playtest aid rather than a save-schema feature.
+    - Added local month-review telemetry capture with queue, dock, invalid-storage, blocked-order, and bottleneck summaries, plus a compact export surface in the Operations panel.
+    - Extended the right operations panel with difficulty visibility and a playtest review section for recent month summaries and copyable review output.
+    - Expanded the monthly planning forecast page and save-slot metadata so testers can see the active difficulty more clearly.
+    - Added focused Vitest coverage for difficulty behavior, tutorial hint selection, month-review telemetry formatting, and save metadata.
+    - Verification completed: `npm run test` passed with 105 tests, and `npm run build` passed. The build still emits the expected Phaser bundle-size warning.
+    - Manual browser verification and structured internal playtest sessions are still recommended to finish the full Phase 12 checklist.

@@ -1,4 +1,5 @@
 import type { ContractSummary, GameState } from "../core/GameState";
+import { getDifficultyModeById } from "../config/difficulty";
 import { clamp } from "../../shared/utils/clamp";
 
 const TICKS_PER_DAY = 1440;
@@ -14,7 +15,10 @@ export class ContractSystem {
     const completedDays = Math.max(0, state.calendar.day - 1);
     const elapsedDayFraction = state.currentTick / TICKS_PER_DAY;
     const targetDays = Math.max(completedDays, elapsedDayFraction >= 1 ? elapsedDayFraction : 0);
-    const expectedThroughput = contract.targetThroughputCubicFeetPerDay * targetDays;
+    const expectedThroughput =
+      contract.targetThroughputCubicFeetPerDay *
+      targetDays *
+      getDifficultyModeById(state.difficultyModeId).serviceTargetMultiplier;
     const fulfilledDemandCubicFeet =
       (state.freightFlow.metrics.totalUnloadedCubicFeet +
         state.freightFlow.metrics.totalOutboundCubicFeetShipped) /

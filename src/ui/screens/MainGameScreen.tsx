@@ -9,6 +9,7 @@ import { TopHud } from "../components/hud/TopHud";
 import { BottomKpiBar } from "../components/panels/BottomKpiBar";
 import { LeftToolPanel } from "../components/panels/LeftToolPanel";
 import { RightOperationsPanel } from "../components/panels/RightOperationsPanel";
+import { TutorialCoachCard } from "../components/tutorial/TutorialCoachCard";
 import { useSimulationState } from "../hooks/useSimulation";
 import { useUiStore } from "../store/uiStore";
 
@@ -35,6 +36,7 @@ export function MainGameScreen() {
     <main className="game-shell">
       <div id="phaser-game" ref={containerRef} className="phaser-surface" />
       <TopHud />
+      <TutorialCoachCard />
       <LeftToolPanel />
       <RightOperationsPanel />
       <BottomKpiBar />

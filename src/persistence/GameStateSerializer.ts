@@ -1,4 +1,5 @@
 import { MAP_HEIGHT, MAP_WIDTH } from "../game/shared/constants/map";
+import { getDifficultyModeById } from "../game/simulation/config/difficulty";
 import type { GameState } from "../game/simulation/core/GameState";
 import { GameSpeed, TileZoneType } from "../game/simulation/types/enums";
 import { WarehouseMap } from "../game/simulation/world/WarehouseMap";
@@ -48,6 +49,7 @@ export function deserializeGameState(serialized: SerializedGameState): GameState
 
   const state = cloneJson({
     ...serialized,
+    difficultyModeId: serialized.difficultyModeId ?? getDifficultyModeById().id,
     speed: GameSpeed.Paused,
   }) as Omit<GameState, "warehouseMap">;
 
@@ -79,6 +81,7 @@ export function createSaveMetadata(state: GameState): SaveMetadata {
       .padStart(2, "0")}:${state.calendar.minute.toString().padStart(2, "0")}`,
     cash: state.cash,
     currentTick: state.currentTick,
+    difficultyLabel: getDifficultyModeById(state.difficultyModeId).name,
   };
 }
 

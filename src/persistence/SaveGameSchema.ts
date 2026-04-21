@@ -25,6 +25,7 @@ export interface SaveMetadata {
   calendarLabel: string;
   cash: number;
   currentTick: number;
+  difficultyLabel?: string;
 }
 
 export interface SerializedTile {

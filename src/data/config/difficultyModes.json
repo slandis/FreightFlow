@@ -1,30 +1,28 @@
 [
   {
-    "id": "amateur",
-    "name": "Amateur",
-    "startingCash": 250000,
-    "forecastAccuracy": 0.9,
-    "demandVolatility": 0.12
+    "id": "relaxed",
+    "name": "Relaxed",
+    "startingCash": 225000,
+    "forecastAccuracy": 0.92,
+    "demandVolatility": 0.12,
+    "inboundIntervalMultiplier": 1.08,
+    "inboundVolumeMultiplier": 0.95,
+    "outboundIntervalMultiplier": 1.12,
+    "outboundVolumeMultiplier": 0.92,
+    "scoreDecayMultiplier": 0.78,
+    "serviceTargetMultiplier": 0.88
   },
   {
-    "id": "seasoned",
-    "name": "Seasoned",
-    "startingCash": 175000,
-    "forecastAccuracy": 0.75,
-    "demandVolatility": 0.22
-  },
-  {
-    "id": "pro",
-    "name": "Pro",
-    "startingCash": 125000,
-    "forecastAccuracy": 0.6,
-    "demandVolatility": 0.36
-  },
-  {
-    "id": "god",
-    "name": "God",
-    "startingCash": 90000,
-    "forecastAccuracy": 0.45,
-    "demandVolatility": 0.5
+    "id": "standard",
+    "name": "Standard",
+    "startingCash": 100000,
+    "forecastAccuracy": 0.72,
+    "demandVolatility": 0.26,
+    "inboundIntervalMultiplier": 1,
+    "inboundVolumeMultiplier": 1.05,
+    "outboundIntervalMultiplier": 0.95,
+    "outboundVolumeMultiplier": 1.05,
+    "scoreDecayMultiplier": 1.08,
+    "serviceTargetMultiplier": 1
   }
 ]

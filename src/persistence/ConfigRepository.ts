@@ -183,7 +183,17 @@ function validateDifficultyModes(value: unknown, errors: string[]): void {
       continue;
     }
 
-    for (const field of ["startingCash", "forecastAccuracy", "demandVolatility"]) {
+    for (const field of [
+      "startingCash",
+      "forecastAccuracy",
+      "demandVolatility",
+      "inboundIntervalMultiplier",
+      "inboundVolumeMultiplier",
+      "outboundIntervalMultiplier",
+      "outboundVolumeMultiplier",
+      "scoreDecayMultiplier",
+      "serviceTargetMultiplier",
+    ]) {
       if (!isNonNegativeNumber(mode[field])) {
         errors.push(`difficultyModes.${String(mode.id)} has invalid ${field}`);
       }

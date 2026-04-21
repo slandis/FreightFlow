@@ -142,8 +142,8 @@ describe("storage and outbound freight flow", () => {
 
     expect(needs[0]).toMatchObject({
       cubicFeetOnDock: 900,
-      validCompatibleCapacityCubicFeet: 1000,
-      largestCompatibleAvailableCubicFeet: 500,
+      validCompatibleCapacityCubicFeet: 1100,
+      largestCompatibleAvailableCubicFeet: 550,
       missingCubicFeet: 0,
       reason: "No compatible zone can fit largest dock batch",
       ready: false,
@@ -160,8 +160,8 @@ describe("storage and outbound freight flow", () => {
     const needs = selectDockStorageNeeds(state);
 
     expect(needs[0]).toMatchObject({
-      validCompatibleCapacityCubicFeet: 1000,
-      largestCompatibleAvailableCubicFeet: 1000,
+      validCompatibleCapacityCubicFeet: 1100,
+      largestCompatibleAvailableCubicFeet: 1100,
       missingCubicFeet: 0,
       reason: "Ready for storage",
       ready: true,

@@ -92,10 +92,10 @@ describe("PaintZoneCommand", () => {
 
     expect(standardZones).toHaveLength(1);
     expect(standardZones[0].tileIndexes).toHaveLength(2);
-    expect(standardZones[0].capacityCubicFeet).toBe(1000);
+    expect(standardZones[0].capacityCubicFeet).toBe(1100);
     expect(bulkZones).toHaveLength(1);
     expect(bulkZones[0].tileIndexes).toHaveLength(1);
-    expect(bulkZones[0].capacityCubicFeet).toBe(800);
+    expect(bulkZones[0].capacityCubicFeet).toBe(900);
   });
 
   it("updates command and invalidation event debug metadata", () => {

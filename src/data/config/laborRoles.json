@@ -7,22 +7,22 @@
   {
     "id": "unload",
     "name": "Inbound Unloading",
-    "baseRate": 1
+    "baseRate": 1.08
   },
   {
     "id": "storage",
     "name": "Inbound Storage",
-    "baseRate": 1
+    "baseRate": 1.04
   },
   {
     "id": "pick",
     "name": "Outbound Picking",
-    "baseRate": 1
+    "baseRate": 0.96
   },
   {
     "id": "load",
     "name": "Outbound Loading",
-    "baseRate": 1
+    "baseRate": 1.02
   },
   {
     "id": "sanitation",
@@ -32,6 +32,6 @@
   {
     "id": "management",
     "name": "Management",
-    "baseRate": 1
+    "baseRate": 1.05
   }
 ]

@@ -59,6 +59,7 @@ describe("SaveLoadService", () => {
     expect(payload.savedAt).toBe("2026-04-20T12:00:00.000Z");
     expect(payload.metadata.currentTick).toBe(0);
     expect(payload.metadata.cash).toBe(100000);
+    expect(payload.metadata.difficultyLabel).toBe("Standard");
   });
 
   it("loads a reconstructed state and resumes paused", () => {

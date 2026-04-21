@@ -28,11 +28,17 @@ const validConfig = {
   ],
   difficultyModes: [
     {
-      id: "amateur",
-      name: "Amateur",
+      id: "relaxed",
+      name: "Relaxed",
       startingCash: 250000,
       forecastAccuracy: 0.9,
       demandVolatility: 0.12,
+      inboundIntervalMultiplier: 1.08,
+      inboundVolumeMultiplier: 0.95,
+      outboundIntervalMultiplier: 1.12,
+      outboundVolumeMultiplier: 0.92,
+      scoreDecayMultiplier: 0.78,
+      serviceTargetMultiplier: 0.88,
     },
   ],
 };

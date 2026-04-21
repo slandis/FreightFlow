@@ -133,11 +133,15 @@ describe("inbound freight flow", () => {
     const trailer = freightFlow.trailers[0];
     const batch = freightFlow.freightBatches[0];
     const startingRemainingCubicFeet = trailer.remainingUnloadCubicFeet;
+    const unloadRate =
+      runner
+        .getState()
+        .labor.pools.find((pool) => pool.roleId === "unload")?.effectiveRate ?? 0;
 
     runner.tick();
 
     expect(trailer.remainingUnloadCubicFeet).toBe(
-      Math.max(0, startingRemainingCubicFeet - 360),
+      Math.max(0, startingRemainingCubicFeet - unloadRate),
     );
 
     runUntilDockFreightExists(runner, freightFlow);

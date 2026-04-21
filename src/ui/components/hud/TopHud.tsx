@@ -1,5 +1,13 @@
-import { useSimulationRunner } from "../../../app/providers/SimulationProvider";
+import { useEffect, useState } from "react";
+import {
+  useSimulationController,
+  useSimulationRunner,
+} from "../../../app/providers/SimulationProvider";
 import { ChangeSpeedCommand } from "../../../game/simulation/commands/ChangeSpeedCommand";
+import {
+  getDifficultyModeById,
+  getDifficultyModes,
+} from "../../../game/simulation/config/difficulty";
 import { selectMostSevereIssue } from "../../../game/simulation/selectors/diagnosticSelectors";
 import { GameSpeed } from "../../../game/simulation/types/enums";
 import {
@@ -27,6 +35,7 @@ const speedButtons: Array<{ speed: GameSpeed; label: string }> = [
 ];
 
 export function TopHud() {
+  const { restartSimulation } = useSimulationController();
   const simulation = useSimulationRunner();
   const calendar = useSimulationState(selectCalendar);
   const speed = useSimulationState(selectSpeed);
@@ -36,8 +45,14 @@ export function TopHud() {
   const currentTick = useSimulationState(selectCurrentTick);
   const isPlanningActive = useSimulationState(selectIsPlanningActive);
   const mostSevereIssue = useSimulationState(selectMostSevereIssue);
+  const difficultyMode = useSimulationState((state) => getDifficultyModeById(state.difficultyModeId));
   const activeOverlayMode = useUiStore((state) => state.activeOverlayMode);
   const setSaveLoadDialogOpen = useUiStore((state) => state.setSaveLoadDialogOpen);
+  const [pendingDifficultyModeId, setPendingDifficultyModeId] = useState(difficultyMode.id);
+
+  useEffect(() => {
+    setPendingDifficultyModeId(difficultyMode.id);
+  }, [difficultyMode.id]);
 
   return (
     <header className="top-hud">
@@ -62,11 +77,35 @@ export function TopHud() {
           {mostSevereIssue ? ` (${mostSevereIssue.severity})` : ""}
         </span>
       </MetricTooltip>
+      <MetricTooltip content="Current playtest difficulty preset.">
+        <span>Difficulty: {difficultyMode.name}</span>
+      </MetricTooltip>
       {isPlanningActive ? <span className="hud-badge">Planning active</span> : null}
       <span className="hud-badge">Overlay: {formatOverlay(activeOverlayMode)}</span>
       <span>Tick: {currentTick}</span>
       <button className="hud-action" onClick={() => setSaveLoadDialogOpen(true)} type="button">
         Save/Load
+      </button>
+      <label className="hud-select">
+        <span>New Run</span>
+        <select
+          aria-label="Select difficulty for new run"
+          onChange={(event) => setPendingDifficultyModeId(event.target.value)}
+          value={pendingDifficultyModeId}
+        >
+          {getDifficultyModes().map((mode) => (
+            <option key={mode.id} value={mode.id}>
+              {mode.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <button
+        className="hud-action"
+        onClick={() => restartSimulation(pendingDifficultyModeId)}
+        type="button"
+      >
+        Start New
       </button>
       <div className="speed-controls" aria-label="Simulation speed">
         {speedButtons.map((button) => (

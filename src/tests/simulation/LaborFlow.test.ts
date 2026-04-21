@@ -155,8 +155,21 @@ describe("labor pools and queue processing", () => {
     oneWorker.tick();
     twoWorkers.tick();
 
-    expect(oneWorker.getState().freightFlow.trailers[0].remainingUnloadCubicFeet).toBe(780);
-    expect(twoWorkers.getState().freightFlow.trailers[0].remainingUnloadCubicFeet).toBe(660);
+    const oneWorkerRate =
+      oneWorker
+        .getState()
+        .labor.pools.find((pool) => pool.roleId === LaborRole.Unload)?.effectiveRate ?? 0;
+    const twoWorkerRate =
+      twoWorkers
+        .getState()
+        .labor.pools.find((pool) => pool.roleId === LaborRole.Unload)?.effectiveRate ?? 0;
+
+    expect(oneWorker.getState().freightFlow.trailers[0].remainingUnloadCubicFeet).toBe(
+      900 - oneWorkerRate,
+    );
+    expect(twoWorkers.getState().freightFlow.trailers[0].remainingUnloadCubicFeet).toBe(
+      900 - twoWorkerRate,
+    );
   });
 
   it("stops dock putaway when storage labor is unassigned", () => {

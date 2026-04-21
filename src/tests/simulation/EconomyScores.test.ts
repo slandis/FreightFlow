@@ -86,13 +86,13 @@ describe("core scores and economy", () => {
     runner.tick();
 
     expect(state.freightFlow.outboundOrders[0].revenueRecognizedTick).toBe(1);
-    expect(state.freightFlow.outboundOrders[0].recognizedRevenue).toBe(270);
-    expect(state.economy.currentMonthRevenue).toBe(270);
+    expect(state.freightFlow.outboundOrders[0].recognizedRevenue).toBe(288);
+    expect(state.economy.currentMonthRevenue).toBe(288);
     expect(state.cash).toBeGreaterThan(100000);
 
     runner.tick();
 
-    expect(state.economy.currentMonthRevenue).toBe(270);
+    expect(state.economy.currentMonthRevenue).toBe(288);
   });
 
   it("accrues labor and operating costs over time", () => {

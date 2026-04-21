@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode, useState } from "react";
+import { getDifficultyModeById } from "../../../game/simulation/config/difficulty";
 import { selectMostSevereIssue } from "../../../game/simulation/selectors/diagnosticSelectors";
 import {
   selectEconomySummary,
@@ -25,6 +26,7 @@ import {
   selectTotalStoredCubicFeet,
 } from "../../../game/simulation/selectors/queueSelectors";
 import { useSimulationState } from "../../hooks/useSimulation";
+import { usePlaytestReview } from "../../hooks/usePlaytestReview";
 import { useUiStore } from "../../store/uiStore";
 
 export function RightOperationsPanel() {
@@ -52,6 +54,18 @@ export function RightOperationsPanel() {
   const economy = useSimulationState(selectEconomySummary);
   const scores = useSimulationState(selectScoreSummary);
   const contracts = useSimulationState(selectContractSummary);
+  const difficultyMode = useSimulationState((state) => getDifficultyModeById(state.difficultyModeId));
+  const playtestReview = usePlaytestReview();
+  const [copyMessage, setCopyMessage] = useState<string | null>(null);
+
+  const copyPlaytestReview = async () => {
+    try {
+      await navigator.clipboard.writeText(playtestReview.exportText);
+      setCopyMessage("Review copied.");
+    } catch {
+      setCopyMessage("Copy failed in this browser.");
+    }
+  };
 
   return (
     <aside className="right-panel" aria-label="Operations">
@@ -138,6 +152,8 @@ export function RightOperationsPanel() {
       </CollapsibleSection>
       <CollapsibleSection title="Business">
         <dl>
+          <dt>Difficulty</dt>
+          <dd>{difficultyMode.name}</dd>
           <dt>Revenue</dt>
           <dd>${formatMoney(economy.currentMonthRevenue)}</dd>
           <dt>Labor cost</dt>
@@ -192,6 +208,43 @@ export function RightOperationsPanel() {
             </Fragment>
           ))}
         </dl>
+      </CollapsibleSection>
+      <CollapsibleSection title="Playtest Review">
+        <p>
+          {playtestReview.records.length} completed month
+          {playtestReview.records.length === 1 ? "" : "s"} recorded on {difficultyMode.name}.
+        </p>
+        {playtestReview.records.length > 0 ? (
+          <ul className="playtest-review-list">
+            {playtestReview.records.slice(-3).reverse().map((record) => (
+              <li key={record.monthKey}>
+                <strong>{record.monthKey}</strong>
+                <small>
+                  Net ${formatMoney(record.monthlyNet)}; service {record.serviceLevel.toFixed(0)}%;
+                  queue avg {record.avgQueuePressure.toFixed(2)}.
+                </small>
+                <small>
+                  Dock avg {Math.round(record.avgDockFreightCubicFeet).toLocaleString()} cu ft;
+                  blocked peak {record.peakBlockedOutboundOrders}.
+                </small>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>Reach the next planning screen to capture the first monthly review.</p>
+        )}
+        <div className="panel-section-heading">
+          <button onClick={copyPlaytestReview} type="button">
+            Copy Review
+          </button>
+          {copyMessage ? <small>{copyMessage}</small> : null}
+        </div>
+        <textarea
+          aria-label="Playtest export"
+          className="playtest-review-export"
+          readOnly
+          value={playtestReview.exportText}
+        />
       </CollapsibleSection>
       <CollapsibleSection title="Dock Storage Needs">
         {dockStorageNeeds.length > 0 ? (

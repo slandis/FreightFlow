@@ -222,14 +222,19 @@ export class LaborManager {
 
   private calculateEffectiveRate(pool: LaborPool, modifiers: LaborModifiers): number {
     if (pool.roleId === LaborRole.SwitchDriver) {
-      return pool.assignedHeadcount;
+      return pool.assignedHeadcount * pool.baseRate;
     }
 
     if (pool.roleId === LaborRole.Sanitation || pool.roleId === LaborRole.Management) {
       return pool.assignedHeadcount * pool.baseRate;
     }
 
-    return pool.assignedHeadcount * CUBIC_FEET_PER_WORKER_TICK * modifiers.productivityMultiplier;
+    return (
+      pool.assignedHeadcount *
+      CUBIC_FEET_PER_WORKER_TICK *
+      pool.baseRate *
+      modifiers.productivityMultiplier
+    );
   }
 
   private calculateUtilization(

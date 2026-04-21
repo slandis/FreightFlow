@@ -1,11 +1,13 @@
+import type { DifficultyModeConfig } from "../config/difficulty";
 import type { RandomService } from "../core/RandomService";
+import { applyDemandVolatility } from "../config/difficulty";
 import type { DomainEvent } from "../events/DomainEvent";
 import { createId } from "../types/ids";
 import type { FreightFlowState } from "./FreightFlowState";
 
-const OUTBOUND_ORDER_INTERVAL_TICKS = 180;
-const MIN_ORDER_CUBIC_FEET = 300;
-const MAX_ORDER_CUBIC_FEET = 900;
+const BASE_OUTBOUND_ORDER_INTERVAL_TICKS = 180;
+const BASE_MIN_ORDER_CUBIC_FEET = 300;
+const BASE_MAX_ORDER_CUBIC_FEET = 900;
 const ORDER_DUE_TICKS = 720;
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
@@ -16,8 +18,14 @@ export class OrderGenerator {
     currentTick: number,
     random: RandomService,
     createEvent: EventFactory,
+    difficultyMode: DifficultyModeConfig,
   ): DomainEvent[] {
-    if (currentTick === 0 || currentTick % OUTBOUND_ORDER_INTERVAL_TICKS !== 0) {
+    const interval = Math.max(
+      1,
+      Math.round(BASE_OUTBOUND_ORDER_INTERVAL_TICKS * difficultyMode.outboundIntervalMultiplier),
+    );
+
+    if (currentTick === 0 || currentTick % interval !== 0) {
       return [];
     }
 
@@ -32,8 +40,22 @@ export class OrderGenerator {
 
     const freightClassId =
       availableFreightClassIds[random.nextInt(0, availableFreightClassIds.length - 1)];
+    const minimumCubicFeet = Math.max(
+      1,
+      Math.round(BASE_MIN_ORDER_CUBIC_FEET * difficultyMode.outboundVolumeMultiplier),
+    );
+    const maximumCubicFeet = Math.max(
+      minimumCubicFeet,
+      Math.round(BASE_MAX_ORDER_CUBIC_FEET * difficultyMode.outboundVolumeMultiplier),
+    );
     const requestedCubicFeet = Math.min(
-      random.nextInt(MIN_ORDER_CUBIC_FEET, MAX_ORDER_CUBIC_FEET),
+      applyDemandVolatility(
+        random.nextInt(minimumCubicFeet, maximumCubicFeet),
+        difficultyMode.id,
+        random.next(),
+        minimumCubicFeet,
+        maximumCubicFeet,
+      ),
       availableInventory[freightClassId],
     );
     const orderId = createId("outbound-order", freightFlow.nextOutboundOrderSequence);

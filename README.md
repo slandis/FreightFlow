@@ -15,4 +15,6 @@ The current implementation is a starter scaffold. The design and architecture so
 
 ## Development Phases
 
-Please see `memory-bank/implementation-plan.md` for detailed phase plans, and `memory-bank/progress.md` for a quick rundown of any completed phases (current complete through Phase 11.)
+Please see `memory-bank/implementation-plan.md` for detailed phase plans, and `memory-bank/progress.md` for a quick rundown of any completed phases (current complete through Phase 12.)
+
+The initial implementation plan is complete. Now we are on to sim tweaks and UI fixes.

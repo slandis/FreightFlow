@@ -35,12 +35,17 @@ import { MoraleSystem } from "../systems/MoraleSystem";
 import { PlanningSystem } from "../systems/PlanningSystem";
 import { SafetySystem } from "../systems/SafetySystem";
 import { SatisfactionSystem } from "../systems/SatisfactionSystem";
+import {
+  DEFAULT_DIFFICULTY_MODE_ID,
+  getDifficultyModeById,
+} from "../config/difficulty";
 
 export interface SimulationRunnerOptions {
   seed?: number;
   startingCash?: number;
   initialCalendar?: SimulationCalendar;
   openInitialPlanning?: boolean;
+  difficultyModeId?: string;
 }
 
 type StateListener = (state: GameState) => void;
@@ -81,11 +86,15 @@ export class SimulationRunner {
     const warehouseMap = new WarehouseMap(MAP_WIDTH, MAP_HEIGHT);
     const labor = this.laborManager.createInitialLaborState();
     const calendar = this.clock.getCalendar();
+    const difficultyMode = getDifficultyModeById(
+      options.difficultyModeId ?? DEFAULT_DIFFICULTY_MODE_ID,
+    );
     this.state = {
       currentTick: 0,
       calendar,
+      difficultyModeId: difficultyMode.id,
       speed: GameSpeed.Paused,
-      cash: options.startingCash ?? 100000,
+      cash: options.startingCash ?? difficultyMode.startingCash,
       kpis: {
         inboundCubicFeet: 0,
         outboundCubicFeet: 0,
@@ -133,6 +142,7 @@ export class SimulationRunner {
   tick(): void {
     this.state.currentTick = this.clock.advance();
     this.state.calendar = this.clock.getCalendar();
+    const difficultyMode = getDifficultyModeById(this.state.difficultyModeId);
     const planningEvents = this.planningSystem.update(this.state, (type) =>
       this.createEvent(type),
     );
@@ -149,6 +159,7 @@ export class SimulationRunner {
         this.state.currentTick,
         this.random,
         (type) => this.createEvent(type),
+        difficultyMode,
       ),
       ...this.switchDriverSystem.process(
         this.state.freightFlow,
@@ -174,6 +185,7 @@ export class SimulationRunner {
         this.state.currentTick,
         this.random,
         (type) => this.createEvent(type),
+        difficultyMode,
       ),
       ...this.pickSystem.process(
         this.state.freightFlow,

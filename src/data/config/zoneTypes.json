@@ -7,26 +7,26 @@
   {
     "id": "standard-storage",
     "name": "Standard Storage",
-    "capacityPerTile": 500
+    "capacityPerTile": 550
   },
   {
     "id": "bulk-storage",
     "name": "Bulk Storage",
-    "capacityPerTile": 800
+    "capacityPerTile": 900
   },
   {
     "id": "fast-turn-storage",
     "name": "Fast-Turn Storage",
-    "capacityPerTile": 350
+    "capacityPerTile": 420
   },
   {
     "id": "oversize-storage",
     "name": "Oversize Storage",
-    "capacityPerTile": 650
+    "capacityPerTile": 720
   },
   {
     "id": "special-handling-storage",
     "name": "Special Handling Storage",
-    "capacityPerTile": 300
+    "capacityPerTile": 360
   }
 ]

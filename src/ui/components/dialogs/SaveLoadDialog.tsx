@@ -91,7 +91,7 @@ function SaveSlot({
             <small>Saved: {formatSavedAt(slot.savedAt)}</small>
             <small>
               {slot.metadata
-                ? `${slot.metadata.calendarLabel}; cash $${slot.metadata.cash.toLocaleString()}; alerts ${slot.metadata.activeAlertCount}`
+                ? `${slot.metadata.calendarLabel}; ${slot.metadata.difficultyLabel ?? "Unknown"}; cash $${slot.metadata.cash.toLocaleString()}; alerts ${slot.metadata.activeAlertCount}`
                 : "Metadata unavailable"}
             </small>
           </>
