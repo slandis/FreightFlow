@@ -3,7 +3,22 @@ import { ConfigRepository } from "../../persistence/ConfigRepository";
 
 const validConfig = {
   clientProfiles: [],
-  contracts: [],
+  contracts: [
+    {
+      id: "atlas-grocery-network",
+      clientName: "Atlas Grocery Network",
+      freightClassId: "standard",
+      difficultyTag: "capacity",
+      minMonthlyCubicFeet: 180000,
+      maxMonthlyCubicFeet: 280000,
+      throughputMultiplier: 1.36,
+      lengthMonthsOptions: [3, 4, 6],
+      rateMultiplier: 0.94,
+      minimumServiceLevelModifier: -2,
+      dwellPenaltyRateMultiplier: 0.95,
+      challengeNote: "High grocery replenishment volume keeps standard storage under pressure all month.",
+    },
+  ],
   seasonalCurves: [],
   zoneTypes: [
     { id: "travel", name: "Travel", capacityPerTile: 0 },

@@ -626,6 +626,9 @@ Turn contracts into explicit monthly business decisions with live portfolio trac
 
 ### Tasks
 - generate 3-4 bounded contract offers when monthly planning opens
+- source monthly offers from a large reusable contract pool with 50-75 unique companies
+- vary offer volume bands aggressively enough to create materially different monthly decisions
+- avoid obvious client-name repetition until the pool is substantially exhausted
 - add a `Contracts` page to monthly planning
 - allow accept/reject decisions through authoritative planning commands
 - present each offer with length, freight class, expected throughput, revenue rate, service target, and dwell/well-time penalty terms
@@ -639,6 +642,8 @@ Turn contracts into explicit monthly business decisions with live portfolio trac
 
 ### Deliverables
 - monthly planning shows plausible contract offers tied to current warehouse conditions
+- contract offers come from a broad named pool instead of a tiny procedural name generator
+- different months can surface clearly different company mixes, freight classes, and operating challenges
 - accepted offers become active contracts on monthly plan confirmation
 - contract-tagged freight can be tracked through storage and shipment completion
 - active contracts update health, service level, penalties, and performance over time
@@ -646,6 +651,8 @@ Turn contracts into explicit monthly business decisions with live portfolio trac
 
 ### Validation Checklist
 - planning opens with 3-4 offers and no impossible freight-class or throughput combinations
+- offers in the same month use unique company names and show meaningful challenge diversity
+- completed client names do not immediately repeat while unused templates still exist
 - accept/reject decisions persist correctly until confirmation
 - accepted offers become active contracts and rejected offers do not
 - contract-tagged freight retains attribution through unload, storage, pick, load, and shipment
@@ -661,6 +668,10 @@ Turn contracts into explicit monthly business decisions with live portfolio trac
 ### Implementation Notes
 Keep offers plausible rather than generous: they should create explainable operational challenges instead of absurd requirements.
 For the first pass, estimated labor and cost attribution is acceptable if it stays consistent and decision-useful.
+Current direction:
+- use data-backed contract templates instead of only procedural name fragments
+- keep monthly planning at `4` surfaced offers even if the underlying offer pool is much larger
+- bias selection toward diversity across freight class, challenge tag, and volume band
 
 ---
 

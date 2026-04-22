@@ -1,6 +1,7 @@
 import { createContext, type PropsWithChildren, useContext, useState } from "react";
 import { APP_DEFAULT_DIFFICULTY_MODE_ID } from "../../game/simulation/config/difficulty";
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
+import { usePlaytestCheats } from "../../ui/hooks/usePlaytestCheats";
 import { useSimulationLoop } from "../../ui/hooks/useSimulationLoop";
 
 interface SimulationContextValue {
@@ -15,6 +16,7 @@ export function SimulationProvider({ children }: PropsWithChildren) {
     createSimulationRunner(APP_DEFAULT_DIFFICULTY_MODE_ID),
   );
   useSimulationLoop(simulation);
+  usePlaytestCheats(simulation);
 
   return (
     <SimulationContext.Provider

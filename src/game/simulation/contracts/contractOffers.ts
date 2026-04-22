@@ -1,3 +1,4 @@
+import contractTemplates from "../../../data/config/contracts.json";
 import freightClasses from "../../../data/config/freightClasses.json";
 import type {
   ActiveContract,
@@ -14,32 +15,6 @@ import { LaborRole } from "../types/enums";
 import { createId } from "../types/ids";
 
 const OFFER_COUNT = 4;
-const MONTHS_PER_CONTRACT = [2, 3, 4, 6] as const;
-const CLIENT_PREFIXES = [
-  "Northline",
-  "Blue River",
-  "Mercury",
-  "Atlas",
-  "Summit",
-  "Harbor",
-  "Keystone",
-  "Crescent",
-];
-const CLIENT_SUFFIXES = [
-  "Logistics",
-  "Distribution",
-  "Supply",
-  "Retail Group",
-  "Freight Co.",
-  "Partners",
-];
-const CONTRACT_DIFFICULTIES: ContractDifficultyTag[] = [
-  "capacity",
-  "speed",
-  "specialization",
-  "margin",
-  "consistency",
-];
 const ROLE_ORDER: LaborRole[] = [
   LaborRole.SwitchDriver,
   LaborRole.Unload,
@@ -47,51 +22,70 @@ const ROLE_ORDER: LaborRole[] = [
   LaborRole.Pick,
   LaborRole.Load,
 ];
+
 type FreightClassConfig = (typeof freightClasses)[number];
+
+interface ContractTemplateConfig {
+  id: string;
+  clientName: string;
+  freightClassId: string;
+  difficultyTag: ContractDifficultyTag;
+  minMonthlyCubicFeet: number;
+  maxMonthlyCubicFeet: number;
+  throughputMultiplier: number;
+  lengthMonthsOptions: number[];
+  rateMultiplier: number;
+  minimumServiceLevelModifier: number;
+  dwellPenaltyRateMultiplier: number;
+  challengeNote: string;
+}
+
+const configuredContractTemplates = contractTemplates as ContractTemplateConfig[];
 
 export function generateMonthlyContractOffers(
   state: GameState,
   monthKey: string,
   random: RandomService,
 ): ContractOffer[] {
+  const templates = selectOfferTemplates(state, random);
   const offers: ContractOffer[] = [];
 
-  for (let offerIndex = 0; offerIndex < OFFER_COUNT; offerIndex += 1) {
-    const freightClass = freightClasses[random.nextInt(0, freightClasses.length - 1)];
-    const difficultyTag =
-      CONTRACT_DIFFICULTIES[random.nextInt(0, CONTRACT_DIFFICULTIES.length - 1)];
+  for (const [offerIndex, template] of templates.entries()) {
+    const freightClass = getFreightClassConfig(template.freightClassId);
+
+    if (!freightClass) {
+      continue;
+    }
+
     const expectedMonthlyThroughputCubicFeet = calculateOfferThroughput(
       state,
       freightClass,
-      difficultyTag,
+      template,
       random,
     );
     const lengthMonths =
-      MONTHS_PER_CONTRACT[random.nextInt(0, MONTHS_PER_CONTRACT.length - 1)];
+      template.lengthMonthsOptions[random.nextInt(0, template.lengthMonthsOptions.length - 1)];
     const analysis = buildOfferAnalysis(
       state,
       freightClass,
       expectedMonthlyThroughputCubicFeet,
-      difficultyTag,
+      template.difficultyTag,
     );
 
     offers.push({
       id: createId("contract-offer", state.contracts.nextOfferSequence + offerIndex),
       monthKey,
-      clientName: createClientName(random, offerIndex),
+      clientName: template.clientName,
       freightClassId: freightClass.id,
       lengthMonths,
       expectedMonthlyThroughputCubicFeet,
       expectedWeeklyThroughputCubicFeet: Math.round(expectedMonthlyThroughputCubicFeet / 4),
-      revenuePerCubicFoot: calculateOfferRevenueRate(freightClass, difficultyTag, random),
-      minimumServiceLevel: calculateMinimumServiceLevel(difficultyTag, random),
-      dwellPenaltyThresholdTicks: calculateDwellPenaltyThreshold(difficultyTag),
-      dwellPenaltyRatePerCubicFoot: calculateDwellPenaltyRate(freightClass, difficultyTag),
-      difficultyTag,
-      operationalChallengeNote: buildOperationalChallengeNote(
-        freightClass,
-        difficultyTag,
-      ),
+      revenuePerCubicFoot: calculateOfferRevenueRate(freightClass, template, random),
+      minimumServiceLevel: calculateMinimumServiceLevel(template, random),
+      dwellPenaltyThresholdTicks: calculateDwellPenaltyThreshold(template.difficultyTag),
+      dwellPenaltyRatePerCubicFoot: calculateDwellPenaltyRate(freightClass, template),
+      difficultyTag: template.difficultyTag,
+      operationalChallengeNote: template.challengeNote,
       forecastRange: {
         minMonthlyCubicFeet: Math.round(expectedMonthlyThroughputCubicFeet * 0.84),
         maxMonthlyCubicFeet: Math.round(expectedMonthlyThroughputCubicFeet * 1.18),
@@ -154,10 +148,106 @@ export function activateAcceptedContractOffers(state: GameState): void {
   state.contracts.pendingOffers = [];
 }
 
+function selectOfferTemplates(
+  state: GameState,
+  random: RandomService,
+): ContractTemplateConfig[] {
+  const primaryPool = getAvailableTemplates(state, true);
+  const fallbackPool = getAvailableTemplates(state, false);
+  const candidatePool = primaryPool.length >= OFFER_COUNT ? primaryPool : fallbackPool;
+  const selected: ContractTemplateConfig[] = [];
+  const remaining = [...candidatePool];
+
+  while (selected.length < OFFER_COUNT && remaining.length > 0) {
+    let bestIndex = 0;
+    let bestScore = Number.NEGATIVE_INFINITY;
+
+    for (const [index, template] of remaining.entries()) {
+      const score = scoreTemplateSelection(template, selected) + random.next();
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = index;
+      }
+    }
+
+    selected.push(remaining.splice(bestIndex, 1)[0]);
+  }
+
+  return selected;
+}
+
+function getAvailableTemplates(
+  state: GameState,
+  excludeCompletedClientNames: boolean,
+): ContractTemplateConfig[] {
+  const activeClientNames = new Set(state.contracts.activeContracts.map((contract) => contract.clientName));
+  const pendingClientNames = new Set(state.contracts.pendingOffers.map((offer) => offer.clientName));
+  const completedClientNames = new Set(
+    excludeCompletedClientNames
+      ? state.contracts.completedContracts.map((contract) => contract.clientName)
+      : [],
+  );
+
+  return configuredContractTemplates.filter((template) => {
+    if (
+      activeClientNames.has(template.clientName) ||
+      pendingClientNames.has(template.clientName) ||
+      completedClientNames.has(template.clientName)
+    ) {
+      return false;
+    }
+
+    const freightClass = getFreightClassConfig(template.freightClassId);
+
+    if (!freightClass) {
+      return false;
+    }
+
+    const compatibleCapacity = getCompatibleStorageCapacity(state, freightClass);
+    const capacityBound = Math.max(90000, compatibleCapacity * 6);
+
+    return Math.min(template.maxMonthlyCubicFeet, capacityBound) >= template.minMonthlyCubicFeet;
+  });
+}
+
+function scoreTemplateSelection(
+  template: ContractTemplateConfig,
+  selectedTemplates: ContractTemplateConfig[],
+): number {
+  const duplicateFreightClass = selectedTemplates.some(
+    (selectedTemplate) => selectedTemplate.freightClassId === template.freightClassId,
+  );
+  const duplicateDifficulty = selectedTemplates.some(
+    (selectedTemplate) => selectedTemplate.difficultyTag === template.difficultyTag,
+  );
+  const volumeBand = getVolumeBand(template);
+  const duplicateVolumeBand = selectedTemplates.some(
+    (selectedTemplate) => getVolumeBand(selectedTemplate) === volumeBand,
+  );
+  const averageThroughputMultiplier =
+    selectedTemplates.length === 0
+      ? template.throughputMultiplier
+      : selectedTemplates.reduce(
+          (total, selectedTemplate) => total + selectedTemplate.throughputMultiplier,
+          0,
+        ) / selectedTemplates.length;
+  const throughputSpreadScore =
+    Math.abs(template.throughputMultiplier - averageThroughputMultiplier) * 4;
+
+  return (
+    (duplicateFreightClass ? 0 : 3) +
+    (duplicateDifficulty ? 0 : 2) +
+    (duplicateVolumeBand ? 0 : 2.5) +
+    throughputSpreadScore +
+    template.throughputMultiplier
+  );
+}
+
 function calculateOfferThroughput(
   state: GameState,
   freightClass: FreightClassConfig,
-  difficultyTag: ContractDifficultyTag,
+  template: ContractTemplateConfig,
   random: RandomService,
 ): number {
   const currentPortfolioMonthly = state.contracts.activeContracts.reduce(
@@ -167,39 +257,45 @@ function calculateOfferThroughput(
   const compatibleCapacity = getCompatibleStorageCapacity(state, freightClass);
   const capacityBound = Math.max(90000, compatibleCapacity * 6);
   const portfolioAnchor = currentPortfolioMonthly <= 0 ? 180000 : currentPortfolioMonthly * 0.38;
-  const difficultyMultiplier = getDifficultyThroughputMultiplier(difficultyTag);
+  const difficultyMultiplier = getDifficultyThroughputMultiplier(template.difficultyTag);
   const variance = 0.88 + random.next() * 0.26;
+  const templateMin = Math.max(45000, template.minMonthlyCubicFeet);
+  const templateMax = Math.max(templateMin, template.maxMonthlyCubicFeet);
+  const feasibleMax = Math.max(templateMin, Math.min(templateMax, capacityBound));
+  const suggestedMonthlyCubicFeet =
+    portfolioAnchor * difficultyMultiplier * template.throughputMultiplier * variance;
 
-  return Math.max(
-    45000,
-    Math.min(
-      Math.round(portfolioAnchor * difficultyMultiplier * variance),
-      Math.round(capacityBound),
-    ),
+  return clampOfferVolume(
+    Math.round(suggestedMonthlyCubicFeet),
+    templateMin,
+    feasibleMax,
   );
 }
 
 function calculateOfferRevenueRate(
   freightClass: FreightClassConfig,
-  difficultyTag: ContractDifficultyTag,
+  template: ContractTemplateConfig,
   random: RandomService,
 ): number {
-  const rateMultiplier =
+  const difficultyRateMultiplier =
     {
       capacity: 0.95,
       speed: 1.12,
       specialization: 1.2,
       margin: 0.84,
       consistency: 1,
-    }[difficultyTag] ?? 1;
+    }[template.difficultyTag] ?? 1;
 
   return roundCurrency(
-    freightClass.baseRevenuePerCubicFoot * rateMultiplier * (0.94 + random.next() * 0.14),
+    freightClass.baseRevenuePerCubicFoot *
+      difficultyRateMultiplier *
+      template.rateMultiplier *
+      (0.96 + random.next() * 0.1),
   );
 }
 
 function calculateMinimumServiceLevel(
-  difficultyTag: ContractDifficultyTag,
+  template: ContractTemplateConfig,
   random: RandomService,
 ): number {
   const baseline =
@@ -209,9 +305,15 @@ function calculateMinimumServiceLevel(
       specialization: 84,
       margin: 82,
       consistency: 90,
-    }[difficultyTag] ?? 82;
+    }[template.difficultyTag] ?? 82;
 
-  return Math.min(97, Math.max(72, Math.round(baseline + random.nextInt(-2, 3))));
+  return Math.min(
+    97,
+    Math.max(
+      72,
+      Math.round(baseline + template.minimumServiceLevelModifier + random.nextInt(-2, 3)),
+    ),
+  );
 }
 
 function calculateDwellPenaltyThreshold(difficultyTag: ContractDifficultyTag): number {
@@ -231,7 +333,7 @@ function calculateDwellPenaltyThreshold(difficultyTag: ContractDifficultyTag): n
 
 function calculateDwellPenaltyRate(
   freightClass: FreightClassConfig,
-  difficultyTag: ContractDifficultyTag,
+  template: ContractTemplateConfig,
 ): number {
   const difficultyRate =
     {
@@ -240,27 +342,12 @@ function calculateDwellPenaltyRate(
       specialization: 0.032,
       margin: 0.018,
       consistency: 0.038,
-    }[difficultyTag] ?? 0.02;
+    }[template.difficultyTag] ?? 0.02;
 
-  return roundCurrency(difficultyRate + freightClass.baseRevenuePerCubicFoot * 0.03);
-}
-
-function buildOperationalChallengeNote(
-  freightClass: FreightClassConfig,
-  difficultyTag: ContractDifficultyTag,
-): string {
-  switch (difficultyTag) {
-    case "capacity":
-      return `${freightClass.name} volume is attractive, but compatible storage will stay busy all month.`;
-    case "speed":
-      return `${freightClass.name} pays for fast turns and punishes slow yard-to-door movement.`;
-    case "specialization":
-      return `${freightClass.name} is profitable, but it leans on a narrower storage footprint.`;
-    case "margin":
-      return `${freightClass.name} is a thinner-margin account that rewards disciplined labor usage.`;
-    case "consistency":
-      return `${freightClass.name} needs reliable weekly performance more than dramatic peak output.`;
-  }
+  return roundCurrency(
+    (difficultyRate + freightClass.baseRevenuePerCubicFoot * 0.03) *
+      template.dwellPenaltyRateMultiplier,
+  );
 }
 
 function buildOfferAnalysis(
@@ -385,11 +472,20 @@ function getDifficultyThroughputMultiplier(difficultyTag: ContractDifficultyTag)
   }
 }
 
-function createClientName(random: RandomService, offerIndex: number): string {
-  const prefix = CLIENT_PREFIXES[random.nextInt(0, CLIENT_PREFIXES.length - 1)];
-  const suffix = CLIENT_SUFFIXES[(offerIndex + random.nextInt(0, CLIENT_SUFFIXES.length - 1)) % CLIENT_SUFFIXES.length];
+function getVolumeBand(template: ContractTemplateConfig): "light" | "medium" | "heavy" {
+  if (template.maxMonthlyCubicFeet < 110000) {
+    return "light";
+  }
 
-  return `${prefix} ${suffix}`;
+  if (template.maxMonthlyCubicFeet < 210000) {
+    return "medium";
+  }
+
+  return "heavy";
+}
+
+function getFreightClassConfig(freightClassId: string): FreightClassConfig | undefined {
+  return freightClasses.find((freightClass) => freightClass.id === freightClassId);
 }
 
 function getCompatibleStorageCapacity(
@@ -463,6 +559,10 @@ function buildBudgetRiskNote(budgetPressure: ContractRiskLevel): string {
   }
 
   return "Budget impact is modest compared with the current operation size.";
+}
+
+function clampOfferVolume(value: number, minimum: number, maximum: number): number {
+  return Math.max(minimum, Math.min(value, maximum));
 }
 
 function roundCurrency(value: number): number {

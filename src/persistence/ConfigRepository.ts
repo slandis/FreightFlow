@@ -57,21 +57,110 @@ export class ConfigRepository {
     const errors: string[] = [];
     const zoneIds = validateIdArray("zoneTypes", this.config.zoneTypes, errors);
     const laborRoleIds = validateIdArray("laborRoles", this.config.laborRoles, errors);
+    const freightClassIds = validateIdArray("freightClasses", this.config.freightClasses, errors);
 
-    validateIdArray("freightClasses", this.config.freightClasses, errors);
     validateIdArray("difficultyModes", this.config.difficultyModes, errors);
-    validateIdArray("contracts", this.config.contracts, errors, { allowEmpty: true });
+    validateIdArray("contracts", this.config.contracts, errors);
     validateIdArray("seasonalCurves", this.config.seasonalCurves, errors, { allowEmpty: true });
     validateIdArray("clientProfiles", this.config.clientProfiles, errors, { allowEmpty: true });
     validateFreightClasses(this.config.freightClasses, zoneIds, errors);
     validateZoneTypes(this.config.zoneTypes, errors);
     validateLaborRoles(laborRoleIds, errors);
     validateDifficultyModes(this.config.difficultyModes, errors);
+    validateContracts(this.config.contracts, freightClassIds, errors);
 
     return {
       success: errors.length === 0,
       errors,
     };
+  }
+}
+
+const contractDifficultyTags = new Set([
+  "capacity",
+  "speed",
+  "specialization",
+  "margin",
+  "consistency",
+]);
+
+function validateContracts(
+  value: unknown,
+  freightClassIds: Set<string>,
+  errors: string[],
+): void {
+  if (!Array.isArray(value)) {
+    return;
+  }
+
+  for (const contract of value) {
+    if (!isRecord(contract)) {
+      continue;
+    }
+
+    if (typeof contract.clientName !== "string" || contract.clientName.length === 0) {
+      errors.push(`contracts.${String(contract.id)} is missing a clientName`);
+    }
+
+    if (
+      typeof contract.freightClassId !== "string" ||
+      !freightClassIds.has(contract.freightClassId)
+    ) {
+      errors.push(
+        `contracts.${String(contract.id)} references unknown freight class ${String(contract.freightClassId)}`,
+      );
+    }
+
+    if (
+      typeof contract.difficultyTag !== "string" ||
+      !contractDifficultyTags.has(contract.difficultyTag)
+    ) {
+      errors.push(`contracts.${String(contract.id)} has invalid difficultyTag`);
+    }
+
+    for (const field of [
+      "minMonthlyCubicFeet",
+      "maxMonthlyCubicFeet",
+      "throughputMultiplier",
+      "rateMultiplier",
+      "dwellPenaltyRateMultiplier",
+    ]) {
+      if (!isNonNegativeNumber(contract[field]) || contract[field] <= 0) {
+        errors.push(`contracts.${String(contract.id)} has invalid ${field}`);
+      }
+    }
+
+    if (
+      isNonNegativeNumber(contract.minMonthlyCubicFeet) &&
+      isNonNegativeNumber(contract.maxMonthlyCubicFeet) &&
+      contract.maxMonthlyCubicFeet < contract.minMonthlyCubicFeet
+    ) {
+      errors.push(`contracts.${String(contract.id)} has maxMonthlyCubicFeet below minimum`);
+    }
+
+    if (
+      typeof contract.minimumServiceLevelModifier !== "number" ||
+      !Number.isFinite(contract.minimumServiceLevelModifier)
+    ) {
+      errors.push(`contracts.${String(contract.id)} has invalid minimumServiceLevelModifier`);
+    }
+
+    if (
+      !Array.isArray(contract.lengthMonthsOptions) ||
+      contract.lengthMonthsOptions.length === 0 ||
+      contract.lengthMonthsOptions.some(
+        (value) => typeof value !== "number" || !Number.isInteger(value) || value <= 0,
+      )
+    ) {
+      errors.push(`contracts.${String(contract.id)} has invalid lengthMonthsOptions`);
+    }
+
+    if (
+      typeof contract.challengeNote !== "string" ||
+      contract.challengeNote.length === 0
+    ) {
+      errors.push(`contracts.${String(contract.id)} is missing a challengeNote`);
+    }
   }
 }
 

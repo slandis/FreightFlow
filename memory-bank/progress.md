@@ -345,3 +345,13 @@ Balance and Monthly Review Rework: Completed
     - Increased outbound friction by lowering harder-mode outbound order size multipliers, requiring at least `1,200` cubic feet of stored inventory before new outbound demand can spawn, and blocking new generation when `3` active outbound orders already exist.
     - Updated timing, planning, economy, outbound-flow, and save/load coverage to reflect the new speed, monthly-review, and balance behavior.
     - Verification completed: `npm test` passed with 134 tests, and `npm run build` passed. The build still emits the expected Vite chunk-size warning.
+
+Playtest Quality-of-Life and Contract Pool Expansion: Completed
+    - Added `memory-bank/gameplay-hints.md` with concrete staffing plans, layout patterns, score-recovery advice, and speed usage guidance for all four run types.
+    - Fixed the top-HUD `New Run` dropdown styling so the selector and its options render with readable contrast.
+    - Added a playtest cheat sequence so typing `ineedcashnow!` outside form fields resets cash to `250,000` through an authoritative simulation command.
+    - Replaced the tiny procedural monthly contract-offer source with a data-backed pool of 50 distinct company templates covering all freight classes and challenge tags.
+    - Expanded contract template data to include unique company names, fixed freight classes, volume ranges, term options, pricing/service modifiers, and per-account challenge notes.
+    - Updated monthly offer generation to draw 4 surfaced offers from the larger pool while favoring diversity across freight class, difficulty tag, and volume band and avoiding immediate client-name repetition.
+    - Added contract-template config validation plus focused coverage for offer diversity, anti-repetition behavior, and the new playtest cheat handling.
+    - Verification completed: `npm test` passed with 139 tests, and `npm run build` passed. The build still emits the expected Vite chunk-size warning.

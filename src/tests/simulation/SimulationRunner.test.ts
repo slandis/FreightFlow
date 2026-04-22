@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { TileZoneType } from "../../game/simulation/types/enums";
 import { ChangeSpeedCommand } from "../../game/simulation/commands/ChangeSpeedCommand";
+import {
+  GrantPlaytestCashCommand,
+  PLAYTEST_CASH_AMOUNT,
+} from "../../game/simulation/commands/GrantPlaytestCashCommand";
 import { GameSpeed } from "../../game/simulation/types/enums";
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
 import { selectCash } from "../../game/simulation/selectors/kpiSelectors";
@@ -53,6 +57,17 @@ describe("SimulationRunner", () => {
     expect(result.success).toBe(true);
     expect(selectSpeed(runner.getState())).toBe(GameSpeed.Fast);
     expect(runner.getState().debug.lastCommandType).toBe("change-speed");
+  });
+
+  it("can reset cash through the playtest cheat command", () => {
+    const runner = new SimulationRunner({ startingCash: 12345 });
+
+    const result = runner.dispatch(new GrantPlaytestCashCommand());
+
+    expect(result.success).toBe(true);
+    expect(runner.getState().cash).toBe(PLAYTEST_CASH_AMOUNT);
+    expect(runner.getState().debug.lastCommandType).toBe("grant-playtest-cash");
+    expect(runner.getState().debug.lastEventType).toBe("playtest-cash-granted");
   });
 
   it("emits command events through the shared event bus", () => {

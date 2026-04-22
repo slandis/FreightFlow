@@ -81,7 +81,14 @@ button {
   border: 1px solid rgba(238, 244, 242, 0.22);
   border-radius: 8px;
   color: #eef4f2;
-  background: rgba(94, 163, 198, 0.18);
+  background: rgba(24, 33, 38, 0.96);
+  padding: 0 10px;
+  appearance: auto;
+}
+
+.hud-select select option {
+  color: #eef4f2;
+  background: #182126;
 }
 
 .hud-badge {
