@@ -9,6 +9,8 @@ const BASE_OUTBOUND_ORDER_INTERVAL_TICKS = 60;
 const BASE_MIN_ORDER_CUBIC_FEET = 300;
 const BASE_MAX_ORDER_CUBIC_FEET = 900;
 const ORDER_DUE_TICKS = 720;
+const MIN_AVAILABLE_INVENTORY_CUBIC_FEET = 1200;
+const MAX_ACTIVE_OUTBOUND_ORDERS = 3;
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
 
@@ -29,7 +31,20 @@ export class OrderGenerator {
       return [];
     }
 
+    if (getActiveOutboundOrderCount(freightFlow) >= MAX_ACTIVE_OUTBOUND_ORDERS) {
+      return [];
+    }
+
     const availableInventory = getAvailableInventoryByContractAndFreightClass(freightFlow);
+    const totalAvailableInventory = Object.values(availableInventory).reduce(
+      (total, cubicFeet) => total + cubicFeet,
+      0,
+    );
+
+    if (totalAvailableInventory < MIN_AVAILABLE_INVENTORY_CUBIC_FEET) {
+      return [];
+    }
+
     const inventoryKeys = Object.entries(availableInventory).filter(
       ([, cubicFeet]) => cubicFeet > 0,
     );
@@ -90,6 +105,10 @@ export class OrderGenerator {
 
     return [event];
   }
+}
+
+function getActiveOutboundOrderCount(freightFlow: FreightFlowState): number {
+  return freightFlow.outboundOrders.filter((order) => order.state !== "complete").length;
 }
 
 function getAvailableInventoryByContractAndFreightClass(

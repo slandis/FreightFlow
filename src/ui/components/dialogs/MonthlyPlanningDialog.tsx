@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ApplyBudgetPlanCommand } from "../../../game/simulation/commands/ApplyBudgetPlanCommand";
 import { AssignPlannedLaborCommand } from "../../../game/simulation/commands/AssignPlannedLaborCommand";
 import { ConfirmMonthlyPlanCommand } from "../../../game/simulation/commands/ConfirmMonthlyPlanCommand";
+import { SetMonthlyReviewSkipCommand } from "../../../game/simulation/commands/SetMonthlyReviewSkipCommand";
 import { SetPlannedTotalHeadcountCommand } from "../../../game/simulation/commands/SetPlannedTotalHeadcountCommand";
 import { SetContractOfferDecisionCommand } from "../../../game/simulation/commands/SetContractOfferDecisionCommand";
 import { getDifficultyModeById } from "../../../game/simulation/config/difficulty";
@@ -108,6 +109,12 @@ export function MonthlyPlanningDialog() {
     setError(result.success ? null : result.errors[0] ?? "Plan update failed");
   };
 
+  const updateSkipMonthlyReviews = (skipMonthlyReviews: boolean) => {
+    const result = simulation.dispatch(new SetMonthlyReviewSkipCommand(skipMonthlyReviews));
+
+    setError(result.success ? null : result.errors[0] ?? "Monthly review setting update failed");
+  };
+
   const setOfferDecision = (offerId: string, decision: "accepted" | "rejected") => {
     const result = simulation.dispatch(new SetContractOfferDecisionCommand(offerId, decision));
 
@@ -155,6 +162,14 @@ export function MonthlyPlanningDialog() {
         </div>
 
         <footer className="planning-summary-bar">
+          <label className="planning-skip-toggle">
+            <input
+              checked={planning.skipMonthlyReviews}
+              onChange={(event) => updateSkipMonthlyReviews(event.target.checked)}
+              type="checkbox"
+            />
+            Skip future monthly reviews
+          </label>
           <span>Cash ${formatNumber(activeSnapshot.cash)}</span>
           <span>Net ${formatNumber(activeSnapshot.currentMonthNet)}</span>
           <span>Headcount {activePendingPlan.totalHeadcount}</span>

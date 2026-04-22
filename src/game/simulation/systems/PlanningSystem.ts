@@ -26,7 +26,7 @@ interface OpenPlanningOptions {
   monthKey?: string;
   resetCurrentMonthEconomy?: boolean;
   regenerateOffers?: boolean;
-  setSpeedToSlow?: boolean;
+  openedSpeed?: GameSpeed;
 }
 
 export class PlanningSystem {
@@ -48,11 +48,16 @@ export class PlanningSystem {
       return [];
     }
 
+    if (state.planning.skipMonthlyReviews) {
+      advanceMonthWithoutReview(state, monthKey);
+      return [];
+    }
+
     return openMonthlyPlanning(state, random, createEvent, {
       monthKey,
       regenerateOffers: true,
       resetCurrentMonthEconomy: true,
-      setSpeedToSlow: true,
+      openedSpeed: state.speed === GameSpeed.Hyper ? GameSpeed.Paused : GameSpeed.Slow,
     });
   }
 }
@@ -85,8 +90,8 @@ export function openMonthlyPlanning(
     state.contracts.pendingOffers = generateMonthlyContractOffers(state, monthKey, random);
   }
 
-  if (options.setSpeedToSlow) {
-    state.speed = GameSpeed.Slow;
+  if (options.openedSpeed) {
+    state.speed = options.openedSpeed;
   }
 
   if (options.resetCurrentMonthEconomy) {
@@ -246,6 +251,20 @@ function resetCurrentMonthEconomy(state: GameState): void {
   state.economy.currentMonthLaborCost = 0;
   state.economy.currentMonthOperatingCost = 0;
   state.economy.currentMonthNet = 0;
+}
+
+function advanceMonthWithoutReview(state: GameState, monthKey: string): void {
+  state.planning.lastOpenedMonthKey = monthKey;
+  state.planning.lastConfirmedMonthKey = monthKey;
+  state.planning.currentPlan = {
+    monthKey,
+    totalHeadcount: state.planning.currentPlan.totalHeadcount,
+    budget: cloneBudgetPlan(state.planning.currentPlan.budget),
+    laborAssignments: { ...state.planning.currentPlan.laborAssignments },
+  };
+  state.contracts.pendingOffers = [];
+  resetCurrentMonthEconomy(state);
+  laborAnalyticsRecorder.resetForMonth(state.labor, monthKey, state.currentTick);
 }
 
 function contractHealthRank(health: string): number {

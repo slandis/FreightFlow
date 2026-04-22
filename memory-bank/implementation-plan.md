@@ -582,6 +582,9 @@ Prepare the first structured playable build.
 - tune zone capacities
 - tune freight arrival ranges
 - tune basic difficulty mode presets
+- tune outbound order cadence, minimum inventory thresholds, and backlog gating so storage and dock pressure persist longer
+- tune freight revenue rates, recurring labor cost, and operating-cost floor so cash growth requires sustained throughput
+- tune live simulation speed ladder for more readable normal play and faster-but-controlled month cycling
 - tune budget effect strengths
 - tune morale/safety/condition/satisfaction thresholds
 - polish alerts and recommendations
@@ -593,6 +596,8 @@ Prepare the first structured playable build.
 - MVP candidate build
 - at least one approachable difficulty
 - at least one challenging difficulty
+- storage and outbound systems create visible friction instead of instantly draining inventory
+- monthly review can be skipped intentionally after the player has learned the loop
 - playtest questions and telemetry plan
 
 ### Validation Checklist
@@ -600,9 +605,17 @@ Prepare the first structured playable build.
 - the game is understandable to a fresh tester
 - different layouts and labor choices produce meaningfully different outcomes
 - throughput and money feel connected to player skill
+- Hyper reaches month boundaries quickly, then stops safely for review instead of overshooting
+- skipping monthly reviews preserves the current plan and still resets month-boundary counters correctly
 
 ### Implementation Notes
 Balance for clarity first, realism second. The player must be able to learn the system before they can appreciate complexity.
+Recent tuning decisions:
+- live speed ladder: `Slow 4`, `Medium 10`, `Fast 20`
+- Hyper targets a 30-day month in `4` seconds and should pause on monthly-review open
+- monthly review now supports a persistent `skip future monthly reviews` option for players who want uninterrupted play
+- outbound demand should require meaningful stored inventory and respect a small active-order cap before spawning more work
+- recurring burn should stay high enough that profitable flow requires sustained, not incidental, throughput
 
 ---
 

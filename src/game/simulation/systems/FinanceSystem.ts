@@ -5,7 +5,7 @@ import type { DomainEvent } from "../events/DomainEvent";
 import { LABOR_COST_PER_WORKER_PER_TICK } from "../labor/laborCost";
 import { getBudgetCostPerTick } from "../planning/BudgetPlan";
 
-const BASE_OPERATING_COST_PER_TICK = 0.15;
+const BASE_OPERATING_COST_PER_TICK = 0.28;
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
 

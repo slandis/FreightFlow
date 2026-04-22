@@ -163,6 +163,7 @@ describe("SaveLoadService", () => {
     const { service } = createService(runner);
 
     expect(runner.getState().planning.isPlanningActive).toBe(true);
+    runner.getState().planning.skipMonthlyReviews = true;
     service.save("slot-1");
     runner.getState().planning.isPlanningActive = false;
 
@@ -170,6 +171,7 @@ describe("SaveLoadService", () => {
 
     expect(runner.getState().planning.isPlanningActive).toBe(true);
     expect(runner.getState().planning.pendingPlan).not.toBeNull();
+    expect(runner.getState().planning.skipMonthlyReviews).toBe(true);
   });
 
   it("round-trips an active freight lifecycle and can continue ticking", () => {

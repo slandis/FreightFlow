@@ -50,6 +50,10 @@ export function deserializeGameState(serialized: SerializedGameState): GameState
   const state = cloneJson({
     ...serialized,
     difficultyModeId: serialized.difficultyModeId ?? getDifficultyModeById().id,
+    planning: {
+      ...serialized.planning,
+      skipMonthlyReviews: serialized.planning?.skipMonthlyReviews ?? false,
+    },
     speed: GameSpeed.Paused,
   }) as Omit<GameState, "warehouseMap">;
 

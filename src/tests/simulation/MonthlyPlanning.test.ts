@@ -5,6 +5,7 @@ import { ChangeSpeedCommand } from "../../game/simulation/commands/ChangeSpeedCo
 import { ConfirmMonthlyPlanCommand } from "../../game/simulation/commands/ConfirmMonthlyPlanCommand";
 import { OpenMonthlyPlanningCommand } from "../../game/simulation/commands/OpenMonthlyPlanningCommand";
 import { PaintZoneCommand } from "../../game/simulation/commands/PaintZoneCommand";
+import { SetMonthlyReviewSkipCommand } from "../../game/simulation/commands/SetMonthlyReviewSkipCommand";
 import { SetContractOfferDecisionCommand } from "../../game/simulation/commands/SetContractOfferDecisionCommand";
 import { SetPlannedTotalHeadcountCommand } from "../../game/simulation/commands/SetPlannedTotalHeadcountCommand";
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
@@ -65,6 +66,16 @@ describe("monthly planning", () => {
     runner.tick();
 
     expect(openedEvents).toHaveLength(1);
+  });
+
+  it("pauses from hyper speed when monthly planning opens", () => {
+    const runner = createRunnerAtMonthEnd();
+
+    runner.dispatch(new ChangeSpeedCommand(GameSpeed.Hyper));
+    runner.tick();
+
+    expect(runner.getState().planning.isPlanningActive).toBe(true);
+    expect(runner.getState().speed).toBe(GameSpeed.Paused);
   });
 
   it("updates pending budget only during active planning", () => {
@@ -290,6 +301,23 @@ describe("monthly planning", () => {
     expect(state.planning.latestSnapshot?.currentMonthRevenue).toBe(1234);
     expect(state.economy.currentMonthRevenue).toBe(1234);
     expect(state.contracts.pendingOffers).toHaveLength(0);
+  });
+
+  it("can skip future monthly reviews while keeping the active plan in force", () => {
+    const runner = createRunnerAtMonthEnd();
+    openPlanning(runner);
+
+    expect(runner.dispatch(new SetMonthlyReviewSkipCommand(true)).success).toBe(true);
+    expect(runner.dispatch(new ConfirmMonthlyPlanCommand()).success).toBe(true);
+
+    runner.tick();
+
+    const state = runner.getState();
+    expect(state.planning.skipMonthlyReviews).toBe(true);
+    expect(state.planning.isPlanningActive).toBe(false);
+    expect(state.planning.currentPlan.monthKey).toBe("Y1-M2");
+    expect(state.planning.lastConfirmedMonthKey).toBe("Y1-M2");
+    expect(state.economy.currentMonthRevenue).toBe(0);
   });
 
   it("does not advance simulation time while planning is open", () => {

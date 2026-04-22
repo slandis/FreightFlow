@@ -8,7 +8,7 @@
     "demandVolatility": 0.12,
     "inboundIntervalMultiplier": 1.08,
     "inboundVolumeMultiplier": 0.95,
-    "outboundIntervalMultiplier": 1.12,
+    "outboundIntervalMultiplier": 1.35,
     "outboundVolumeMultiplier": 0.92,
     "scoreDecayMultiplier": 0.78,
     "serviceTargetMultiplier": 0.88
@@ -22,8 +22,8 @@
     "demandVolatility": 0.26,
     "inboundIntervalMultiplier": 1,
     "inboundVolumeMultiplier": 1.05,
-    "outboundIntervalMultiplier": 0.95,
-    "outboundVolumeMultiplier": 1.05,
+    "outboundIntervalMultiplier": 1.2,
+    "outboundVolumeMultiplier": 0.95,
     "scoreDecayMultiplier": 1.08,
     "serviceTargetMultiplier": 1
   },
@@ -36,8 +36,8 @@
     "demandVolatility": 0.34,
     "inboundIntervalMultiplier": 0.94,
     "inboundVolumeMultiplier": 1.12,
-    "outboundIntervalMultiplier": 0.9,
-    "outboundVolumeMultiplier": 1.12,
+    "outboundIntervalMultiplier": 1.08,
+    "outboundVolumeMultiplier": 1,
     "scoreDecayMultiplier": 1.22,
     "serviceTargetMultiplier": 1.08
   },
@@ -50,8 +50,8 @@
     "demandVolatility": 0.42,
     "inboundIntervalMultiplier": 0.88,
     "inboundVolumeMultiplier": 1.22,
-    "outboundIntervalMultiplier": 0.84,
-    "outboundVolumeMultiplier": 1.2,
+    "outboundIntervalMultiplier": 1,
+    "outboundVolumeMultiplier": 1.08,
     "scoreDecayMultiplier": 1.38,
     "serviceTargetMultiplier": 1.16
   }

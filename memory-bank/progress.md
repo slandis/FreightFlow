@@ -335,3 +335,13 @@ Run Types Expansion: Completed
     - Scaled starting labor-role assignments to fit the selected mode's total headcount while preserving the existing role-balance pattern as closely as possible.
     - Updated config validation and simulation coverage for the new run modes and the reduced standard-mode baseline headcount.
     - Verification completed: `npm test` passed with 132 tests. The existing Vite build warning remains unchanged.
+
+Balance and Monthly Review Rework: Completed
+    - Reworked the live simulation speed ladder to `Slow 4`, `Medium 10`, and `Fast 20`, and tuned `Hyper` to reach a 30-day month target in `4` seconds.
+    - Updated month-boundary behavior so planning still opens once per month, but Hyper now drops into `Paused` for review instead of slow-playing through the boundary.
+    - Added a persistent `skip future monthly reviews` planning option backed by authoritative simulation state, command handling, UI controls, and save/load preservation.
+    - Lowered freight-class base revenue rates and raised recurring labor and operating costs so revenue growth no longer outruns warehouse friction as quickly.
+    - Retuned the baseline contract throughput/revenue assumptions to fit the harsher recurring-cost scale without making the default business instantly insolvent.
+    - Increased outbound friction by lowering harder-mode outbound order size multipliers, requiring at least `1,200` cubic feet of stored inventory before new outbound demand can spawn, and blocking new generation when `3` active outbound orders already exist.
+    - Updated timing, planning, economy, outbound-flow, and save/load coverage to reflect the new speed, monthly-review, and balance behavior.
+    - Verification completed: `npm test` passed with 134 tests, and `npm run build` passed. The build still emits the expected Vite chunk-size warning.

@@ -36,7 +36,7 @@ const validConfig = {
       demandVolatility: 0.12,
       inboundIntervalMultiplier: 1.08,
       inboundVolumeMultiplier: 0.95,
-      outboundIntervalMultiplier: 1.12,
+      outboundIntervalMultiplier: 1.35,
       outboundVolumeMultiplier: 0.92,
       scoreDecayMultiplier: 0.78,
       serviceTargetMultiplier: 0.88,

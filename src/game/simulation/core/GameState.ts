@@ -111,6 +111,7 @@ export interface PlanningSnapshot {
 
 export interface PlanningState {
   isPlanningActive: boolean;
+  skipMonthlyReviews: boolean;
   activePlanId: string | null;
   lastOpenedMonthKey: string | null;
   lastConfirmedMonthKey: string | null;
@@ -295,9 +296,9 @@ export function createInitialContractState(): ContractState {
         acceptedMonthIndex: 1,
         endMonthIndex: Number.MAX_SAFE_INTEGER,
         lengthMonths: 999,
-        expectedMonthlyThroughputCubicFeet: 270000,
-        revenuePerCubicFoot: 0.32,
-        targetThroughputCubicFeetPerDay: 9000,
+        expectedMonthlyThroughputCubicFeet: 330000,
+        revenuePerCubicFoot: 0.28,
+        targetThroughputCubicFeetPerDay: 11000,
         minimumServiceLevel: 80,
         dwellPenaltyThresholdTicks: 1440,
         dwellPenaltyRatePerCubicFoot: 0.015,
@@ -340,6 +341,7 @@ export function createInitialPlanningState(
 
   return {
     isPlanningActive: false,
+    skipMonthlyReviews: false,
     activePlanId: null,
     lastOpenedMonthKey: monthKey,
     lastConfirmedMonthKey: monthKey,

@@ -13,9 +13,9 @@ import { GameSpeed } from "../../game/simulation/types/enums";
 describe("SimulationTiming", () => {
   it("maps simulation speeds to ticks per second", () => {
     expect(getTicksPerSecondForSpeed(GameSpeed.Paused)).toBe(0);
-    expect(getTicksPerSecondForSpeed(GameSpeed.Slow)).toBe(1);
-    expect(getTicksPerSecondForSpeed(GameSpeed.Medium)).toBe(4);
-    expect(getTicksPerSecondForSpeed(GameSpeed.Fast)).toBe(12);
+    expect(getTicksPerSecondForSpeed(GameSpeed.Slow)).toBe(4);
+    expect(getTicksPerSecondForSpeed(GameSpeed.Medium)).toBe(10);
+    expect(getTicksPerSecondForSpeed(GameSpeed.Fast)).toBe(20);
     expect(getTicksPerSecondForSpeed(GameSpeed.Hyper)).toBe(HYPER_TICKS_PER_SECOND);
   });
 
@@ -27,26 +27,25 @@ describe("SimulationTiming", () => {
   });
 
   it("calculates slow, medium, fast, and hyper ticks from elapsed time", () => {
-    expect(calculateTicksForElapsed(1000, GameSpeed.Slow, 0).ticksToRun).toBe(1);
-    expect(calculateTicksForElapsed(1000, GameSpeed.Medium, 0).ticksToRun).toBe(4);
-    expect(calculateTicksForElapsed(1000, GameSpeed.Fast, 0).ticksToRun).toBe(12);
+    expect(calculateTicksForElapsed(1000, GameSpeed.Slow, 0).ticksToRun).toBe(4);
+    expect(calculateTicksForElapsed(1000, GameSpeed.Medium, 0).ticksToRun).toBe(10);
+    expect(calculateTicksForElapsed(1000, GameSpeed.Fast, 0).ticksToRun).toBe(20);
     expect(calculateTicksForElapsed(1000, GameSpeed.Hyper, 0).ticksToRun).toBe(
       MAX_HYPER_TICKS_PER_FRAME,
     );
   });
 
-  it("targets a month of hyper ticks in six seconds", () => {
-    expect(HYPER_TARGET_SECONDS_PER_MONTH).toBeGreaterThanOrEqual(5);
-    expect(HYPER_TARGET_SECONDS_PER_MONTH).toBeLessThanOrEqual(10);
+  it("targets a month of hyper ticks in four seconds", () => {
+    expect(HYPER_TARGET_SECONDS_PER_MONTH).toBe(4);
     expect(HYPER_TICKS_PER_SECOND * HYPER_TARGET_SECONDS_PER_MONTH).toBe(TICKS_PER_MONTH);
   });
 
   it("carries partial elapsed time between frames", () => {
-    const firstFrame = calculateTicksForElapsed(400, GameSpeed.Slow, 0);
-    const secondFrame = calculateTicksForElapsed(600, GameSpeed.Slow, firstFrame.accumulatedMs);
+    const firstFrame = calculateTicksForElapsed(100, GameSpeed.Slow, 0);
+    const secondFrame = calculateTicksForElapsed(150, GameSpeed.Slow, firstFrame.accumulatedMs);
 
     expect(firstFrame.ticksToRun).toBe(0);
-    expect(firstFrame.accumulatedMs).toBe(400);
+    expect(firstFrame.accumulatedMs).toBe(100);
     expect(secondFrame.ticksToRun).toBe(1);
     expect(secondFrame.accumulatedMs).toBe(0);
   });

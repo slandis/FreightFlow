@@ -1103,6 +1103,17 @@ button {
   color: rgba(238, 244, 242, 0.82);
 }
 
+.planning-skip-toggle {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  margin-right: auto;
+}
+
+.planning-skip-toggle input {
+  margin: 0;
+}
+
 .planning-error {
   border-left: 3px solid #d96c5f;
   padding-left: 8px;

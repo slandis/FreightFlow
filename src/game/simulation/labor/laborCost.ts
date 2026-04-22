@@ -1,4 +1,4 @@
-export const LABOR_COST_PER_WORKER_PER_TICK = 0.08;
+export const LABOR_COST_PER_WORKER_PER_TICK = 0.11;
 export const TICKS_PER_DAY = 1440;
 export const TICKS_PER_MONTH = TICKS_PER_DAY * 30;
 export const LABOR_COST_PER_WORKER_PER_MONTH =
