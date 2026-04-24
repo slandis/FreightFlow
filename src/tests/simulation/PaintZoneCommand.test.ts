@@ -194,7 +194,7 @@ describe("PaintZoneCommand", () => {
     const result = runner.dispatch(new PaintZoneCommand(4, 4, TileZoneType.StandardStorage));
 
     expect(result.success).toBe(false);
-    expect(result.errors).toEqual(["Not enough cash to assign 1 tile ($80)"]);
+    expect(result.errors).toEqual(["Not enough cash to assign 1 tile ($120)"]);
     expect(runner.getState().warehouseMap.getTile(4, 4)?.zoneType).toBe(TileZoneType.Unassigned);
   });
 

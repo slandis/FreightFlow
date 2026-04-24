@@ -53,7 +53,7 @@ describe("door placement", () => {
     const result = runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
 
     expect(result.success).toBe(false);
-    expect(result.errors).toEqual(["Not enough cash to place a door ($2,500)"]);
+    expect(result.errors).toEqual(["Not enough cash to place a door ($4,000)"]);
     expect(runner.getState().freightFlow.doors).toHaveLength(0);
     expect(runner.getState().warehouseMap.getTile(4, 0)?.isActiveDoor).toBe(false);
   });

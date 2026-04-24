@@ -1,8 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSimulationRunner } from "../../../app/providers/SimulationProvider";
 import { LocalSaveRepository } from "../../../persistence/LocalSaveRepository";
 import { SAVE_SLOT_IDS, type SaveSlotSummary } from "../../../persistence/SaveGameSchema";
 import { SaveLoadService } from "../../../persistence/SaveLoadService";
+import {
+  ensureTestScenarioSlots,
+  resetTestScenarioSlot,
+  TEST_SCENARIOS,
+} from "../../../persistence/testScenarios";
 import { useUiStore } from "../../store/uiStore";
 
 export function SaveLoadDialog() {
@@ -20,6 +25,12 @@ export function SaveLoadDialog() {
     [simulation],
   );
   const [slots, setSlots] = useState(() => saveLoadService.listSlots());
+
+  useEffect(() => {
+    const repository = new LocalSaveRepository();
+    ensureTestScenarioSlots(repository);
+    setSlots(saveLoadService.listSlots());
+  }, [saveLoadService]);
 
   function refreshSlots(): void {
     setSlots(saveLoadService.listSlots());
@@ -59,6 +70,32 @@ export function SaveLoadDialog() {
                 onDelete={() => applyResult(saveLoadService.delete(slotId))}
                 onLoad={() => applyResult(saveLoadService.load(slotId))}
                 onSave={() => applyResult(saveLoadService.save(slotId))}
+                slot={slot}
+              />
+            );
+          })}
+        </div>
+        <div className="save-slot-list">
+          {TEST_SCENARIOS.map((scenario) => {
+            const slot = slots.find((candidate) => candidate.slotId === scenario.slotId) ?? {
+              slotId: scenario.slotId,
+              isEmpty: true,
+              savedAt: null,
+              metadata: null,
+              error: null,
+            };
+
+            return (
+              <ScenarioSlot
+                key={scenario.slotId}
+                description={scenario.description}
+                label={scenario.label}
+                onLoad={() => applyResult(saveLoadService.load(scenario.slotId))}
+                onReset={() => {
+                  resetTestScenarioSlot(new LocalSaveRepository(), scenario.slotId);
+                  setSaveLoadMessage(`Reset ${scenario.label}`);
+                  refreshSlots();
+                }}
                 slot={slot}
               />
             );
@@ -107,6 +144,47 @@ function SaveSlot({
         </button>
         <button disabled={slot.isEmpty} onClick={onDelete} type="button">
           Delete
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function ScenarioSlot({
+  description,
+  label,
+  onLoad,
+  onReset,
+  slot,
+}: {
+  description: string;
+  label: string;
+  onLoad: () => void;
+  onReset: () => void;
+  slot: SaveSlotSummary;
+}) {
+  return (
+    <section className="save-slot">
+      <div>
+        <strong>{label}</strong>
+        <small>{description}</small>
+        {slot.isEmpty ? (
+          <small>Scenario save is missing</small>
+        ) : (
+          <small>
+            {slot.metadata
+              ? `${slot.metadata.calendarLabel}; ${slot.metadata.difficultyLabel ?? "Unknown"}; cash $${slot.metadata.cash.toLocaleString()}; alerts ${slot.metadata.activeAlertCount}`
+              : "Metadata unavailable"}
+          </small>
+        )}
+        {slot.error ? <small className="save-slot-error">{slot.error}</small> : null}
+      </div>
+      <div className="save-slot-actions">
+        <button onClick={onLoad} type="button">
+          Load
+        </button>
+        <button onClick={onReset} type="button">
+          Reset
         </button>
       </div>
     </section>

@@ -89,6 +89,18 @@ function paintStandardStorage(runner: SimulationRunner): void {
   runner.dispatch(new PaintZoneCommand(7, 5, TileZoneType.StandardStorage));
 }
 
+function paintStandardStorageAtDistance(
+  runner: SimulationRunner,
+  travelX: number,
+  travelY: number,
+  storageX: number,
+  storageY: number,
+): void {
+  runner.dispatch(new PaintZoneCommand(travelX, travelY, TileZoneType.Travel));
+  runner.dispatch(new PaintZoneCommand(storageX, storageY, TileZoneType.StandardStorage));
+  runner.dispatch(new PaintZoneCommand(storageX + 1, storageY, TileZoneType.StandardStorage));
+}
+
 describe("labor pools and queue processing", () => {
   it("initializes all configured labor roles with default headcount", () => {
     const runner = new SimulationRunner();
@@ -208,6 +220,29 @@ describe("labor pools and queue processing", () => {
     expect(state.freightFlow.inventoryByFreightClass.standard).toBe(900);
   });
 
+  it("stores freight faster into closer storage than farther valid storage", () => {
+    const nearRunner = new SimulationRunner();
+    const farRunner = new SimulationRunner();
+
+    paintStandardStorageAtDistance(nearRunner, 5, 5, 6, 5);
+    paintStandardStorageAtDistance(farRunner, 5, 5, 7, 5);
+
+    nearRunner.getState().freightFlow.freightBatches.push(createBatch());
+    farRunner.getState().freightFlow.freightBatches.push(createBatch());
+
+    runTicks(nearRunner, 2);
+    runTicks(farRunner, 2);
+
+    const nearBatch = nearRunner.getState().freightFlow.freightBatches[0];
+    const farBatch = farRunner.getState().freightFlow.freightBatches[0];
+
+    expect(nearBatch.state).toBe("storing");
+    expect(farBatch.state).toBe("storing");
+    expect((nearBatch.remainingStorageCubicFeet ?? Number.MAX_SAFE_INTEGER)).toBeLessThan(
+      farBatch.remainingStorageCubicFeet ?? Number.MAX_SAFE_INTEGER,
+    );
+  });
+
   it("stops picking and loading when matching labor is unassigned", () => {
     const pickRunner = new SimulationRunner();
     pickRunner.dispatch(new AssignLaborCommand(LaborRole.Pick, 0));
@@ -243,6 +278,46 @@ describe("labor pools and queue processing", () => {
     loadRunner.tick();
 
     expect(loadRunner.getState().freightFlow.outboundOrders[0].state).toBe("picked");
+  });
+
+  it("picks freight faster from closer storage than farther storage", () => {
+    const nearRunner = new SimulationRunner();
+    const farRunner = new SimulationRunner();
+
+    paintStandardStorageAtDistance(nearRunner, 5, 5, 6, 5);
+    paintStandardStorageAtDistance(farRunner, 5, 5, 7, 5);
+
+    const nearZoneId =
+      nearRunner
+        .getState()
+        .warehouseMap.zones.find((zone) => zone.zoneType === TileZoneType.StandardStorage)?.id ?? null;
+    const farZoneId =
+      farRunner
+        .getState()
+        .warehouseMap.zones.find((zone) => zone.zoneType === TileZoneType.StandardStorage)?.id ?? null;
+
+    nearRunner.getState().freightFlow.freightBatches.push(
+      createBatch({ state: "in-storage", storageZoneId: nearZoneId, storedTick: 1 }),
+    );
+    farRunner.getState().freightFlow.freightBatches.push(
+      createBatch({ state: "in-storage", storageZoneId: farZoneId, storedTick: 1 }),
+    );
+    nearRunner.getState().freightFlow.outboundOrders.push(
+      createOrder({ requestedCubicFeet: 900, remainingPickCubicFeet: 900 }),
+    );
+    farRunner.getState().freightFlow.outboundOrders.push(
+      createOrder({ requestedCubicFeet: 900, remainingPickCubicFeet: 900 }),
+    );
+
+    runTicks(nearRunner, 2);
+    runTicks(farRunner, 2);
+
+    const nearOrder = nearRunner.getState().freightFlow.outboundOrders[0];
+    const farOrder = farRunner.getState().freightFlow.outboundOrders[0];
+
+    expect(nearOrder.state).toBe("picking");
+    expect(farOrder.state).toBe("picking");
+    expect(nearOrder.remainingPickCubicFeet).toBeLessThan(farOrder.remainingPickCubicFeet);
   });
 
   it("reports support-role penalties for sanitation and management understaffing", () => {

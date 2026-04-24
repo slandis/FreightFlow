@@ -18,7 +18,7 @@
   {
     "id": "standard",
     "name": "Standard",
-    "startingCash": 100000,
+    "startingCash": 85000,
     "initialHeadcount": 12,
     "forecastAccuracy": 0.72,
     "demandVolatility": 0.26,
@@ -34,33 +34,33 @@
   {
     "id": "demanding",
     "name": "Demanding",
-    "startingCash": 70000,
+    "startingCash": 50000,
     "initialHeadcount": 9,
     "forecastAccuracy": 0.6,
     "demandVolatility": 0.34,
-    "inboundIntervalMultiplier": 0.94,
+    "inboundIntervalMultiplier": 0.9,
     "inboundYardDwellMinTicks": 3,
     "inboundYardDwellMaxTicks": 6,
     "inboundVolumeMultiplier": 1.12,
     "outboundIntervalMultiplier": 1.08,
     "outboundVolumeMultiplier": 1,
-    "scoreDecayMultiplier": 1.22,
-    "serviceTargetMultiplier": 1.08
+    "scoreDecayMultiplier": 1.3,
+    "serviceTargetMultiplier": 1.14
   },
   {
     "id": "brutal",
     "name": "Brutal",
-    "startingCash": 45000,
+    "startingCash": 30000,
     "initialHeadcount": 8,
     "forecastAccuracy": 0.48,
     "demandVolatility": 0.42,
-    "inboundIntervalMultiplier": 0.88,
+    "inboundIntervalMultiplier": 0.84,
     "inboundYardDwellMinTicks": 4,
     "inboundYardDwellMaxTicks": 8,
     "inboundVolumeMultiplier": 1.22,
     "outboundIntervalMultiplier": 1,
     "outboundVolumeMultiplier": 1.08,
-    "scoreDecayMultiplier": 1.38,
-    "serviceTargetMultiplier": 1.16
+    "scoreDecayMultiplier": 1.5,
+    "serviceTargetMultiplier": 1.24
   }
 ]

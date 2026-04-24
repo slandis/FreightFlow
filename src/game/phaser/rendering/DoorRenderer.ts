@@ -83,6 +83,10 @@ export class DoorRenderer {
     this.orientation = orientation;
   }
 
+  destroy(): void {
+    this.layer.destroy();
+  }
+
   private getDockCapacityIndicatorColor(dockUsageRatio: number): number {
     if (dockUsageRatio >= 1) {
       return dockCapacityIndicatorColors.full;

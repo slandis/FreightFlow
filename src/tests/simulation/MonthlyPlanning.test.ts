@@ -204,6 +204,7 @@ describe("monthly planning", () => {
     expect(state.planning.currentPlan.budget).toEqual(budget);
     expect(state.planning.lastConfirmedMonthKey).toBe("Y1-M2");
     expect(state.labor.totalHeadcount).toBe(20);
+    expect(state.economy.currentMonthCapitalCost).toBe(40000);
     expect(
       state.labor.pools.find((pool) => pool.roleId === LaborRole.Sanitation)?.assignedHeadcount,
     ).toBe(
@@ -211,6 +212,23 @@ describe("monthly planning", () => {
     );
     expect(state.labor.unassignedHeadcount).toBe(8);
     expect(confirmedEvents).toHaveLength(1);
+  });
+
+  it("charges a removal cost when a confirmed monthly plan reduces headcount", () => {
+    const runner = createRunnerAtMonthEnd();
+    openPlanning(runner);
+
+    expect(runner.dispatch(new AssignPlannedLaborCommand(LaborRole.Management, 0)).success).toBe(
+      true,
+    );
+    expect(runner.dispatch(new SetPlannedTotalHeadcountCommand(11)).success).toBe(true);
+    expect(runner.dispatch(new ConfirmMonthlyPlanCommand()).success).toBe(true);
+
+    runner.tick();
+
+    const state = runner.getState();
+    expect(state.labor.totalHeadcount).toBe(11);
+    expect(state.economy.currentMonthCapitalCost).toBe(2500);
   });
 
   it("activates accepted contract offers when the monthly plan is confirmed", () => {

@@ -8,6 +8,7 @@ import { LaborRole } from "../types/enums";
 import type { WarehouseMap } from "../world/WarehouseMap";
 import type { Zone } from "../world/Zone";
 import { recalculateZoneUsage } from "../world/zoneUsage";
+import { getStorageDistanceMultiplier } from "./travelDistance";
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
 const laborAnalyticsRecorder = new LaborAnalyticsRecorder();
@@ -57,7 +58,10 @@ export class StorageSystem {
       }
 
       const remainingStorageCubicFeet = batch.remainingStorageCubicFeet ?? batch.cubicFeet;
-      const processedCubicFeet = Math.min(remainingCapacity, remainingStorageCubicFeet);
+      const zone = warehouseMap.zones.find((candidateZone) => candidateZone.id === batch.storageZoneId);
+      const distanceMultiplier = getStorageDistanceMultiplier(zone?.nearestTravelDistance ?? null);
+      const effectiveCapacity = Math.max(1, remainingCapacity * distanceMultiplier);
+      const processedCubicFeet = Math.min(effectiveCapacity, remainingStorageCubicFeet);
       remainingCapacity -= processedCubicFeet;
       batch.remainingStorageCubicFeet = Math.max(0, remainingStorageCubicFeet - processedCubicFeet);
 

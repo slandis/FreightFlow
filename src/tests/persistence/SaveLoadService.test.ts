@@ -59,7 +59,7 @@ describe("SaveLoadService", () => {
     expect(payload.schemaVersion).toBe(SAVE_SCHEMA_VERSION);
     expect(payload.savedAt).toBe("2026-04-20T12:00:00.000Z");
     expect(payload.metadata.currentTick).toBe(0);
-    expect(payload.metadata.cash).toBe(100000);
+    expect(payload.metadata.cash).toBe(85000);
     expect(payload.metadata.difficultyLabel).toBe("Standard");
   });
 
@@ -82,7 +82,7 @@ describe("SaveLoadService", () => {
     expect(result.success).toBe(true);
     expect(state.speed).toBe(GameSpeed.Paused);
     expect(state.cash).toBe(
-      100000 -
+      85000 -
         getZonePaintCost(TileZoneType.Travel) -
         getZonePaintCost(TileZoneType.StandardStorage) -
         getDoorPlacementCost("inbound"),

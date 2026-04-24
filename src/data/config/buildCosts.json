@@ -1,12 +1,12 @@
 {
-  "travelPerTile": 50,
-  "erasePerTile": 15,
+  "travelPerTile": 80,
+  "erasePerTile": 40,
   "storagePerTile": {
-    "standard-storage": 80,
-    "bulk-storage": 110,
-    "fast-turn-storage": 95,
-    "oversize-storage": 140,
-    "special-handling-storage": 180
+    "standard-storage": 120,
+    "bulk-storage": 150,
+    "fast-turn-storage": 140,
+    "oversize-storage": 190,
+    "special-handling-storage": 240
   },
-  "doorPlacement": 2500
+  "doorPlacement": 4000
 }

@@ -3,9 +3,9 @@ import type { ActiveContract } from "../core/GameState";
 import type { GameState } from "../core/GameState";
 import type { DomainEvent } from "../events/DomainEvent";
 import { LABOR_COST_PER_WORKER_PER_TICK } from "../labor/laborCost";
-import { getBudgetCostPerTick } from "../planning/BudgetPlan";
+import { getBudgetCostPerTick, getHeadcountOperatingCostPerTick } from "../planning/BudgetPlan";
 
-const BASE_OPERATING_COST_PER_TICK = 0.28;
+const BASE_OPERATING_COST_PER_TICK = 0.36;
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
 
@@ -24,6 +24,7 @@ export class FinanceSystem {
     const operatingCost =
       BASE_OPERATING_COST_PER_TICK +
       getBudgetCostPerTick(state.planning.currentPlan.budget) +
+      getHeadcountOperatingCostPerTick(state.labor.totalHeadcount) +
       state.labor.modifiers.conditionPressure * 0.01 +
       Math.max(0, 100 - state.scores.condition.value) * 0.005 +
       Math.max(0, 100 - state.scores.safety.value) * 0.005;

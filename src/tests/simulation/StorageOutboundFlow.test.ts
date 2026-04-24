@@ -269,6 +269,16 @@ describe("storage and outbound freight flow", () => {
         storedTick: 1,
       }),
     );
+    first.getState().freightFlow.freightBatches.push(
+      createBatch({
+        id: "freight-batch-test-3",
+        trailerId: "trailer-test-3",
+        cubicFeet: 500,
+        state: "in-storage",
+        storageZoneId: "standard-storage-001",
+        storedTick: 1,
+      }),
+    );
     second.getState().freightFlow.freightBatches.push(
       createBatch({ state: "in-storage", storageZoneId: "standard-storage-001", storedTick: 1 }),
     );
@@ -277,6 +287,16 @@ describe("storage and outbound freight flow", () => {
         id: "freight-batch-test-2",
         trailerId: "trailer-test-2",
         cubicFeet: 600,
+        state: "in-storage",
+        storageZoneId: "standard-storage-001",
+        storedTick: 1,
+      }),
+    );
+    second.getState().freightFlow.freightBatches.push(
+      createBatch({
+        id: "freight-batch-test-3",
+        trailerId: "trailer-test-3",
+        cubicFeet: 500,
         state: "in-storage",
         storageZoneId: "standard-storage-001",
         storedTick: 1,
@@ -371,7 +391,9 @@ describe("storage and outbound freight flow", () => {
 
     runner.dispatch(new PlaceDoorCommand(4, 0, "flex"));
     paintStandardStorage(runner);
+    runner.dispatch(new PaintZoneCommand(8, 4, TileZoneType.Travel));
     runner.dispatch(new PaintZoneCommand(8, 5, TileZoneType.StandardStorage));
+    runner.dispatch(new PaintZoneCommand(9, 5, TileZoneType.StandardStorage));
     state.freightFlow.freightBatches.push(createBatch());
     state.freightFlow.freightBatches.push(
       createBatch({
@@ -380,10 +402,18 @@ describe("storage and outbound freight flow", () => {
         cubicFeet: 600,
       }),
     );
+    state.freightFlow.freightBatches.push(
+      createBatch({
+        id: "freight-batch-test-3",
+        trailerId: "trailer-test-3",
+        cubicFeet: 300,
+      }),
+    );
 
     runTicks(runner, 10);
     expect(state.freightFlow.freightBatches[0].state).toBe("in-storage");
     expect(state.freightFlow.freightBatches[1].state).toBe("in-storage");
+    expect(state.freightFlow.freightBatches[2].state).toBe("in-storage");
 
     runTicks(runner, 67);
     expect(state.freightFlow.outboundOrders).toHaveLength(1);
@@ -392,7 +422,7 @@ describe("storage and outbound freight flow", () => {
 
     expect(state.freightFlow.outboundOrders[0].state).toBe("complete");
     expect(state.kpis.outboundCubicFeet).toBeGreaterThan(0);
-    expect(state.kpis.outboundCubicFeet).toBeLessThanOrEqual(1500);
+    expect(state.kpis.outboundCubicFeet).toBeLessThanOrEqual(1800);
   });
 });
 

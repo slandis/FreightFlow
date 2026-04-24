@@ -376,3 +376,11 @@ Inbound Yard Dwell Tuning: Completed
     - Extended inbound trailer state with `readyForDoorAssignmentTick`, updated inbound generation to stamp that value on arrival, and gated switch-driver door assignment on the trailer becoming ready.
     - Updated config validation and inbound-flow coverage so the new dwell configuration and staged yard -> switching -> unloading sequence are both enforced by tests.
     - Verification completed: `npm test` passed with 148 tests, and `npm run build` passed. The build still emits the expected Vite chunk-size warning.
+
+Scenario Saves, Load Refresh, and Travel Distance: Completed
+    - Added four seeded playtest scenario save slots for `Relaxed`, `Standard`, `Demanding`, and `Brutal`, surfaced through the existing Save/Load dialog with `Load` and `Reset` actions.
+    - Centered the seeded scenario layouts on the map and changed scenario seeding to regenerate those built-in slots so they do not silently reuse stale payloads.
+    - Fixed loaded-state rendering by rebuilding Phaser tile, overlay, door, and input bindings whenever save/load replaces the authoritative map or freight references.
+    - Added a first-pass travel-distance throughput factor for storage and picking using conservative multipliers derived from storage-zone travel distance rather than explicit worker path simulation.
+    - Added regression coverage for scenario payload validity/reset behavior, visible relaxed-scenario layout seeding, loaded-state renderer refresh, and distance-based storage/pick throughput differences.
+    - Verification completed: `npm test` passed with 154 tests, and `npm run build` passed. The build still emits the expected Vite chunk-size warning.

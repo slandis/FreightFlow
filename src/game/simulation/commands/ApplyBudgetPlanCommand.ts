@@ -3,6 +3,7 @@ import type { BudgetPlan } from "../core/GameState";
 import {
   cloneBudgetPlan,
   getBudgetCostPerTick,
+  getHeadcountOperatingCostPerTick,
   validateBudgetPlan,
 } from "../planning/BudgetPlan";
 import { createPlanningSnapshot } from "../systems/PlanningSystem";
@@ -35,7 +36,9 @@ export class ApplyBudgetPlanCommand implements Command<"apply-budget-plan"> {
       ...context.createEvent("budget-plan-updated"),
       monthKey: context.state.planning.pendingPlan.monthKey,
       budget: cloneBudgetPlan(this.budget),
-      projectedBudgetCostPerTick: getBudgetCostPerTick(this.budget),
+      projectedBudgetCostPerTick:
+        getBudgetCostPerTick(this.budget) +
+        getHeadcountOperatingCostPerTick(context.state.planning.pendingPlan.totalHeadcount),
     };
 
     return commandSucceeded([event]);

@@ -3,6 +3,11 @@ import type { FreightFlowState } from "../freight/FreightFlowState";
 import type { LaborState } from "./LaborPool";
 import { LaborAnalyticsRecorder } from "./LaborAnalyticsRecorder";
 import { LaborRole } from "../types/enums";
+import type { WarehouseMap } from "../world/WarehouseMap";
+import {
+  getPickDistanceMultiplier,
+  getWeightedStorageDistanceForOrder,
+} from "./travelDistance";
 
 const INVENTORY_UNAVAILABLE_REASON = "Inventory unavailable";
 
@@ -12,6 +17,7 @@ const laborAnalyticsRecorder = new LaborAnalyticsRecorder();
 export class PickSystem {
   process(
     freightFlow: FreightFlowState,
+    warehouseMap: WarehouseMap,
     currentTick: number,
     createEvent: EventFactory,
     pickCapacityCubicFeet: number,
@@ -81,7 +87,10 @@ export class PickSystem {
         break;
       }
 
-      const processedCubicFeet = Math.min(remainingCapacity, order.remainingPickCubicFeet);
+      const weightedDistance = getWeightedStorageDistanceForOrder(order, freightFlow, warehouseMap);
+      const distanceMultiplier = getPickDistanceMultiplier(weightedDistance);
+      const effectiveCapacity = Math.max(1, remainingCapacity * distanceMultiplier);
+      const processedCubicFeet = Math.min(effectiveCapacity, order.remainingPickCubicFeet);
       remainingCapacity -= processedCubicFeet;
       order.remainingPickCubicFeet = Math.max(
         0,

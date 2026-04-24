@@ -13,6 +13,7 @@ import { ContractSystem } from "../../game/simulation/systems/ContractSystem";
 import {
   LABOR_COST_PER_WORKER_PER_TICK,
 } from "../../game/simulation/labor/laborCost";
+import { getHeadcountOperatingCostPerTick } from "../../game/simulation/planning/BudgetPlan";
 import { LaborRole } from "../../game/simulation/types/enums";
 
 function runTicks(runner: SimulationRunner, ticks: number): void {
@@ -112,7 +113,9 @@ describe("core scores and economy", () => {
 
     const economy = selectEconomySummary(runner.getState());
     expect(economy.currentMonthLaborCost).toBeCloseTo(12 * LABOR_COST_PER_WORKER_PER_TICK, 6);
-    expect(economy.currentMonthOperatingCost).toBeGreaterThan(0);
+    expect(economy.currentMonthOperatingCost).toBeGreaterThan(
+      getHeadcountOperatingCostPerTick(runner.getState().labor.totalHeadcount),
+    );
     expect(runner.getState().cash).toBeLessThan(100000);
   });
 
@@ -130,7 +133,7 @@ describe("core scores and economy", () => {
     );
   });
 
-  it("keeps baseline fixed costs in scale with baseline monthly contract revenue", () => {
+  it("pushes baseline fixed costs above baseline monthly contract revenue to require stronger play", () => {
     const runner = new SimulationRunner();
     const baselineContract = runner.getState().contracts.activeContracts[0];
     const monthlyRevenueCapacity =
@@ -144,7 +147,7 @@ describe("core scores and economy", () => {
     const monthlyOperatingFloor =
       runner.getState().economy.operatingCostPerTick * 1440 * 30;
 
-    expect(monthlyLaborCost + monthlyOperatingFloor).toBeLessThan(monthlyRevenueCapacity * 1.1);
+    expect(monthlyLaborCost + monthlyOperatingFloor).toBeGreaterThan(monthlyRevenueCapacity * 2);
   });
 
   it("updates KPI fields from economy and score state", () => {

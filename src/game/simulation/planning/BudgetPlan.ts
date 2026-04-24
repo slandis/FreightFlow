@@ -1,6 +1,9 @@
 import type { BudgetPlan } from "../core/GameState";
 
 export const BUDGET_COST_PER_POINT_PER_TICK = 0.01;
+export const WORKFORCE_OPERATING_COST_PER_HEAD_PER_TICK = 0.09;
+export const HEADCOUNT_ADDITION_COST = 5000;
+export const HEADCOUNT_REMOVAL_COST = 2500;
 
 const MAX_MAINTENANCE_SUPPORT = 0.35;
 const MAX_SAFETY_SUPPORT = 0.3;
@@ -46,6 +49,28 @@ export function getTotalBudgetPoints(budget: BudgetPlan): number {
 
 export function getBudgetCostPerTick(budget: BudgetPlan): number {
   return getTotalBudgetPoints(budget) * BUDGET_COST_PER_POINT_PER_TICK;
+}
+
+export function getHeadcountOperatingCostPerTick(totalHeadcount: number): number {
+  return Math.max(0, totalHeadcount) * WORKFORCE_OPERATING_COST_PER_HEAD_PER_TICK;
+}
+
+export function getHeadcountChangeCost(
+  currentHeadcount: number,
+  plannedHeadcount: number,
+): number {
+  const sanitizedCurrent = Math.max(0, currentHeadcount);
+  const sanitizedPlanned = Math.max(0, plannedHeadcount);
+
+  if (sanitizedPlanned > sanitizedCurrent) {
+    return (sanitizedPlanned - sanitizedCurrent) * HEADCOUNT_ADDITION_COST;
+  }
+
+  if (sanitizedPlanned < sanitizedCurrent) {
+    return (sanitizedCurrent - sanitizedPlanned) * HEADCOUNT_REMOVAL_COST;
+  }
+
+  return 0;
 }
 
 export function getMaintenanceSupport(budget: BudgetPlan): number {

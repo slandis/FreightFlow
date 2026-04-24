@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type { SimulationRunner } from "../../simulation/core/SimulationRunner";
+import type { GameState } from "../../simulation/core/GameState";
 import { selectWarehouseMap } from "../../simulation/selectors/mapSelectors";
 import { ISO_TILE_WIDTH } from "../../shared/constants/map";
 import { MapInputController } from "../input/MapInputController";
@@ -11,8 +12,13 @@ import { useUiStore, type MapFocusRequest } from "../../../ui/store/uiStore";
 
 export class MainScene extends Phaser.Scene {
   private inputController: MapInputController | null = null;
+  private tileRenderer: TileRenderer | null = null;
+  private zoneOverlayRenderer: ZoneOverlayRenderer | null = null;
+  private doorRenderer: DoorRenderer | null = null;
   private unsubscribeSimulation: (() => void) | null = null;
   private unsubscribeUi: (() => void) | null = null;
+  private activeMapRef: ReturnType<typeof selectWarehouseMap> | null = null;
+  private activeFreightFlowRef: GameState["freightFlow"] | null = null;
 
   constructor(private readonly simulation: SimulationRunner) {
     super("MainScene");
@@ -21,66 +27,55 @@ export class MainScene extends Phaser.Scene {
   create(): void {
     this.input.mouse?.disableContextMenu();
 
-    const map = selectWarehouseMap(this.simulation.getState());
-    const renderer = new TileRenderer(this, map, {
-      x: (map.height * ISO_TILE_WIDTH) / 2 + 96,
-      y: 96,
-    }, useUiStore.getState().mapOrientation);
-    const zoneOverlayRenderer = new ZoneOverlayRenderer(
-      this,
-      map,
-      this.simulation.getState().freightFlow,
-      renderer.getOrigin(),
-      useUiStore.getState().mapOrientation,
-    );
-    const doorRenderer = new DoorRenderer(
-      this,
-      map,
-      this.simulation.getState().freightFlow,
-      renderer.getOrigin(),
-      useUiStore.getState().mapOrientation,
-    );
-
-    renderer.render();
-    zoneOverlayRenderer.render(useUiStore.getState().activeOverlayMode);
-    doorRenderer.render();
-    this.configureCamera(renderer);
-
-    this.inputController = new MapInputController(this, this.simulation, map, renderer);
-    this.inputController.attach();
+    this.rebuildSceneBindings(true);
     this.unsubscribeSimulation = this.simulation.subscribe(() => {
-      renderer.render();
-      zoneOverlayRenderer.render(useUiStore.getState().activeOverlayMode);
-      doorRenderer.render();
+      const state = this.simulation.getState();
+      const nextMapRef = selectWarehouseMap(state);
+      const nextFreightFlowRef = state.freightFlow;
+
+      if (
+        nextMapRef !== this.activeMapRef ||
+        nextFreightFlowRef !== this.activeFreightFlowRef
+      ) {
+        this.rebuildSceneBindings(false);
+      }
+
+      this.tileRenderer?.render();
+      this.zoneOverlayRenderer?.render(useUiStore.getState().activeOverlayMode);
+      this.doorRenderer?.render();
       this.inputController?.refreshHighlights();
     });
     this.unsubscribeUi = useUiStore.subscribe((state, previousState) => {
+      if (!this.tileRenderer || !this.zoneOverlayRenderer || !this.doorRenderer) {
+        return;
+      }
+
       if (state.mapOrientation !== previousState.mapOrientation) {
         this.applyMapOrientation(
           state.mapOrientation,
           previousState.mapOrientation,
-          renderer,
-          zoneOverlayRenderer,
-          doorRenderer,
+          this.tileRenderer,
+          this.zoneOverlayRenderer,
+          this.doorRenderer,
         );
       }
 
       if (state.activeOverlayMode !== previousState.activeOverlayMode) {
-        zoneOverlayRenderer.render(state.activeOverlayMode);
+        this.zoneOverlayRenderer.render(state.activeOverlayMode);
       }
 
       if (state.mapFocusRequest && state.mapFocusRequest !== previousState.mapFocusRequest) {
-        this.focusOnTile(state.mapFocusRequest, renderer);
+        this.focusOnTile(state.mapFocusRequest, this.tileRenderer);
       }
     });
 
     const pendingFocus = useUiStore.getState().mapFocusRequest;
-    if (pendingFocus) {
-      this.focusOnTile(pendingFocus, renderer);
+    if (pendingFocus && this.tileRenderer) {
+      this.focusOnTile(pendingFocus, this.tileRenderer);
     }
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      renderer.destroy();
+      this.destroySceneBindings();
       this.unsubscribeSimulation?.();
       this.unsubscribeSimulation = null;
       this.unsubscribeUi?.();
@@ -164,5 +159,75 @@ export class MainScene extends Phaser.Scene {
     }
 
     this.inputController?.refreshHighlights();
+  }
+
+  private rebuildSceneBindings(resetCamera: boolean): void {
+    this.destroySceneBindings();
+
+    const state = this.simulation.getState();
+    const map = selectWarehouseMap(state);
+    const renderer = new TileRenderer(
+      this,
+      map,
+      {
+        x: (map.height * ISO_TILE_WIDTH) / 2 + 96,
+        y: 96,
+      },
+      useUiStore.getState().mapOrientation,
+    );
+    const zoneOverlayRenderer = new ZoneOverlayRenderer(
+      this,
+      map,
+      state.freightFlow,
+      renderer.getOrigin(),
+      useUiStore.getState().mapOrientation,
+    );
+    const doorRenderer = new DoorRenderer(
+      this,
+      map,
+      state.freightFlow,
+      renderer.getOrigin(),
+      useUiStore.getState().mapOrientation,
+    );
+
+    renderer.render();
+    zoneOverlayRenderer.render(useUiStore.getState().activeOverlayMode);
+    doorRenderer.render();
+
+    if (resetCamera) {
+      this.configureCamera(renderer);
+    } else {
+      const camera = this.cameras.main;
+      const bounds = renderer.getWorldBounds();
+      const padding = 320;
+      camera.setBounds(
+        bounds.x - padding,
+        bounds.y - padding,
+        bounds.width + padding * 2,
+        bounds.height + padding * 2,
+      );
+      camera.centerOn(bounds.centerX, bounds.centerY);
+    }
+
+    this.inputController = new MapInputController(this, this.simulation, map, renderer);
+    this.inputController.attach();
+    this.tileRenderer = renderer;
+    this.zoneOverlayRenderer = zoneOverlayRenderer;
+    this.doorRenderer = doorRenderer;
+    this.activeMapRef = map;
+    this.activeFreightFlowRef = state.freightFlow;
+  }
+
+  private destroySceneBindings(): void {
+    this.inputController?.destroy();
+    this.inputController = null;
+    this.tileRenderer?.destroy();
+    this.tileRenderer = null;
+    this.zoneOverlayRenderer?.destroy();
+    this.zoneOverlayRenderer = null;
+    this.doorRenderer?.destroy();
+    this.doorRenderer = null;
+    this.activeMapRef = null;
+    this.activeFreightFlowRef = null;
   }
 }

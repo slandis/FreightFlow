@@ -74,6 +74,10 @@ export class ZoneOverlayRenderer {
     this.orientation = orientation;
   }
 
+  destroy(): void {
+    this.overlayLayer.destroy();
+  }
+
   private renderInvalidStorage(): void {
     for (const tile of this.map.tiles) {
       if (tile.validForStorage || !tile.invalidReason) {

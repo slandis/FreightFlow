@@ -13,10 +13,13 @@ import { LaborManager } from "../labor/LaborManager";
 import {
   cloneBudgetPlan,
   getBudgetCostPerTick,
+  getHeadcountChangeCost,
+  getHeadcountOperatingCostPerTick,
   validateBudgetPlan,
 } from "../planning/BudgetPlan";
 import { getActiveForecastMonthlyVolumeCubicFeet } from "../planning/inventorySupport";
 import { GameSpeed } from "../types/enums";
+import { recordCapitalCost } from "../economy/buildCosts";
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
 
@@ -119,6 +122,13 @@ export function applyQueuedMonthlyPlan(
     return [];
   }
 
+  const headcountChangeCost = getHeadcountChangeCost(
+    state.planning.currentPlan.totalHeadcount,
+    queuedPlan.totalHeadcount,
+  );
+
+  recordCapitalCost(state, headcountChangeCost);
+
   for (const pool of state.labor.pools) {
     pool.assignedHeadcount = queuedPlan.laborAssignments[pool.roleId] ?? 0;
     pool.availableHeadcount = pool.assignedHeadcount;
@@ -207,7 +217,8 @@ export function createPlanningSnapshot(
     ).length,
     activeAlertCount: activeAlerts.length,
     criticalAlertCount: activeAlerts.filter((alert) => alert.severity === "critical").length,
-    projectedBudgetCostPerTick: getBudgetCostPerTick(plan.budget),
+    projectedBudgetCostPerTick:
+      getBudgetCostPerTick(plan.budget) + getHeadcountOperatingCostPerTick(plan.totalHeadcount),
     activeContractCount: state.contracts.activeContracts.length,
     acceptedOfferCount: state.contracts.pendingOffers.filter(
       (offer) => offer.decision === "accepted",

@@ -329,6 +329,7 @@ Complete the freight lifecycle from dock to storage to outbound shipment.
 - add throughput measurement
 - add dock storage-needs diagnostics for freight waiting on the dock
 - report compatible storage types, usable capacity, largest available compatible opening, and blocked reason
+- add a low-risk travel-distance throughput factor for storage and picking so closer valid layouts perform modestly better than farther ones
 
 ### Deliverables
 - inbound freight can be stored
@@ -337,6 +338,7 @@ Complete the freight lifecycle from dock to storage to outbound shipment.
 - completed shipments update throughput KPIs
 - operations panel identifies which storage zone types are needed for blocked dock freight
 - diagnostics distinguish missing storage, invalid storage, insufficient capacity, and whole-batch fit problems
+- storage and picking throughput respond to storage-zone travel distance without requiring worker path simulation
 
 ### Validation Checklist
 - freight only stores in compatible valid zones
@@ -344,6 +346,7 @@ Complete the freight lifecycle from dock to storage to outbound shipment.
 - outbound orders fail gracefully if inventory is unavailable
 - throughput changes as work completes
 - dock storage-needs diagnostics match the same compatibility, validity, capacity, and whole-batch rules used by storage processing
+- equal labor setups with different storage distances produce different storage and pick progress over the same time window
 
 ### Dependencies
 - zone validation and capacity logic
@@ -352,6 +355,7 @@ Complete the freight lifecycle from dock to storage to outbound shipment.
 ### Implementation Notes
 Start with only 1–2 freight classes if needed, then expand after the loop works.
 Dock storage diagnostics should remain selector-driven and read-only. They should explain why freight is stranded without letting React own any storage rules.
+For travel-distance effects, prefer small throughput multipliers over explicit travel-task simulation in the first pass. Reuse authoritative zone distance data and keep the penalty conservative enough that layout quality matters without making the flow model pathfinding-heavy.
 
 ---
 
@@ -555,23 +559,29 @@ Make the project resilient, testable, and suitable for repeated play sessions.
 - fix duplicated state ownership problems
 - add internal debug panels and logs
 - identify and remove memory leaks or loop duplication
+- support seeded playtest scenario saves using the same versioned payload path as normal saves
+- ensure Phaser map rendering and input bindings refresh correctly when a loaded save replaces authoritative map or freight objects
 
 ### Deliverables
 - browser save/load works
 - simulation can resume from saved state
 - core systems have baseline automated coverage
 - major runtime crashes are eliminated
+- built-in test scenarios can be loaded and reset through the normal save/load surface
 
 ### Validation Checklist
 - save during active play and reload into the same operational state
 - repeated long sessions do not crash or degrade badly
 - test suite catches at least one intentionally introduced regression
+- seeded scenario saves deserialize into visible, playable layouts instead of stale pre-load map state
 
 ### Dependencies
 - most gameplay systems implemented
 
 ### Implementation Notes
 Do not postpone stability too long. Save/load often exposes architectural weaknesses.
+If built-in scenarios are provided as seeded save slots, regenerate them through the same schema/version pipeline as standard saves so they cannot silently drift.
+When loading replaces `warehouseMap` or `freightFlow`, Phaser scenes must rebuild or refresh any renderer/input objects that captured the previous references instead of continuing to draw stale state.
 
 ---
 

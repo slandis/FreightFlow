@@ -1,5 +1,9 @@
 import type { GameState } from "../core/GameState";
-import { getBudgetCostPerTick, getTotalBudgetPoints } from "../planning/BudgetPlan";
+import {
+  getBudgetCostPerTick,
+  getHeadcountOperatingCostPerTick,
+  getTotalBudgetPoints,
+} from "../planning/BudgetPlan";
 import { getInventorySupportRecommendationForPlanning } from "../planning/inventorySupport";
 
 export function selectPlanningState(state: GameState) {
@@ -19,12 +23,14 @@ export function selectPlanningSnapshot(state: GameState) {
 }
 
 export function selectPlanningBudgetSummary(state: GameState) {
-  const budget = state.planning.pendingPlan?.budget ?? state.planning.currentPlan.budget;
+  const plan = state.planning.pendingPlan ?? state.planning.currentPlan;
+  const budget = plan.budget;
 
   return {
     budget,
     totalBudgetPoints: getTotalBudgetPoints(budget),
-    projectedBudgetCostPerTick: getBudgetCostPerTick(budget),
+    projectedBudgetCostPerTick:
+      getBudgetCostPerTick(budget) + getHeadcountOperatingCostPerTick(plan.totalHeadcount),
   };
 }
 

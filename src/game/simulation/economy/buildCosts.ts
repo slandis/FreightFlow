@@ -75,12 +75,20 @@ export function trySpendCapitalCost(state: GameState, amount: number): boolean {
     return false;
   }
 
+  recordCapitalCost(state, amount);
+
+  return true;
+}
+
+export function recordCapitalCost(state: GameState, amount: number): void {
+  if (amount <= 0) {
+    return;
+  }
+
   state.cash -= amount;
   state.economy.lifetimeCapitalCost += amount;
   state.economy.currentMonthCapitalCost += amount;
   state.economy.lastCapitalSpendTick = state.currentTick;
-
-  return true;
 }
 
 export function formatCurrencyAmount(amount: number): string {
