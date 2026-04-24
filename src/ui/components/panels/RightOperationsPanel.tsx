@@ -459,7 +459,8 @@ export function RightOperationsPanel() {
                   <div>
                     <strong>{zone.zoneName}</strong>
                     <small>
-                      {zone.tileCount} tile{zone.tileCount === 1 ? "" : "s"} · {zone.zoneId}
+                      {zone.tileCount} tile{zone.tileCount === 1 ? "" : "s"} across{" "}
+                      {zone.areaCount} area{zone.areaCount === 1 ? "" : "s"}
                     </small>
                   </div>
                   <span>{Math.round(zone.utilization * 100)}%</span>

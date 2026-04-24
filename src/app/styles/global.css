@@ -283,7 +283,9 @@ button {
   bottom: var(--bottom-hud-clearance);
   right: 12px;
   width: 280px;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
   padding: 12px;
 }
 

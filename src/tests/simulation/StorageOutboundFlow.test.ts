@@ -194,9 +194,35 @@ describe("storage and outbound freight flow", () => {
       usedCubicFeet: 900,
       capacityCubicFeet: 1100,
       tileCount: 2,
+      areaCount: 1,
+      invalidAreaCount: 0,
       validForStorage: true,
     });
     expect(zones[0].utilization).toBeCloseTo(900 / 1100, 6);
+  });
+
+  it("groups disconnected areas under their parent storage zone type", () => {
+    const runner = new SimulationRunner();
+    const state = runner.getState();
+
+    runner.dispatch(new PaintZoneCommand(5, 5, TileZoneType.Travel));
+    runner.dispatch(new PaintZoneCommand(6, 5, TileZoneType.StandardStorage));
+    runner.dispatch(new PaintZoneCommand(10, 5, TileZoneType.StandardStorage));
+
+    const zones = selectStorageZoneSummaries(state);
+
+    expect(zones).toHaveLength(1);
+    expect(zones[0]).toMatchObject({
+      zoneName: "Standard Storage",
+      zoneType: TileZoneType.StandardStorage,
+      usedCubicFeet: 0,
+      capacityCubicFeet: 1100,
+      tileCount: 2,
+      areaCount: 2,
+      invalidAreaCount: 1,
+      validForStorage: false,
+      invalidReason: "1 assigned area is invalid for storage",
+    });
   });
 
   it("leaves freight on the dock when storage is invalid or full", () => {

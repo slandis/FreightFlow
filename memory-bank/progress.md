@@ -355,3 +355,17 @@ Playtest Quality-of-Life and Contract Pool Expansion: Completed
     - Updated monthly offer generation to draw 4 surfaced offers from the larger pool while favoring diversity across freight class, difficulty tag, and volume band and avoiding immediate client-name repetition.
     - Added contract-template config validation plus focused coverage for offer diversity, anti-repetition behavior, and the new playtest cheat handling.
     - Verification completed: `npm test` passed with 139 tests, and `npm run build` passed. The build still emits the expected Vite chunk-size warning.
+
+Storage Zone Parent Grouping: Completed
+    - Changed the right-HUD `Storage Zones` panel to group capacity by parent storage-zone class instead of listing each contiguous child area as a separate capacity row.
+    - Updated `selectStorageZoneSummaries` to aggregate authoritative child-zone usage, capacity, assigned tile count, area count, and invalid-area count into one summary per storage class.
+    - Simplified the panel copy so each entry now shows total assigned tiles across grouped areas, which makes the display match higher-level storage planning decisions better than raw contiguous zone ids.
+    - Added regression coverage for disconnected-area aggregation and grouped invalid-area messaging.
+    - Verification completed: `npm test` passed with 143 tests, and `npm run build` passed. The build still emits the expected Vite chunk-size warning.
+
+Paused Storage Tile-Art Preservation: Completed
+    - Fixed paused zone editing so rebuilding storage zones no longer resets existing assigned areas to the default `00` capacity tile image.
+    - Added storage-zone reconciliation after paint commands so stored freight remaps onto rebuilt zones by tile overlap before the next simulation tick.
+    - Centralized zone-usage recalculation and applied it immediately after map edits so rendered utilization stays aligned with authoritative stored volume even while paused.
+    - Added regression coverage for repainting unrelated areas while stored freight already exists in a storage zone.
+    - Verification completed: `npm test` passed with 144 tests, and `npm run build` passed. The build still emits the expected Vite chunk-size warning.

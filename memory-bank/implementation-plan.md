@@ -525,6 +525,7 @@ Make the game understandable during normal play without heavy developer interpre
 - diagnostic selectors have focused unit coverage
 - production build and local browser smoke check pass
 - storage-zone summaries match authoritative zone usage and validity state
+- storage-zone summaries can aggregate disconnected child areas into parent storage-zone groups when the HUD needs class-level capacity visibility
 
 ### Dependencies
 - underlying systems must already exist
@@ -533,6 +534,8 @@ Make the game understandable during normal play without heavy developer interpre
 This phase is critical. A good simulation with poor readability will test badly.
 Diagnostic rendering should remain mode-aware and disposable: Phaser redraws from the latest simulation snapshot and UI overlay mode, while React only requests overlays or map focus.
 When map-art experiments are too noisy or visually ambiguous, prefer selector-driven HUD diagnostics such as compact progress bars over adding decorative rendering complexity.
+For the right Operations panel, prefer grouping storage capacity by parent storage-zone class when that better matches the player decision being supported, while still deriving totals from authoritative child-zone state.
+When storage-zone tile art reflects utilization, paused map edits must preserve existing zone usage immediately after rebuild so already-assigned areas do not flash back to empty-state visuals.
 
 ---
 

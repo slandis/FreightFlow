@@ -68,6 +68,7 @@ export class MainScene extends Phaser.Scene {
     }
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      renderer.destroy();
       this.unsubscribeSimulation?.();
       this.unsubscribeSimulation = null;
       this.unsubscribeUi?.();

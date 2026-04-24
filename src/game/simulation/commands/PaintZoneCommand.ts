@@ -4,6 +4,7 @@ import {
   formatCurrencyAmount,
   trySpendCapitalCost,
 } from "../economy/buildCosts";
+import { reconcileStorageZonesAfterMapEdit } from "../world/reconcileStorageZones";
 import { isStorageZoneType } from "../world/ZoneManager";
 import type { Command, CommandContext } from "./Command";
 import { commandFailed, commandSucceeded } from "./Command";
@@ -46,7 +47,13 @@ export class PaintZoneCommand implements Command<"paint-zone"> {
       );
     }
 
+    const previousZones = context.state.warehouseMap.zones.map((zone) => ({
+      ...zone,
+      tileIndexes: [...zone.tileIndexes],
+    }));
+
     context.state.warehouseMap.paintTile(this.x, this.y, this.zoneType);
+    reconcileStorageZonesAfterMapEdit(context.state, previousZones);
 
     const events = context.state.warehouseMap.zones
       .filter((zone) => isStorageZoneType(zone.zoneType) && !zone.validForStorage)

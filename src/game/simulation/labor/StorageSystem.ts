@@ -7,6 +7,7 @@ import { LaborAnalyticsRecorder } from "./LaborAnalyticsRecorder";
 import { LaborRole } from "../types/enums";
 import type { WarehouseMap } from "../world/WarehouseMap";
 import type { Zone } from "../world/Zone";
+import { recalculateZoneUsage } from "../world/zoneUsage";
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
 const laborAnalyticsRecorder = new LaborAnalyticsRecorder();
@@ -30,7 +31,7 @@ export class StorageSystem {
     const events: DomainEvent[] = [];
     let remainingCapacity = storageCapacityCubicFeet;
 
-    this.recalculateZoneUsage(freightFlow, warehouseMap);
+    recalculateZoneUsage(freightFlow, warehouseMap);
 
     for (const batch of freightFlow.freightBatches) {
       if (batch.state !== "on-dock" || storageCapacityCubicFeet <= 0) {
@@ -115,28 +116,5 @@ export class StorageSystem {
           return first.usedCubicFeet - second.usedCubicFeet;
         })[0] ?? null
     );
-  }
-
-  private recalculateZoneUsage(freightFlow: FreightFlowState, warehouseMap: WarehouseMap): void {
-    for (const zone of warehouseMap.zones) {
-      zone.usedCubicFeet = 0;
-    }
-
-    for (const batch of freightFlow.freightBatches) {
-      if (
-        (batch.state !== "in-storage" && batch.state !== "storing") ||
-        !batch.storageZoneId
-      ) {
-        continue;
-      }
-
-      const zone = warehouseMap.zones.find(
-        (candidateZone) => candidateZone.id === batch.storageZoneId,
-      );
-
-      if (zone) {
-        zone.usedCubicFeet += batch.cubicFeet;
-      }
-    }
   }
 }

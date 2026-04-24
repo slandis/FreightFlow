@@ -23,6 +23,8 @@ export interface StorageZoneSummary {
   capacityCubicFeet: number;
   utilization: number;
   tileCount: number;
+  areaCount: number;
+  invalidAreaCount: number;
   validForStorage: boolean;
   invalidReason: string | null;
 }
@@ -216,10 +218,27 @@ export function selectStorageCapacitySummary(state: GameState) {
 }
 
 export function selectStorageZoneSummaries(state: GameState): StorageZoneSummary[] {
-  return state.warehouseMap.zones
-    .filter((zone) => zone.capacityCubicFeet > 0)
-    .map((zone) => ({
-      zoneId: zone.id,
+  const summaries = new Map<TileZoneType, StorageZoneSummary>();
+
+  for (const zone of state.warehouseMap.zones.filter((candidate) => candidate.capacityCubicFeet > 0)) {
+    const existing = summaries.get(zone.zoneType);
+
+    if (existing) {
+      existing.usedCubicFeet += zone.usedCubicFeet;
+      existing.capacityCubicFeet += zone.capacityCubicFeet;
+      existing.tileCount += zone.tileIndexes.length;
+      existing.areaCount += 1;
+      existing.invalidAreaCount += zone.validForStorage ? 0 : 1;
+
+      if (!zone.validForStorage) {
+        existing.validForStorage = false;
+      }
+
+      continue;
+    }
+
+    summaries.set(zone.zoneType, {
+      zoneId: zone.zoneType,
       zoneName: zoneNameByType.get(zone.zoneType) ?? zone.zoneType,
       zoneType: zone.zoneType,
       usedCubicFeet: zone.usedCubicFeet,
@@ -227,8 +246,21 @@ export function selectStorageZoneSummaries(state: GameState): StorageZoneSummary
       utilization:
         zone.capacityCubicFeet > 0 ? zone.usedCubicFeet / zone.capacityCubicFeet : 0,
       tileCount: zone.tileIndexes.length,
+      areaCount: 1,
+      invalidAreaCount: zone.validForStorage ? 0 : 1,
       validForStorage: zone.validForStorage,
-      invalidReason: zone.invalidReason,
+      invalidReason: null,
+    });
+  }
+
+  return [...summaries.values()]
+    .map((summary) => ({
+      ...summary,
+      utilization:
+        summary.capacityCubicFeet > 0 ? summary.usedCubicFeet / summary.capacityCubicFeet : 0,
+      invalidReason: summary.validForStorage
+        ? null
+        : `${summary.invalidAreaCount === 1 ? "1 assigned area is" : `${summary.invalidAreaCount} assigned areas are`} invalid for storage`,
     }))
     .sort((first, second) => {
       if (second.usedCubicFeet !== first.usedCubicFeet) {

@@ -209,4 +209,44 @@ describe("PaintZoneCommand", () => {
     expect(runner.getState().debug.lastEventType).toBe("zone-invalidated");
     expect(eventTypes).toEqual(["zone-invalidated"]);
   });
+
+  it("preserves stored zone usage when unrelated painting rebuilds zones while paused", () => {
+    const runner = new SimulationRunner();
+    const state = runner.getState();
+
+    runner.dispatch(new PaintZoneCommand(5, 5, TileZoneType.Travel));
+    runner.dispatch(new PaintZoneCommand(6, 5, TileZoneType.StandardStorage));
+    runner.dispatch(new PaintZoneCommand(7, 5, TileZoneType.StandardStorage));
+    const initialStorageZone = state.warehouseMap.zones.find(
+      (zone) => zone.zoneType === TileZoneType.StandardStorage,
+    );
+
+    state.freightFlow.freightBatches.push({
+      id: "stored-batch",
+      trailerId: "trailer-1",
+      contractId: "baseline-general-freight",
+      freightClassId: "standard",
+      cubicFeet: 900,
+      state: "in-storage",
+      createdTick: 0,
+      unloadedTick: 0,
+      storageZoneId: initialStorageZone?.id ?? null,
+      outboundOrderId: null,
+      storedTick: 0,
+      remainingStorageCubicFeet: null,
+      pickedTick: null,
+      loadedTick: null,
+      dockTileIndex: null,
+    });
+
+    runner.dispatch(new PaintZoneCommand(10, 10, TileZoneType.Travel));
+
+    const storageZone = state.warehouseMap.zones.find(
+      (zone) => zone.zoneType === TileZoneType.StandardStorage,
+    );
+
+    expect(storageZone?.usedCubicFeet).toBe(900);
+    expect(storageZone?.capacityCubicFeet).toBe(1100);
+    expect(state.freightFlow.freightBatches[0].storageZoneId).toBe(storageZone?.id);
+  });
 });
