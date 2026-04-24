@@ -2,6 +2,7 @@
   "travelPerTile": 80,
   "erasePerTile": 40,
   "storagePerTile": {
+    "stage": 80,
     "standard-storage": 120,
     "bulk-storage": 150,
     "fast-turn-storage": 140,

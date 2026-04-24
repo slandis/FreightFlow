@@ -315,6 +315,7 @@ export class SimulationRunner {
       ),
       ...this.loadSystem.process(
         this.state.freightFlow,
+        this.state.warehouseMap,
         this.state.currentTick,
         (type) => this.createEvent(type),
         this.laborManager.getProcessingCapacity(this.state.labor, LaborRole.Load),

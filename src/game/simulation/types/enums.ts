@@ -10,6 +10,7 @@ export enum TileZoneType {
   Unassigned = "unassigned",
   Dock = "dock",
   Travel = "travel",
+  Stage = "stage",
   StandardStorage = "standard-storage",
   BulkStorage = "bulk-storage",
   FastTurnStorage = "fast-turn-storage",

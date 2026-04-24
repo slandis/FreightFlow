@@ -21,4 +21,5 @@ export interface Trailer {
   remainingUnloadCubicFeet: number;
   remainingLoadCubicFeet: number;
   dockTileIndex: number | null;
+  stageZoneId?: string | null;
 }

@@ -189,9 +189,9 @@ export function RightOperationsPanel() {
           <dd>{queues.switchingTrailers}</dd>
           <dt>Unload queue</dt>
           <dd>{queues.unloadTrailers}</dd>
-          <dt>Dock freight</dt>
+          <dt>Stage freight</dt>
           <dd>{dockFreightCubicFeet.toLocaleString()} cu ft</dd>
-          <dt>Dock cap</dt>
+          <dt>Stage cap</dt>
           <dd>
             {dockCapacity.usedCubicFeet.toLocaleString()} /{" "}
             {dockCapacity.totalCapacityCubicFeet.toLocaleString()} cu ft
@@ -207,7 +207,7 @@ export function RightOperationsPanel() {
             {storageCapacity.usedCubicFeet.toLocaleString()} /{" "}
             {storageCapacity.capacityCubicFeet.toLocaleString()} cu ft
           </dd>
-          <dt>Blocked dock</dt>
+          <dt>Blocked stage</dt>
           <dd>{storageQueueCubicFeet.toLocaleString()} cu ft</dd>
           <dt>Open orders</dt>
           <dd>{outboundQueues.openOrders}</dd>
@@ -410,14 +410,14 @@ export function RightOperationsPanel() {
           value={playtestReview.exportText}
         />
       </CollapsibleSection>
-      <CollapsibleSection title="Dock Storage Needs">
+      <CollapsibleSection title="Stage To Storage Needs">
         {dockStorageNeeds.length > 0 ? (
           <ul className="dock-storage-needs">
             {dockStorageNeeds.map((need) => (
               <li key={need.freightClassId} className={need.ready ? "ready" : "blocked"}>
                 <span>{need.freightClassName}</span>
                 <small>
-                  {need.cubicFeetOnDock.toLocaleString()} cu ft on dock; needs{" "}
+                  {need.cubicFeetOnDock.toLocaleString()} cu ft in stage; needs{" "}
                   {formatZoneNames(need.compatibleZoneNames)}
                 </small>
                 <small>
@@ -429,7 +429,7 @@ export function RightOperationsPanel() {
                   <button
                     onClick={() =>
                       requestMapFocus({
-                        reason: `${need.freightClassName} dock need`,
+                        reason: `${need.freightClassName} stage need`,
                         x: 32,
                         y: 0,
                         zoom: 0.94,
@@ -437,14 +437,14 @@ export function RightOperationsPanel() {
                     }
                     type="button"
                   >
-                    Focus dock
+                    Focus stage
                   </button>
                 ) : null}
               </li>
             ))}
           </ul>
         ) : (
-          <p>Dock is clear.</p>
+          <p>Stage is clear.</p>
         )}
       </CollapsibleSection>
       <CollapsibleSection title="Storage Zones">

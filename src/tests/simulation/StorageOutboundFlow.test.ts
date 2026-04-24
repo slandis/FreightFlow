@@ -23,7 +23,7 @@ function createBatch(overrides: Partial<FreightBatch> = {}): FreightBatch {
     contractId: "baseline-general-freight",
     freightClassId: "standard",
     cubicFeet: 900,
-    state: "on-dock",
+    state: "in-stage",
     createdTick: 0,
     unloadedTick: 0,
     storageZoneId: null,
@@ -65,13 +65,25 @@ function paintStandardStorage(runner: SimulationRunner): void {
   runner.dispatch(new PaintZoneCommand(7, 5, TileZoneType.StandardStorage));
 }
 
+function paintStageNearDoor(runner: SimulationRunner, x: number): string {
+  runner.dispatch(new PaintZoneCommand(x, 1, TileZoneType.Stage));
+  runner.dispatch(new PaintZoneCommand(x - 1, 1, TileZoneType.Stage));
+  runner.dispatch(new PaintZoneCommand(x + 1, 1, TileZoneType.Stage));
+  runner.dispatch(new PaintZoneCommand(x, 2, TileZoneType.Stage));
+
+  return runner.getState().warehouseMap.getTile(x, 1)?.zoneId ?? "";
+}
+
 describe("storage and outbound freight flow", () => {
   it("stores compatible dock freight in valid storage and updates capacity and inventory", () => {
     const runner = new SimulationRunner();
     const state = runner.getState();
 
     paintStandardStorage(runner);
-    state.freightFlow.freightBatches.push(createBatch());
+    runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    const stageZoneId = paintStageNearDoor(runner, 4);
+    runner.dispatch(new PaintZoneCommand(4, 2, TileZoneType.Travel));
+    state.freightFlow.freightBatches.push(createBatch({ stageZoneId }));
 
     runTicks(runner, 5);
 
@@ -94,7 +106,7 @@ describe("storage and outbound freight flow", () => {
 
     runner.tick();
 
-    expect(state.freightFlow.freightBatches[0].state).toBe("on-dock");
+    expect(state.freightFlow.freightBatches[0].state).toBe("in-stage");
     expect(state.freightFlow.queues.storageQueueCubicFeet).toBe(900);
   });
 
@@ -163,7 +175,10 @@ describe("storage and outbound freight flow", () => {
     const state = runner.getState();
 
     paintStandardStorage(runner);
-    state.freightFlow.freightBatches.push(createBatch({ cubicFeet: 900 }));
+    runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    const stageZoneId = paintStageNearDoor(runner, 4);
+    runner.dispatch(new PaintZoneCommand(4, 2, TileZoneType.Travel));
+    state.freightFlow.freightBatches.push(createBatch({ cubicFeet: 900, stageZoneId }));
 
     const needs = selectDockStorageNeeds(state);
 
@@ -176,16 +191,53 @@ describe("storage and outbound freight flow", () => {
     });
   });
 
+  it("does not move staged freight into storage when the stage area has no travel access", () => {
+    const runner = new SimulationRunner();
+    const state = runner.getState();
+
+    paintStandardStorage(runner);
+    runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    const stageZoneId = paintStageNearDoor(runner, 4);
+    state.freightFlow.freightBatches.push(createBatch({ stageZoneId }));
+
+    runTicks(runner, 5);
+
+    expect(state.freightFlow.freightBatches[0].state).toBe("in-stage");
+    expect(state.freightFlow.freightBatches[0].storageZoneId).toBeNull();
+  });
+
+  it("reports stage travel access as a storage blocker for staged freight", () => {
+    const runner = new SimulationRunner();
+    const state = runner.getState();
+
+    paintStandardStorage(runner);
+    runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    const stageZoneId = paintStageNearDoor(runner, 4);
+    state.freightFlow.freightBatches.push(createBatch({ cubicFeet: 900, stageZoneId }));
+
+    const needs = selectDockStorageNeeds(state);
+
+    expect(needs[0]).toMatchObject({
+      reason: "Stage has no travel access",
+      ready: false,
+    });
+  });
+
   it("summarizes storage zones with utilization for the operations panel", () => {
     const runner = new SimulationRunner();
     const state = runner.getState();
 
     paintStandardStorage(runner);
-    state.freightFlow.freightBatches.push(createBatch());
+    runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    const stageZoneId = paintStageNearDoor(runner, 4);
+    runner.dispatch(new PaintZoneCommand(4, 2, TileZoneType.Travel));
+    state.freightFlow.freightBatches.push(createBatch({ stageZoneId }));
 
     runTicks(runner, 5);
 
-    const zones = selectStorageZoneSummaries(state);
+    const zones = selectStorageZoneSummaries(state).filter(
+      (zone) => zone.zoneType === TileZoneType.StandardStorage,
+    );
 
     expect(zones).toHaveLength(1);
     expect(zones[0]).toMatchObject({
@@ -232,7 +284,7 @@ describe("storage and outbound freight flow", () => {
 
     invalidRunner.tick();
 
-    expect(invalidRunner.getState().freightFlow.freightBatches[0].state).toBe("on-dock");
+    expect(invalidRunner.getState().freightFlow.freightBatches[0].state).toBe("in-stage");
 
     const fullRunner = new SimulationRunner();
     fullRunner.dispatch(new PaintZoneCommand(5, 5, TileZoneType.Travel));
@@ -241,7 +293,7 @@ describe("storage and outbound freight flow", () => {
 
     fullRunner.tick();
 
-    expect(fullRunner.getState().freightFlow.freightBatches[0].state).toBe("on-dock");
+    expect(fullRunner.getState().freightFlow.freightBatches[0].state).toBe("in-stage");
   });
 
   it("does not generate outbound orders without stored inventory", () => {
@@ -423,11 +475,13 @@ describe("storage and outbound freight flow", () => {
     const state = runner.getState();
 
     runner.dispatch(new PlaceDoorCommand(4, 0, "outbound"));
+    const stageZoneId = paintStageNearDoor(runner, 4);
 
     state.freightFlow.freightBatches.push(
       createBatch({
         state: "picked",
         storageZoneId: null,
+        stageZoneId,
         outboundOrderId: "outbound-order-test",
         pickedTick: 1,
       }),
@@ -462,16 +516,19 @@ describe("storage and outbound freight flow", () => {
     const state = runner.getState();
 
     runner.dispatch(new PlaceDoorCommand(4, 0, "flex"));
+    const stageZoneId = paintStageNearDoor(runner, 4);
+    runner.dispatch(new PaintZoneCommand(4, 2, TileZoneType.Travel));
     paintStandardStorage(runner);
     runner.dispatch(new PaintZoneCommand(8, 4, TileZoneType.Travel));
     runner.dispatch(new PaintZoneCommand(8, 5, TileZoneType.StandardStorage));
     runner.dispatch(new PaintZoneCommand(9, 5, TileZoneType.StandardStorage));
-    state.freightFlow.freightBatches.push(createBatch());
+    state.freightFlow.freightBatches.push(createBatch({ stageZoneId }));
     state.freightFlow.freightBatches.push(
       createBatch({
         id: "freight-batch-test-2",
         trailerId: "trailer-test-2",
         cubicFeet: 600,
+        stageZoneId,
       }),
     );
     state.freightFlow.freightBatches.push(
@@ -479,6 +536,7 @@ describe("storage and outbound freight flow", () => {
         id: "freight-batch-test-3",
         trailerId: "trailer-test-3",
         cubicFeet: 300,
+        stageZoneId,
       }),
     );
 

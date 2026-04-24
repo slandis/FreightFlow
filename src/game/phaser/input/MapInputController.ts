@@ -357,6 +357,7 @@ export class MapInputController {
       validForStorage: tile.validForStorage,
       invalidReason: tile.invalidReason,
       nearestTravelDistance: tile.nearestTravelDistance,
+      nearestDoorDistance: tile.nearestDoorDistance,
       isActiveDoor: tile.isActiveDoor,
       doorId: door?.id ?? null,
       doorMode: door?.mode ?? null,

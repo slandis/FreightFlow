@@ -8,6 +8,7 @@ import {
   getPickDistanceMultiplier,
   getWeightedStorageDistanceForOrder,
 } from "./travelDistance";
+import { findAvailableOutboundStageZone } from "../dock/dockCapacity";
 
 const INVENTORY_UNAVAILABLE_REASON = "Inventory unavailable";
 
@@ -102,6 +103,11 @@ export class PickSystem {
       }
 
       order.state = "picked";
+      const outboundStageZone = findAvailableOutboundStageZone(
+        warehouseMap,
+        freightFlow,
+        order.fulfilledCubicFeet,
+      );
       laborAnalyticsRecorder.recordCompletedWork(
         labor,
         LaborRole.Pick,
@@ -117,6 +123,7 @@ export class PickSystem {
         batch.state = "picked";
         batch.pickedTick = currentTick;
         batch.storageZoneId = null;
+        batch.stageZoneId = outboundStageZone?.id ?? null;
       }
 
       const event = {

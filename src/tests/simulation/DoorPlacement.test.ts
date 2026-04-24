@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { getDoorPlacementCost } from "../../game/simulation/economy/buildCosts";
+import { PaintZoneCommand } from "../../game/simulation/commands/PaintZoneCommand";
 import { PlaceDoorCommand } from "../../game/simulation/commands/PlaceDoorCommand";
 import { RemoveDoorCommand } from "../../game/simulation/commands/RemoveDoorCommand";
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
 import type { Trailer } from "../../game/simulation/freight/Trailer";
+import { TileZoneType } from "../../game/simulation/types/enums";
 
 function createYardTrailer(id: string): Trailer {
   return {
@@ -23,6 +25,15 @@ function createYardTrailer(id: string): Trailer {
     remainingLoadCubicFeet: 0,
     dockTileIndex: null,
   };
+}
+
+function paintStageNearDoor(runner: SimulationRunner, x: number): string {
+  runner.dispatch(new PaintZoneCommand(x, 1, TileZoneType.Stage));
+  runner.dispatch(new PaintZoneCommand(x - 1, 1, TileZoneType.Stage));
+  runner.dispatch(new PaintZoneCommand(x + 1, 1, TileZoneType.Stage));
+  runner.dispatch(new PaintZoneCommand(x, 2, TileZoneType.Stage));
+
+  return runner.getState().warehouseMap.getTile(x, 1)?.zoneId ?? "";
 }
 
 describe("door placement", () => {
@@ -101,7 +112,7 @@ describe("door placement", () => {
     const runner = new SimulationRunner();
     runner.dispatch(new PlaceDoorCommand(4, 0, "flex"));
     const door = runner.getState().freightFlow.doors[0];
-    const dockTileIndex = runner.getState().warehouseMap.getTileIndex(door.x, door.y);
+    const stageZoneId = paintStageNearDoor(runner, 4);
 
     runner.getState().freightFlow.freightBatches.push({
       id: "dock-batch-test",
@@ -109,16 +120,17 @@ describe("door placement", () => {
       contractId: "baseline-general-freight",
       freightClassId: "standard",
       cubicFeet: 1200,
-      state: "on-dock",
+      state: "in-stage",
       createdTick: 0,
       unloadedTick: 0,
       storageZoneId: null,
+      stageZoneId,
       outboundOrderId: null,
       storedTick: null,
       remainingStorageCubicFeet: 1200,
       pickedTick: null,
       loadedTick: null,
-      dockTileIndex,
+      dockTileIndex: null,
     });
 
     const result = runner.dispatch(new RemoveDoorCommand(door.x, door.y));
@@ -139,6 +151,7 @@ describe("door placement", () => {
     }
 
     runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    paintStageNearDoor(runner, 4);
     freightFlow.trailers.push(createYardTrailer("trailer-waiting"));
 
     runner.tick();

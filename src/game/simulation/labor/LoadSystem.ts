@@ -4,6 +4,8 @@ import type { LaborState } from "./LaborPool";
 import { LaborAnalyticsRecorder } from "./LaborAnalyticsRecorder";
 import { createId } from "../types/ids";
 import { LaborRole } from "../types/enums";
+import { findAvailableOutboundDoorForStageZone } from "../dock/dockCapacity";
+import type { WarehouseMap } from "../world/WarehouseMap";
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
 const laborAnalyticsRecorder = new LaborAnalyticsRecorder();
@@ -11,6 +13,7 @@ const laborAnalyticsRecorder = new LaborAnalyticsRecorder();
 export class LoadSystem {
   process(
     freightFlow: FreightFlowState,
+    warehouseMap: WarehouseMap,
     currentTick: number,
     createEvent: EventFactory,
     loadCapacityCubicFeet: number,
@@ -21,11 +24,12 @@ export class LoadSystem {
 
     for (const order of freightFlow.outboundOrders) {
       if (order.state === "picked" && loadCapacityCubicFeet > 0) {
-        const door = freightFlow.doors.find(
-          (candidateDoor) =>
-            candidateDoor.state === "idle" &&
-            (candidateDoor.mode === "outbound" || candidateDoor.mode === "flex"),
-        );
+        const stageZoneId =
+          freightFlow.freightBatches.find((batch) => order.freightBatchIds.includes(batch.id))
+            ?.stageZoneId ?? null;
+        const door = stageZoneId
+          ? findAvailableOutboundDoorForStageZone(freightFlow, warehouseMap, stageZoneId)
+          : null;
 
         if (!door) {
           continue;
@@ -56,6 +60,7 @@ export class LoadSystem {
           remainingUnloadCubicFeet: 0,
           remainingLoadCubicFeet: order.fulfilledCubicFeet,
           dockTileIndex: null,
+          stageZoneId,
         });
 
         for (const batch of freightFlow.freightBatches) {
@@ -129,6 +134,7 @@ export class LoadSystem {
 
         batch.state = "complete";
         batch.loadedTick = currentTick;
+        batch.stageZoneId = null;
       }
 
       const event = {

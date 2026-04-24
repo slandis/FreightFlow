@@ -12,7 +12,7 @@ function createDockBatch(freightClassId = "standard"): FreightBatch {
     contractId: "baseline-general-freight",
     freightClassId,
     cubicFeet: 600,
-    state: "on-dock",
+    state: "in-stage",
     createdTick: 0,
     unloadedTick: 0,
     storageZoneId: null,

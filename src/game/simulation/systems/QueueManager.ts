@@ -16,10 +16,10 @@ export class QueueManager {
       (trailer) => trailer.state === "at-door" || trailer.state === "unloading",
     );
     const dockFreightCubicFeet = freightFlow.freightBatches
-      .filter((batch) => batch.state === "on-dock")
+      .filter((batch) => batch.state === "in-stage")
       .reduce((total, batch) => total + batch.cubicFeet, 0);
     const storageQueueCubicFeet = freightFlow.freightBatches
-      .filter((batch) => batch.state === "on-dock" || batch.state === "storing")
+      .filter((batch) => batch.state === "in-stage" || batch.state === "storing")
       .reduce((total, batch) => total + (batch.remainingStorageCubicFeet ?? batch.cubicFeet), 0);
     const pickQueueCubicFeet = freightFlow.outboundOrders
       .filter((order) => order.state === "open" || order.state === "picking")

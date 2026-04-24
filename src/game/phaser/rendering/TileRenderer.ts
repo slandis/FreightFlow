@@ -15,6 +15,7 @@ const tileFillColors: Record<TileZoneType, number> = {
   [TileZoneType.Unassigned]: 0x31413b,
   [TileZoneType.Dock]: 0xc9a646,
   [TileZoneType.Travel]: 0x6aa076,
+  [TileZoneType.Stage]: 0xd08e52,
   [TileZoneType.StandardStorage]: 0x6b8fbc,
   [TileZoneType.BulkStorage]: 0x9f7e54,
   [TileZoneType.FastTurnStorage]: 0xa4b85c,

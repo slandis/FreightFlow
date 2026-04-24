@@ -5,6 +5,7 @@ const UTILIZATION_THRESHOLDS = [0, 25, 50, 75, 100] as const;
 
 const texturePrefixByZoneType: Partial<Record<TileZoneType, string>> = {
   [TileZoneType.Travel]: "travel_tile",
+  [TileZoneType.Stage]: "stage_tile",
   [TileZoneType.StandardStorage]: "standard_tile",
   [TileZoneType.BulkStorage]: "bulk_tile",
   [TileZoneType.FastTurnStorage]: "fast_tile",

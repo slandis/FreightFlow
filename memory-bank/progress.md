@@ -394,3 +394,14 @@ Contract Scheduler, Outbound Retune, and Performance Patch: Completed
     - Patched the first scheduler rollout for runtime smoothness by removing allocation-heavy inbound contract sorting, simplifying outbound due-contract selection, and throttling outbound evaluation to every 2 ticks.
     - Updated cadence-sensitive simulation, persistence, config, and difficulty coverage for contract timing fields, one-spawn-per-tick behavior, retry handling, and the new outbound timing expectations.
     - Verification completed: `npm test` passed with 159 tests, and `npm run build` passed. The build still emits the expected Vite chunk-size warning.
+
+Stage Zone and Explicit Door-Side Staging: Completed
+    - Added `Stage` as a first-class painted zone type with dedicated build cost, capacity config, left-panel tool entry, overlay/tile color treatment, and `stage_tile_*` Phaser asset loading.
+    - Extended zone validation so a contiguous Stage area is valid when at least one tile in that area touches an active door tile, while long-term storage zones continue to validate against nearby travel access.
+    - Replaced implicit dock-door capacity with Stage-zone capacity, so doors now act as access points only and stage occupancy is calculated from Stage zones plus inbound trailer reservations.
+    - Reworked inbound flow so switch assignment requires nearby valid Stage capacity, and unloaded freight lands into Stage instead of abstract dock tiles.
+    - Reworked outbound flow so picked freight is marshaled into Stage near outbound-capable doors before loading, and load operations now require a supporting Stage zone instead of direct door-side capacity.
+    - Tightened putaway so freight can only move from Stage into long-term storage when the source Stage area also touches travel, preventing isolated door-side staging from feeding the floor without access.
+    - Updated queue handling, HUD/tutorial copy, door-removal protection, and Stage-related selectors so blocked freight and near-door pressure are described through Stage rather than hidden dock capacity, including explicit reporting when a Stage area has no travel access.
+    - Added and updated coverage for inbound assignment, unloading, outbound loading, stage-backed door removal, isolated-stage putaway blocking, and Stage-aware end-to-end freight movement while preserving full-suite regression coverage.
+    - Verification completed: `npm test` passed with 163 tests, and `npm run build` passed. The build still emits the expected Vite chunk-size warning.

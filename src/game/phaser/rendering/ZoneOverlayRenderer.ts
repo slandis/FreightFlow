@@ -14,6 +14,7 @@ import {
 
 const zoneOverlayColors: Partial<Record<TileZoneType, number>> = {
   [TileZoneType.Travel]: 0xe6b655,
+  [TileZoneType.Stage]: 0xd08e52,
   [TileZoneType.StandardStorage]: 0x5ea3c6,
   [TileZoneType.BulkStorage]: 0x8d70a8,
   [TileZoneType.FastTurnStorage]: 0x5fbf8f,
@@ -236,6 +237,7 @@ export class ZoneOverlayRenderer {
 function isStorageTile(tile: Tile): boolean {
   return (
     tile.zoneType === TileZoneType.StandardStorage ||
+    tile.zoneType === TileZoneType.Stage ||
     tile.zoneType === TileZoneType.BulkStorage ||
     tile.zoneType === TileZoneType.FastTurnStorage ||
     tile.zoneType === TileZoneType.OversizeStorage ||

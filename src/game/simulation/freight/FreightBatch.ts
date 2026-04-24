@@ -7,7 +7,7 @@ export interface FreightBatch {
   state:
     | "in-yard"
     | "at-door"
-    | "on-dock"
+    | "in-stage"
     | "storing"
     | "in-storage"
     | "picking"
@@ -19,6 +19,7 @@ export interface FreightBatch {
   unloadedTick: number | null;
   storageStartedTick?: number | null;
   storageZoneId: string | null;
+  stageZoneId?: string | null;
   outboundOrderId: string | null;
   storedTick: number | null;
   remainingStorageCubicFeet: number | null;

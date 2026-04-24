@@ -176,6 +176,7 @@ function populateScenario(
       pickedTick: null,
       loadedTick: null,
       dockTileIndex: null,
+      stageZoneId: null,
     },
     {
       id: `${difficultyModeId}-stored-fast-a`,
@@ -194,6 +195,7 @@ function populateScenario(
       pickedTick: null,
       loadedTick: null,
       dockTileIndex: null,
+      stageZoneId: null,
     },
   );
 
@@ -215,6 +217,7 @@ function populateScenario(
       pickedTick: null,
       loadedTick: null,
       dockTileIndex: null,
+      stageZoneId: null,
     });
   }
 
@@ -235,6 +238,7 @@ function populateScenario(
       remainingUnloadCubicFeet: difficultyModeId === "standard" ? 900 : 1200,
       remainingLoadCubicFeet: 0,
       dockTileIndex: null,
+      stageZoneId: null,
     });
   }
 
@@ -246,7 +250,7 @@ function populateScenario(
       contractId: "baseline-general-freight",
       freightClassId: "standard",
       cubicFeet: difficultyModeId === "demanding" ? 950 : 1200,
-      state: "on-dock",
+      state: "in-stage",
       createdTick: 0,
       unloadedTick: 0,
       storageStartedTick: null,
@@ -257,6 +261,7 @@ function populateScenario(
       pickedTick: null,
       loadedTick: null,
       dockTileIndex,
+      stageZoneId: null,
     });
   }
 

@@ -47,7 +47,7 @@ function createBatch(overrides: Partial<FreightBatch> = {}): FreightBatch {
     contractId: "baseline-general-freight",
     freightClassId: "standard",
     cubicFeet: 900,
-    state: "on-dock",
+    state: "in-stage",
     createdTick: 0,
     unloadedTick: 0,
     storageZoneId: null,
@@ -87,6 +87,15 @@ function paintStandardStorage(runner: SimulationRunner): void {
   runner.dispatch(new PaintZoneCommand(5, 5, TileZoneType.Travel));
   runner.dispatch(new PaintZoneCommand(6, 5, TileZoneType.StandardStorage));
   runner.dispatch(new PaintZoneCommand(7, 5, TileZoneType.StandardStorage));
+}
+
+function paintStageNearDoor(runner: SimulationRunner, x: number): string {
+  runner.dispatch(new PaintZoneCommand(x, 1, TileZoneType.Stage));
+  runner.dispatch(new PaintZoneCommand(x - 1, 1, TileZoneType.Stage));
+  runner.dispatch(new PaintZoneCommand(x + 1, 1, TileZoneType.Stage));
+  runner.dispatch(new PaintZoneCommand(x, 2, TileZoneType.Stage));
+
+  return runner.getState().warehouseMap.getTile(x, 1)?.zoneId ?? "";
 }
 
 function paintStandardStorageAtDistance(
@@ -203,7 +212,7 @@ describe("labor pools and queue processing", () => {
 
     runner.tick();
 
-    expect(state.freightFlow.freightBatches[0].state).toBe("on-dock");
+    expect(state.freightFlow.freightBatches[0].state).toBe("in-stage");
     expect(selectBottleneckSummary(state)?.roleId).toBe(LaborRole.Storage);
   });
 
@@ -212,7 +221,10 @@ describe("labor pools and queue processing", () => {
     const state = runner.getState();
 
     paintStandardStorage(runner);
-    state.freightFlow.freightBatches.push(createBatch());
+    runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    const stageZoneId = paintStageNearDoor(runner, 4);
+    runner.dispatch(new PaintZoneCommand(4, 2, TileZoneType.Travel));
+    state.freightFlow.freightBatches.push(createBatch({ stageZoneId }));
 
     runTicks(runner, 5);
 
@@ -224,11 +236,17 @@ describe("labor pools and queue processing", () => {
     const nearRunner = new SimulationRunner();
     const farRunner = new SimulationRunner();
 
+    nearRunner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    farRunner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    const nearStageZoneId = paintStageNearDoor(nearRunner, 4);
+    const farStageZoneId = paintStageNearDoor(farRunner, 4);
+    nearRunner.dispatch(new PaintZoneCommand(4, 2, TileZoneType.Travel));
+    farRunner.dispatch(new PaintZoneCommand(4, 2, TileZoneType.Travel));
     paintStandardStorageAtDistance(nearRunner, 5, 5, 6, 5);
     paintStandardStorageAtDistance(farRunner, 5, 5, 7, 5);
 
-    nearRunner.getState().freightFlow.freightBatches.push(createBatch());
-    farRunner.getState().freightFlow.freightBatches.push(createBatch());
+    nearRunner.getState().freightFlow.freightBatches.push(createBatch({ stageZoneId: nearStageZoneId }));
+    farRunner.getState().freightFlow.freightBatches.push(createBatch({ stageZoneId: farStageZoneId }));
 
     runTicks(nearRunner, 2);
     runTicks(farRunner, 2);

@@ -214,7 +214,7 @@ export function createPlanningSnapshot(
       0,
     ),
     dockStorageNeedCount: state.freightFlow.freightBatches.filter(
-      (batch) => batch.state === "on-dock",
+      (batch) => batch.state === "in-stage",
     ).length,
     activeAlertCount: activeAlerts.length,
     criticalAlertCount: activeAlerts.filter((alert) => alert.severity === "critical").length,

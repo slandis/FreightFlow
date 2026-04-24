@@ -5,6 +5,11 @@
     "capacityPerTile": 0
   },
   {
+    "id": "stage",
+    "name": "Stage",
+    "capacityPerTile": 1250
+  },
+  {
     "id": "standard-storage",
     "name": "Standard Storage",
     "capacityPerTile": 550

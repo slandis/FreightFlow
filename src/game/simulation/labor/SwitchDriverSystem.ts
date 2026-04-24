@@ -77,10 +77,10 @@ export class SwitchDriverSystem {
         break;
       }
 
-      const { door, dockTileIndex } = assignment;
+      const { door, stageZoneId } = assignment;
       trailer.state = "switching-to-door";
       trailer.doorId = door.id;
-      trailer.dockTileIndex = dockTileIndex;
+      trailer.stageZoneId = stageZoneId;
       trailer.doorAssignedTick = currentTick;
       trailer.remainingSwitchTicks = SWITCH_MOVEMENT_TICKS;
       door.state = "reserved";

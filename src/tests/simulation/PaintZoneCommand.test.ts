@@ -5,6 +5,7 @@ import {
 } from "../../game/simulation/economy/buildCosts";
 import { PaintZoneAreaCommand } from "../../game/simulation/commands/PaintZoneAreaCommand";
 import { PaintZoneCommand } from "../../game/simulation/commands/PaintZoneCommand";
+import { PlaceDoorCommand } from "../../game/simulation/commands/PlaceDoorCommand";
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
 import { TileZoneType } from "../../game/simulation/types/enums";
 
@@ -97,6 +98,37 @@ describe("PaintZoneCommand", () => {
     const tile = runner.getState().warehouseMap.getTile(8, 8);
     expect(tile?.validForStorage).toBe(false);
     expect(tile?.invalidReason).toBe("Too far from travel tile");
+  });
+
+  it("marks stage without a touching door tile as invalid", () => {
+    const runner = new SimulationRunner();
+
+    runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    runner.dispatch(new PaintZoneCommand(4, 2, TileZoneType.Stage));
+
+    const tile = runner.getState().warehouseMap.getTile(4, 2);
+    expect(tile?.validForStorage).toBe(false);
+    expect(tile?.invalidReason).toBe("No door access");
+  });
+
+  it("treats a contiguous stage area as valid when any tile touches a door", () => {
+    const runner = new SimulationRunner();
+
+    runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    runner.dispatch(new PaintZoneCommand(4, 1, TileZoneType.Stage));
+    runner.dispatch(new PaintZoneCommand(4, 2, TileZoneType.Stage));
+    runner.dispatch(new PaintZoneCommand(4, 3, TileZoneType.Stage));
+
+    const farTile = runner.getState().warehouseMap.getTile(4, 3);
+    const zone = runner
+      .getState()
+      .warehouseMap.zones.find((candidateZone) => candidateZone.id === farTile?.zoneId);
+
+    expect(farTile?.nearestDoorDistance).toBe(3);
+    expect(farTile?.validForStorage).toBe(true);
+    expect(farTile?.invalidReason).toBeNull();
+    expect(zone?.validForStorage).toBe(true);
+    expect(zone?.invalidReason).toBeNull();
   });
 
   it("aggregates contiguous same-type zones and separates different types", () => {

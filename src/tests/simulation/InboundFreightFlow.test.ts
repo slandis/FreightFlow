@@ -1,14 +1,25 @@
 import { describe, expect, it } from "vitest";
 import freightClasses from "../../data/config/freightClasses.json";
+import { PaintZoneCommand } from "../../game/simulation/commands/PaintZoneCommand";
 import { PlaceDoorCommand } from "../../game/simulation/commands/PlaceDoorCommand";
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
 import type { FreightFlowState } from "../../game/simulation/freight/FreightFlowState";
+import { TileZoneType } from "../../game/simulation/types/enums";
 import type { Trailer } from "../../game/simulation/freight/Trailer";
 
 function runTicks(runner: SimulationRunner, ticks: number): void {
   for (let index = 0; index < ticks; index += 1) {
     runner.tick();
   }
+}
+
+function paintStageNearDoor(runner: SimulationRunner, x: number): string {
+  runner.dispatch(new PaintZoneCommand(x, 1, TileZoneType.Stage));
+  runner.dispatch(new PaintZoneCommand(x - 1, 1, TileZoneType.Stage));
+  runner.dispatch(new PaintZoneCommand(x + 1, 1, TileZoneType.Stage));
+  runner.dispatch(new PaintZoneCommand(x, 2, TileZoneType.Stage));
+
+  return runner.getState().warehouseMap.getTile(x, 1)?.zoneId ?? "";
 }
 
 function createYardTrailer(id: string, arrivalTick: number): Trailer {
@@ -95,6 +106,9 @@ describe("inbound freight flow", () => {
     runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
     runner.dispatch(new PlaceDoorCommand(8, 0, "inbound"));
     runner.dispatch(new PlaceDoorCommand(12, 0, "inbound"));
+    paintStageNearDoor(runner, 4);
+    paintStageNearDoor(runner, 8);
+    paintStageNearDoor(runner, 12);
 
     freightFlow.trailers = [
       { ...createYardTrailer("trailer-newer", 20), readyForDoorAssignmentTick: 0 },
@@ -116,6 +130,7 @@ describe("inbound freight flow", () => {
     const freightFlow = runner.getState().freightFlow;
 
     runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    paintStageNearDoor(runner, 4);
     freightFlow.trailers = [createYardTrailer("trailer-waiting", 0)];
     for (const door of freightFlow.doors) {
       door.state = "reserved";
@@ -133,30 +148,27 @@ describe("inbound freight flow", () => {
     const freightFlow = runner.getState().freightFlow;
     runner.dispatch(new PlaceDoorCommand(8, 0, "inbound"));
     runner.dispatch(new PlaceDoorCommand(12, 0, "inbound"));
+    const firstStageZoneId = paintStageNearDoor(runner, 8);
+    paintStageNearDoor(runner, 12);
 
-    const fullTileIndexes = [7, 8, 9].map((x) =>
-      runner.getState().warehouseMap.getTileIndex(x, 0),
-    );
-
-    fullTileIndexes.forEach((dockTileIndex, index) => {
-      freightFlow.freightBatches.push({
-        id: `dock-batch-${index + 1}`,
-        trailerId: `occupied-${index + 1}`,
+    freightFlow.freightBatches.push({
+        id: "stage-batch-1",
+        trailerId: "occupied-1",
         contractId: "baseline-general-freight",
         freightClassId: "standard",
         cubicFeet: 5000,
-        state: "on-dock",
+        state: "in-stage",
         createdTick: 0,
         unloadedTick: 0,
         storageZoneId: null,
+        stageZoneId: firstStageZoneId,
         outboundOrderId: null,
         storedTick: null,
         remainingStorageCubicFeet: 5000,
         pickedTick: null,
         loadedTick: null,
-        dockTileIndex,
+        dockTileIndex: null,
       });
-    });
 
     freightFlow.trailers = [createYardTrailer("trailer-waiting", 0)];
 
@@ -174,36 +186,32 @@ describe("inbound freight flow", () => {
 
     runner.dispatch(new PlaceDoorCommand(8, 0, "inbound"));
     runner.dispatch(new PlaceDoorCommand(14, 0, "inbound"));
+    const firstStageZoneId = paintStageNearDoor(runner, 8);
+    const secondStageZoneId = paintStageNearDoor(runner, 14);
 
     runner.getEventBus().subscribe("alert-raised", (event) => {
       eventTypes.push(event.type);
     });
 
-    for (const door of freightFlow.doors) {
-      const tileIndexes = [door.x - 1, door.x, door.x + 1]
-        .map((x) => runner.getState().warehouseMap.getTile(x, 0))
-        .filter((tile): tile is NonNullable<typeof tile> => Boolean(tile))
-        .map((tile) => runner.getState().warehouseMap.getTileIndex(tile.x, tile.y));
-
-      tileIndexes.forEach((dockTileIndex, index) => {
-        freightFlow.freightBatches.push({
-          id: `full-dock-${door.id}-${index}`,
-          trailerId: `occupied-${door.id}-${index}`,
+    for (const [index, stageZoneId] of [firstStageZoneId, secondStageZoneId].entries()) {
+      freightFlow.freightBatches.push({
+          id: `full-stage-${index}`,
+          trailerId: `occupied-${index}`,
           contractId: "baseline-general-freight",
           freightClassId: "standard",
           cubicFeet: 5000,
-          state: "on-dock",
+          state: "in-stage",
           createdTick: 0,
           unloadedTick: 0,
           storageZoneId: null,
+          stageZoneId,
           outboundOrderId: null,
           storedTick: null,
           remainingStorageCubicFeet: 5000,
           pickedTick: null,
           loadedTick: null,
-          dockTileIndex,
+          dockTileIndex: null,
         });
-      });
     }
 
     freightFlow.trailers = [createYardTrailer("trailer-blocked", 0)];
@@ -225,6 +233,7 @@ describe("inbound freight flow", () => {
     const runner = new SimulationRunner();
 
     runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    paintStageNearDoor(runner, 4);
 
     runTicks(runner, runner.getState().contracts.activeContracts[0].nextInboundEligibleTick);
     const trailer = runner.getState().freightFlow.trailers[0];
@@ -253,6 +262,7 @@ describe("inbound freight flow", () => {
     const runner = new SimulationRunner();
 
     runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    paintStageNearDoor(runner, 4);
 
     runTicks(runner, runner.getState().contracts.activeContracts[0].nextInboundEligibleTick);
     const freightFlow = runner.getState().freightFlow;
@@ -274,7 +284,7 @@ describe("inbound freight flow", () => {
     runUntilDockFreightExists(runner, freightFlow);
 
     expect(trailer.state).toBe("complete");
-    expect(batch.state).toBe("on-dock");
+    expect(batch.state).toBe("in-stage");
     expect(batch.unloadedTick).not.toBeNull();
     expect(freightFlow.doors[0].state).toBe("idle");
     expect(freightFlow.doors[0].trailerId).toBeNull();
@@ -283,6 +293,7 @@ describe("inbound freight flow", () => {
   it("recalculates queues, dwell, and inbound KPIs as freight completes", () => {
     const runner = new SimulationRunner();
     runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    paintStageNearDoor(runner, 4);
 
     runTicks(runner, runner.getState().contracts.activeContracts[0].nextInboundEligibleTick);
     expect(runner.getState().freightFlow.queues.yardTrailers).toBe(1);
@@ -323,6 +334,7 @@ describe("inbound freight flow", () => {
     const eventTypes: string[] = [];
 
     runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    paintStageNearDoor(runner, 4);
 
     runner.getEventBus().subscribeAll((event) => {
       if (

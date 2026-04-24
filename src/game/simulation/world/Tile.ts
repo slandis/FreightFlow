@@ -10,4 +10,5 @@ export interface Tile {
   validForStorage: boolean;
   invalidReason: string | null;
   nearestTravelDistance: number | null;
+  nearestDoorDistance: number | null;
 }

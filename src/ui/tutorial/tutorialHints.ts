@@ -52,7 +52,7 @@ export function selectTutorialHintCandidates(state: GameState): TutorialHint[] {
       id: "no-valid-storage",
       title: "Storage needs travel access",
       body:
-        "Paint travel first, then keep storage within 3 tiles. Invalid storage cannot receive dock freight.",
+        "Paint travel first, then keep storage within 3 tiles. Invalid storage cannot receive staged freight.",
       actionLabel: "Show storage risk",
       focusTarget: findFirstInvalidStorageTarget(state),
       overlayMode: "invalid-storage",
@@ -62,10 +62,10 @@ export function selectTutorialHintCandidates(state: GameState): TutorialHint[] {
   if (blockedDockNeed) {
     hints.push({
       id: "blocked-dock-storage",
-      title: `${blockedDockNeed.freightClassName} is blocked on the dock`,
-      body: `${blockedDockNeed.reason}. Add compatible storage before dock freight stalls the whole flow.`,
-      actionLabel: "Focus dock",
-      focusTarget: { x: 32, y: 0, label: "Dock freight" },
+      title: `${blockedDockNeed.freightClassName} is blocked in stage`,
+      body: `${blockedDockNeed.reason}. Add compatible storage before staged freight stalls the whole flow.`,
+      actionLabel: "Focus stage",
+      focusTarget: { x: 32, y: 0, label: "Stage freight" },
       overlayMode: "storage-capacity",
     });
   }
@@ -79,7 +79,7 @@ export function selectTutorialHintCandidates(state: GameState): TutorialHint[] {
       id: "missing-inbound-door",
       title: "Inbound freight needs a dock door",
       body:
-        "Place an inbound or flex door on the dock edge so yard trailers can start moving.",
+        "Place an inbound or flex door on the dock edge so yard trailers can start moving into Stage.",
       actionLabel: "Focus dock",
       focusTarget: { x: 32, y: 0, label: "Dock edge" },
       overlayMode: "door-utilization",
@@ -91,7 +91,7 @@ export function selectTutorialHintCandidates(state: GameState): TutorialHint[] {
       id: "missing-outbound-door",
       title: "Outbound freight needs a loading door",
       body:
-        "Picked freight cannot ship until an outbound or flex door is idle and ready to load.",
+        "Picked freight cannot ship until an outbound or flex door is idle and ready to load staged freight.",
       actionLabel: "Focus dock",
       focusTarget: { x: 32, y: 0, label: "Outbound dock door" },
       overlayMode: "door-utilization",

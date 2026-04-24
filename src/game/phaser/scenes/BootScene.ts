@@ -19,6 +19,11 @@ import specialTile25 from "../../../assets/special_tile_25.png";
 import specialTile50 from "../../../assets/special_tile_50.png";
 import specialTile75 from "../../../assets/special_tile_75.png";
 import specialTile100 from "../../../assets/special_tile_100.png";
+import stageTile00 from "../../../assets/stage_tile_00.png";
+import stageTile25 from "../../../assets/stage_tile_25.png";
+import stageTile50 from "../../../assets/stage_tile_50.png";
+import stageTile75 from "../../../assets/stage_tile_75.png";
+import stageTile100 from "../../../assets/stage_tile_100.png";
 import standardTile00 from "../../../assets/standard_tile_00.png";
 import standardTile25 from "../../../assets/standard_tile_25.png";
 import standardTile50 from "../../../assets/standard_tile_50.png";
@@ -57,6 +62,12 @@ export class BootScene extends Phaser.Scene {
     this.load.image("special_tile_50", specialTile50);
     this.load.image("special_tile_75", specialTile75);
     this.load.image("special_tile_100", specialTile100);
+
+    this.load.image("stage_tile_00", stageTile00);
+    this.load.image("stage_tile_25", stageTile25);
+    this.load.image("stage_tile_50", stageTile50);
+    this.load.image("stage_tile_75", stageTile75);
+    this.load.image("stage_tile_100", stageTile100);
 
     this.load.image("standard_tile_00", standardTile00);
     this.load.image("standard_tile_25", standardTile25);

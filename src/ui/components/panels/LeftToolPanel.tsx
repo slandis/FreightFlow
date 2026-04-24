@@ -37,6 +37,13 @@ const storageOptions: ToolOption[] = [
     )}/tile`,
   },
   {
+    id: TileZoneType.Stage,
+    label: "Stage",
+    description: `Inbound/outbound staging near doors · ${formatCurrencyAmount(
+      getZonePaintCost(TileZoneType.Stage),
+    )}/tile`,
+  },
+  {
     id: TileZoneType.StandardStorage,
     label: "Standard Storage",
     description: `General freight · ${formatCurrencyAmount(

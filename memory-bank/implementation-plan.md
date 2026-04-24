@@ -356,6 +356,10 @@ Complete the freight lifecycle from dock to storage to outbound shipment.
 Start with only 1–2 freight classes if needed, then expand after the loop works.
 Dock storage diagnostics should remain selector-driven and read-only. They should explain why freight is stranded without letting React own any storage rules.
 For travel-distance effects, prefer small throughput multipliers over explicit travel-task simulation in the first pass. Reuse authoritative zone distance data and keep the penalty conservative enough that layout quality matters without making the flow model pathfinding-heavy.
+With Stage now implemented, inbound and outbound no longer rely on implicit door-side dock capacity. The working flow is:
+- inbound: yard -> door -> Stage -> storage
+- outbound: storage -> Stage -> load -> shipment
+Stage is the near-door working buffer, while long-term storage stays travel-gated.
 
 ---
 
@@ -871,6 +875,38 @@ Performance guidance for this layer:
 - if cadence logic becomes visible in frame time again, prefer lightweight evaluation throttles before revisiting broader simulation architecture
 
 This keeps contract identity stronger without turning freight generation into the primary source of UI hitching or simulation instability.
+
+---
+
+## 24B. Stage Zone Follow-Up Notes
+
+Dock-edge doors now need to be treated as access points rather than implicit freight-capacity surfaces when Stage is present.
+
+Implementation direction for Stage assumes:
+- `Stage` is a dedicated painted zone type with its own cost, capacity, and tile-art set
+- Stage validity is governed by door access, not travel access
+- a contiguous Stage area is valid when at least one tile in that area touches an active door tile
+- inbound unloading lands into Stage rather than into abstract door/dock capacity
+- outbound picking and loading use Stage as the marshaling buffer near outbound-capable doors
+- storage zones remain longer-term holding areas and continue to require travel access within `3` tiles
+
+Operational consequences to preserve:
+- doors should not contribute usable freight capacity by themselves
+- removing a door must still fail if it would orphan occupied Stage capacity
+- queue summaries and tutorial guidance should describe staged freight and blocked Stage pressure instead of abstract dock capacity where possible
+- Stage capacity per tile should be tuned high enough to replace the old door-adjacent dock-capacity behavior without making Stage itself trivial
+
+Completed implementation notes:
+- `Stage` now ships as a first-class zone type with `$80` per-tile build cost, dedicated tile-art loading, overlay support, and left-panel paint tooling
+- Stage validity is calculated at the contiguous-area level from direct door contact, while long-term storage validity still uses travel proximity
+- Stage-to-storage putaway now also requires the source Stage area to touch travel, so freight cannot leave an isolated near-door staging area without floor access
+- dock-capacity helpers now summarize Stage-zone capacity and reservations instead of abstract door-adjacent tile capacity
+- inbound switch assignment requires both a usable inbound-capable door and nearby valid Stage capacity before a trailer can reserve that door
+- unloaded freight now enters `in-stage`, then storage labor moves it from Stage into long-term storage
+- picked outbound freight now stages near an outbound-capable door before load labor completes the shipment
+- queue, tutorial, and operations-panel language now describe staged freight and blocked Stage pressure instead of dock freight where that workflow is now explicit
+
+This keeps inbound and outbound flow more legible by making the near-door working buffer explicit on the map instead of hiding it inside door state.
 
 ---
 

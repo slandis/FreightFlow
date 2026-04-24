@@ -29,6 +29,7 @@ export class WarehouseMap {
           validForStorage: false,
           invalidReason: null,
           nearestTravelDistance: null,
+          nearestDoorDistance: null,
         });
       }
     }

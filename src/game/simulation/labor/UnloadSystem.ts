@@ -1,4 +1,3 @@
-import { findAvailableDockTileIndexForDoor } from "../dock/dockCapacity";
 import type { DomainEvent } from "../events/DomainEvent";
 import type { FreightFlowState } from "../freight/FreightFlowState";
 import type { LaborState } from "./LaborPool";
@@ -12,7 +11,7 @@ const laborAnalyticsRecorder = new LaborAnalyticsRecorder();
 export class UnloadSystem {
   process(
     freightFlow: FreightFlowState,
-    warehouseMap: WarehouseMap,
+    _warehouseMap: WarehouseMap,
     currentTick: number,
     createEvent: EventFactory,
     unloadCapacityCubicFeet: number,
@@ -25,16 +24,7 @@ export class UnloadSystem {
       if (trailer.state === "at-door" && unloadCapacityCubicFeet > 0) {
         const door = freightFlow.doors.find((candidateDoor) => candidateDoor.id === trailer.doorId);
 
-        if (door && trailer.dockTileIndex === null) {
-          trailer.dockTileIndex = findAvailableDockTileIndexForDoor(
-            warehouseMap,
-            freightFlow,
-            door,
-            trailer.remainingUnloadCubicFeet,
-          );
-        }
-
-        if (trailer.dockTileIndex === null) {
+        if (!trailer.stageZoneId) {
           continue;
         }
 
@@ -92,8 +82,9 @@ export class UnloadSystem {
           continue;
         }
 
-        batch.state = "on-dock";
-        batch.dockTileIndex = trailer.dockTileIndex;
+        batch.state = "in-stage";
+        batch.stageZoneId = trailer.stageZoneId;
+        batch.dockTileIndex = null;
         batch.unloadedTick = currentTick;
         freightFlow.metrics.totalUnloadedCubicFeet += batch.cubicFeet;
 
@@ -106,8 +97,7 @@ export class UnloadSystem {
 
         events.push(event);
       }
-
-      trailer.dockTileIndex = null;
+      trailer.stageZoneId = null;
     }
 
     return events;

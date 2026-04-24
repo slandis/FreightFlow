@@ -3,6 +3,7 @@ import { selectDockCapacitySummary } from "../dock/dockCapacity";
 import freightClasses from "../../../data/config/freightClasses.json";
 import zoneTypes from "../../../data/config/zoneTypes.json";
 import type { TileZoneType } from "../types/enums";
+import { isTrueStorageZoneType, zoneTouchesTravel } from "../world/ZoneManager";
 
 interface FreightClassConfig {
   id: string;
@@ -90,7 +91,7 @@ export function selectDockFreightCubicFeet(state: GameState): number {
 
 export function selectDockStorageNeeds(state: GameState): DockStorageNeed[] {
   const dockBatches = state.freightFlow.freightBatches.filter(
-    (batch) => batch.state === "on-dock",
+    (batch) => batch.state === "in-stage",
   );
   const batchesByFreightClass = new Map<string, typeof dockBatches>();
 
@@ -107,7 +108,7 @@ export function selectDockStorageNeeds(state: GameState): DockStorageNeed[] {
       const compatibleZoneTypes = (freightClass?.compatibleZoneTypes ?? []) as TileZoneType[];
       const compatibleZoneTypeSet = new Set<TileZoneType>(compatibleZoneTypes);
       const matchingZones = state.warehouseMap.zones.filter((zone) =>
-        compatibleZoneTypeSet.has(zone.zoneType),
+        isTrueStorageZoneType(zone.zoneType) && compatibleZoneTypeSet.has(zone.zoneType),
       );
       const validMatchingZones = matchingZones.filter((zone) => zone.validForStorage);
       const cubicFeetOnDock = batches.reduce((total, batch) => total + batch.cubicFeet, 0);
@@ -122,10 +123,19 @@ export function selectDockStorageNeeds(state: GameState): DockStorageNeed[] {
       const largestCompatibleAvailableCubicFeet =
         availableCapacities.length > 0 ? Math.max(...availableCapacities) : 0;
       const missingCubicFeet = Math.max(0, cubicFeetOnDock - validCompatibleCapacityCubicFeet);
+      const hasStageTravelAccess = batches.some((batch) => {
+        if (!batch.stageZoneId) {
+          return true;
+        }
+
+        const stageZone = state.warehouseMap.zones.find((zone) => zone.id === batch.stageZoneId);
+        return stageZone ? zoneTouchesTravel(state.warehouseMap, stageZone) : false;
+      });
       const compatibleZoneNames = compatibleZoneTypes.map(
         (zoneType) => zoneNameByType.get(zoneType) ?? zoneType,
       );
       const reason = findDockStorageNeedReason({
+        hasStageTravelAccess,
         freightClassFound: Boolean(freightClass),
         matchingZoneCount: matchingZones.length,
         validMatchingZoneCount: validMatchingZones.length,
@@ -155,6 +165,7 @@ export function selectDockStorageNeeds(state: GameState): DockStorageNeed[] {
 }
 
 function findDockStorageNeedReason(input: {
+  hasStageTravelAccess: boolean;
   freightClassFound: boolean;
   matchingZoneCount: number;
   validMatchingZoneCount: number;
@@ -164,6 +175,10 @@ function findDockStorageNeedReason(input: {
 }): string {
   if (!input.freightClassFound) {
     return "Unknown freight class";
+  }
+
+  if (!input.hasStageTravelAccess) {
+    return "Stage has no travel access";
   }
 
   if (input.matchingZoneCount === 0) {

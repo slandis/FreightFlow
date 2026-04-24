@@ -9,6 +9,7 @@ import type { WarehouseMap } from "../world/WarehouseMap";
 import type { Zone } from "../world/Zone";
 import { recalculateZoneUsage } from "../world/zoneUsage";
 import { getStorageDistanceMultiplier } from "./travelDistance";
+import { isTrueStorageZoneType, zoneTouchesTravel } from "../world/ZoneManager";
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
 const laborAnalyticsRecorder = new LaborAnalyticsRecorder();
@@ -35,7 +36,15 @@ export class StorageSystem {
     recalculateZoneUsage(freightFlow, warehouseMap);
 
     for (const batch of freightFlow.freightBatches) {
-      if (batch.state !== "on-dock" || storageCapacityCubicFeet <= 0) {
+      if (batch.state !== "in-stage" || storageCapacityCubicFeet <= 0) {
+        continue;
+      }
+
+      const sourceStageZone = batch.stageZoneId
+        ? warehouseMap.zones.find((candidateZone) => candidateZone.id === batch.stageZoneId)
+        : null;
+
+      if (!sourceStageZone || !zoneTouchesTravel(warehouseMap, sourceStageZone)) {
         continue;
       }
 
@@ -72,6 +81,7 @@ export class StorageSystem {
       batch.state = "in-storage";
       batch.storedTick = currentTick;
       batch.remainingStorageCubicFeet = null;
+      batch.stageZoneId = null;
       batch.dockTileIndex = null;
       laborAnalyticsRecorder.recordCompletedWork(
         labor,
@@ -106,6 +116,7 @@ export class StorageSystem {
         .filter(
           (zone) =>
             zone.validForStorage &&
+            isTrueStorageZoneType(zone.zoneType) &&
             compatibleZoneTypes.has(zone.zoneType) &&
             zone.capacityCubicFeet - zone.usedCubicFeet >= batch.cubicFeet,
         )

@@ -1,10 +1,10 @@
 import type { GameState } from "../core/GameState";
 import type { FreightFlowState } from "../freight/FreightFlowState";
 import type { Trailer } from "../freight/Trailer";
+import { TileZoneType } from "../types/enums";
 import type { DoorNode } from "../world/DoorNode";
 import type { WarehouseMap } from "../world/WarehouseMap";
-
-export const DOCK_TILE_CAPACITY_CUBIC_FEET = 5000;
+import type { Zone } from "../world/Zone";
 
 export interface DockTileCapacity {
   tileIndex: number;
@@ -53,91 +53,110 @@ export function getDockTileCapacities(
   freightFlow: FreightFlowState,
   doors: DoorNode[] = freightFlow.doors,
 ): DockTileCapacity[] {
-  const supportingDoorIdsByTileIndex = new Map<number, string[]>();
+  const stageUsageByZoneId = buildStageUsageByZoneId(freightFlow);
 
-  for (const door of doors) {
-    for (const tileIndex of getSupportedDockTileIndexes(warehouseMap, door)) {
-      const supportingDoorIds = supportingDoorIdsByTileIndex.get(tileIndex) ?? [];
-
-      if (!supportingDoorIds.includes(door.id)) {
-        supportingDoorIds.push(door.id);
-      }
-
-      supportingDoorIdsByTileIndex.set(tileIndex, supportingDoorIds);
-    }
-  }
-
-  const usageByTileIndex = buildDockTileUsageByTileIndex(freightFlow);
-
-  return [...supportingDoorIdsByTileIndex.entries()]
-    .map(([tileIndex, supportingDoorIds]) => {
-      const tile = warehouseMap.tiles[tileIndex];
-      const usedCubicFeet = usageByTileIndex.get(tileIndex) ?? 0;
+  return warehouseMap.zones
+    .filter((zone) => zone.zoneType === TileZoneType.Stage)
+    .map((zone) => {
+      const supportingDoorIds = doors
+        .filter((door) => doesDoorSupportZone(warehouseMap, door, zone))
+        .map((door) => door.id);
+      const anchorTile = warehouseMap.tiles[zone.tileIndexes[0]];
+      const usedCubicFeet = stageUsageByZoneId.get(zone.id) ?? 0;
 
       return {
-        tileIndex,
-        x: tile.x,
-        y: tile.y,
+        tileIndex: zone.tileIndexes[0],
+        x: anchorTile?.x ?? 0,
+        y: anchorTile?.y ?? 0,
         supportingDoorIds,
-        capacityCubicFeet: DOCK_TILE_CAPACITY_CUBIC_FEET,
+        capacityCubicFeet: zone.capacityCubicFeet,
         usedCubicFeet,
-        availableCubicFeet: Math.max(0, DOCK_TILE_CAPACITY_CUBIC_FEET - usedCubicFeet),
+        availableCubicFeet: Math.max(0, zone.capacityCubicFeet - usedCubicFeet),
       };
     })
     .sort((first, second) => first.tileIndex - second.tileIndex);
-}
-
-export function findAvailableDockTileIndexForDoor(
-  warehouseMap: WarehouseMap,
-  freightFlow: FreightFlowState,
-  door: DoorNode,
-  requiredCubicFeet: number,
-): number | null {
-  const capacitiesByTileIndex = new Map(
-    getDockTileCapacities(warehouseMap, freightFlow).map((capacity) => [
-      capacity.tileIndex,
-      capacity,
-    ]),
-  );
-
-  return (
-    getSupportedDockTileIndexes(warehouseMap, door)
-      .map((tileIndex) => capacitiesByTileIndex.get(tileIndex))
-      .filter((capacity): capacity is DockTileCapacity => Boolean(capacity))
-      .filter((capacity) => capacity.availableCubicFeet >= requiredCubicFeet)
-      .sort((first, second) => {
-        if (first.availableCubicFeet !== second.availableCubicFeet) {
-          return second.availableCubicFeet - first.availableCubicFeet;
-        }
-
-        return first.tileIndex - second.tileIndex;
-      })[0]?.tileIndex ?? null
-  );
 }
 
 export function findAvailableInboundDoorAssignment(
   warehouseMap: WarehouseMap,
   freightFlow: FreightFlowState,
   trailer: Trailer,
-): { door: DoorNode; dockTileIndex: number } | null {
+): { door: DoorNode; stageZoneId: string } | null {
+  const stageUsageByZoneId = buildStageUsageByZoneId(freightFlow);
+  const requiredCubicFeet = getTrailerReservedDockCubicFeet(freightFlow, trailer);
+
   for (const door of freightFlow.doors) {
     if (door.state !== "idle" || (door.mode !== "inbound" && door.mode !== "flex")) {
       continue;
     }
 
-    const dockTileIndex = findAvailableDockTileIndexForDoor(
+    const stageZone = getBestStageZoneForDoor(
       warehouseMap,
-      freightFlow,
       door,
-      getTrailerReservedDockCubicFeet(freightFlow, trailer),
+      requiredCubicFeet,
+      stageUsageByZoneId,
     );
 
-    if (dockTileIndex !== null) {
-      return { door, dockTileIndex };
+    if (stageZone) {
+      return { door, stageZoneId: stageZone.id };
     }
   }
 
   return null;
+}
+
+export function findAvailableOutboundStageZone(
+  warehouseMap: WarehouseMap,
+  freightFlow: FreightFlowState,
+  requiredCubicFeet: number,
+): Zone | null {
+  const stageUsageByZoneId = buildStageUsageByZoneId(freightFlow);
+
+  return (
+    warehouseMap.zones
+      .filter(
+        (zone) =>
+          zone.zoneType === TileZoneType.Stage &&
+          zone.validForStorage &&
+          zone.capacityCubicFeet - (stageUsageByZoneId.get(zone.id) ?? 0) >= requiredCubicFeet &&
+          freightFlow.doors.some(
+            (door) =>
+              (door.mode === "outbound" || door.mode === "flex") &&
+              doesDoorSupportZone(warehouseMap, door, zone),
+          ),
+      )
+      .sort((first, second) => {
+        const firstDistance = first.nearestDoorDistance ?? Number.MAX_SAFE_INTEGER;
+        const secondDistance = second.nearestDoorDistance ?? Number.MAX_SAFE_INTEGER;
+
+        if (firstDistance !== secondDistance) {
+          return firstDistance - secondDistance;
+        }
+
+        return first.tileIndexes.length - second.tileIndexes.length;
+      })[0] ?? null
+  );
+}
+
+export function findAvailableOutboundDoorForStageZone(
+  freightFlow: FreightFlowState,
+  warehouseMap: WarehouseMap,
+  stageZoneId: string,
+): DoorNode | null {
+  const zone = warehouseMap.zones.find((candidateZone) => candidateZone.id === stageZoneId);
+
+  if (!zone) {
+    return null;
+  }
+
+  return (
+    freightFlow.doors.find(
+      (door) =>
+        door.state === "idle" &&
+        (door.mode === "outbound" || door.mode === "flex") &&
+        doesDoorSupportZone(warehouseMap, door, zone),
+    ) ?? null
+  );
 }
 
 export function countAvailableInboundDoorAssignments(state: GameState): number {
@@ -149,18 +168,16 @@ export function countAvailableInboundDoorAssignments(state: GameState): number {
     return 0;
   }
 
+  const stageUsageByZoneId = buildStageUsageByZoneId(state.freightFlow);
+  const requiredCubicFeet = getTrailerReservedDockCubicFeet(state.freightFlow, waitingInboundTrailer);
+
   return state.freightFlow.doors.filter((door) => {
     if (door.state !== "idle" || (door.mode !== "inbound" && door.mode !== "flex")) {
       return false;
     }
 
-    return (
-      findAvailableDockTileIndexForDoor(
-        state.warehouseMap,
-        state.freightFlow,
-        door,
-        getTrailerReservedDockCubicFeet(state.freightFlow, waitingInboundTrailer),
-      ) !== null
+    return Boolean(
+      getBestStageZoneForDoor(state.warehouseMap, door, requiredCubicFeet, stageUsageByZoneId),
     );
   }).length;
 }
@@ -170,59 +187,91 @@ export function wouldDoorRemovalOrphanDockCapacity(
   freightFlow: FreightFlowState,
   doorToRemove: DoorNode,
 ): boolean {
-  const remainingDoors = freightFlow.doors.filter((door) => door.id !== doorToRemove.id);
-  const remainingSupportedTileIndexes = new Set(
-    getDockTileCapacities(warehouseMap, freightFlow, remainingDoors).map(
-      (capacity) => capacity.tileIndex,
-    ),
-  );
-  const occupiedTileIndexes = [...buildDockTileUsageByTileIndex(freightFlow).entries()]
-    .filter(([, usedCubicFeet]) => usedCubicFeet > 0)
-    .map(([tileIndex]) => tileIndex);
+  const stageUsageByZoneId = buildStageUsageByZoneId(freightFlow);
 
-  return occupiedTileIndexes.some(
-    (tileIndex) =>
-      getSupportedDockTileIndexes(warehouseMap, doorToRemove).includes(tileIndex) &&
-      !remainingSupportedTileIndexes.has(tileIndex),
+  return warehouseMap.zones
+    .filter((zone) => zone.zoneType === TileZoneType.Stage)
+    .some((zone) => {
+      if (
+        !doesDoorSupportZone(warehouseMap, doorToRemove, zone) ||
+        (stageUsageByZoneId.get(zone.id) ?? 0) <= 0
+      ) {
+        return false;
+      }
+
+      return !freightFlow.doors.some(
+        (door) =>
+          door.id !== doorToRemove.id && doesDoorSupportZone(warehouseMap, door, zone),
+      );
+    });
+}
+
+function getBestStageZoneForDoor(
+  warehouseMap: WarehouseMap,
+  door: DoorNode,
+  requiredCubicFeet: number,
+  stageUsageByZoneId: Map<string, number>,
+): Zone | null {
+  return (
+    warehouseMap.zones
+      .filter(
+        (zone) =>
+          zone.zoneType === TileZoneType.Stage &&
+          zone.validForStorage &&
+          doesDoorSupportZone(warehouseMap, door, zone) &&
+          zone.capacityCubicFeet - (stageUsageByZoneId.get(zone.id) ?? 0) >= requiredCubicFeet,
+      )
+      .sort((first, second) => {
+        const firstDistance = first.nearestDoorDistance ?? Number.MAX_SAFE_INTEGER;
+        const secondDistance = second.nearestDoorDistance ?? Number.MAX_SAFE_INTEGER;
+
+        if (firstDistance !== secondDistance) {
+          return firstDistance - secondDistance;
+        }
+
+        return (stageUsageByZoneId.get(first.id) ?? 0) - (stageUsageByZoneId.get(second.id) ?? 0);
+      })[0] ?? null
   );
 }
 
-function buildDockTileUsageByTileIndex(freightFlow: FreightFlowState): Map<number, number> {
-  const usageByTileIndex = new Map<number, number>();
+function buildStageUsageByZoneId(freightFlow: FreightFlowState): Map<string, number> {
+  const usageByZoneId = new Map<string, number>();
 
   for (const batch of freightFlow.freightBatches) {
     if (
-      batch.dockTileIndex === null ||
-      (batch.state !== "on-dock" && batch.state !== "storing")
+      !batch.stageZoneId ||
+      (batch.state !== "in-stage" &&
+        batch.state !== "storing" &&
+        batch.state !== "picked" &&
+        batch.state !== "loading")
     ) {
       continue;
     }
 
-    usageByTileIndex.set(
-      batch.dockTileIndex,
-      (usageByTileIndex.get(batch.dockTileIndex) ?? 0) + batch.cubicFeet,
+    usageByZoneId.set(
+      batch.stageZoneId,
+      (usageByZoneId.get(batch.stageZoneId) ?? 0) + batch.cubicFeet,
     );
   }
 
   for (const trailer of freightFlow.trailers) {
     if (
-      trailer.dockTileIndex === null ||
-      (trailer.state !== "yard" &&
-        trailer.state !== "switching-to-door" &&
+      !trailer.stageZoneId ||
+      (trailer.state !== "switching-to-door" &&
         trailer.state !== "at-door" &&
         trailer.state !== "unloading")
     ) {
       continue;
     }
 
-    usageByTileIndex.set(
-      trailer.dockTileIndex,
-      (usageByTileIndex.get(trailer.dockTileIndex) ?? 0) +
+    usageByZoneId.set(
+      trailer.stageZoneId,
+      (usageByZoneId.get(trailer.stageZoneId) ?? 0) +
         getTrailerReservedDockCubicFeet(freightFlow, trailer),
     );
   }
 
-  return usageByTileIndex;
+  return usageByZoneId;
 }
 
 function getTrailerReservedDockCubicFeet(
@@ -240,28 +289,18 @@ function getTrailerReservedDockCubicFeet(
   return freightBatches.reduce((total, batch) => total + batch.cubicFeet, 0);
 }
 
-function getSupportedDockTileIndexes(
+function doesDoorSupportZone(
   warehouseMap: WarehouseMap,
   door: DoorNode,
-): number[] {
-  const candidateCoordinates = [
-    [door.x, door.y],
-    [door.x - 1, door.y],
-    [door.x + 1, door.y],
-    [door.x, door.y - 1],
-    [door.x, door.y + 1],
-  ];
-  const tileIndexes = new Set<number>();
+  zone: Zone,
+): boolean {
+  return zone.tileIndexes.some((tileIndex) => {
+    const tile = warehouseMap.tiles[tileIndex];
 
-  for (const [x, y] of candidateCoordinates) {
-    const tile = warehouseMap.getTile(x, y);
-
-    if (!tile?.isDockEdge) {
-      continue;
+    if (!tile) {
+      return false;
     }
 
-    tileIndexes.add(warehouseMap.getTileIndex(tile.x, tile.y));
-  }
-
-  return [...tileIndexes.values()];
+    return Math.abs(tile.x - door.x) + Math.abs(tile.y - door.y) === 1;
+  });
 }

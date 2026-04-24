@@ -47,6 +47,7 @@ export interface TileSummary {
   validForStorage: boolean;
   invalidReason: string | null;
   nearestTravelDistance: number | null;
+  nearestDoorDistance: number | null;
   isActiveDoor: boolean;
   doorId: string | null;
   doorMode: string | null;
