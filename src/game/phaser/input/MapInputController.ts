@@ -16,6 +16,7 @@ import { getRectangularPaintSelection } from "./paintSelection";
 const MIN_ZOOM = 0.45;
 const MAX_ZOOM = 1.8;
 const DRAG_THRESHOLD_PIXELS = 4;
+const ROTATE_DRAG_THRESHOLD_PIXELS = 32;
 
 export class MapInputController {
   private hoveredTile: Tile | null = null;
@@ -23,9 +24,13 @@ export class MapInputController {
   private isPanning = false;
   private isPainting = false;
   private isDoorEditing = false;
+  private isRotating = false;
   private hasDragged = false;
   private lastPointerX = 0;
   private lastPointerY = 0;
+  private rotateStartX = 0;
+  private rotateStartY = 0;
+  private rotationTriggered = false;
   private paintStartTile: Tile | null = null;
   private paintPreviewTiles: Tile[] = [];
 
@@ -41,6 +46,7 @@ export class MapInputController {
     this.scene.input.on("pointermove", this.handlePointerMove, this);
     this.scene.input.on("pointerup", this.handlePointerUp, this);
     this.scene.input.on("wheel", this.handleWheel, this);
+    this.scene.input.keyboard?.on("keydown", this.handleKeyDown, this);
     this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, this.destroy, this);
   }
 
@@ -49,15 +55,20 @@ export class MapInputController {
     this.scene.input.off("pointermove", this.handlePointerMove, this);
     this.scene.input.off("pointerup", this.handlePointerUp, this);
     this.scene.input.off("wheel", this.handleWheel, this);
+    this.scene.input.keyboard?.off("keydown", this.handleKeyDown, this);
   }
 
   private handlePointerDown(pointer: Phaser.Input.Pointer): void {
     this.lastPointerX = pointer.x;
     this.lastPointerY = pointer.y;
+    this.rotateStartX = pointer.x;
+    this.rotateStartY = pointer.y;
     this.hasDragged = false;
-    this.isPanning = pointer.rightButtonDown() || pointer.middleButtonDown();
+    this.rotationTriggered = false;
+    this.isPanning = pointer.middleButtonDown();
     this.isPainting = false;
     this.isDoorEditing = false;
+    this.isRotating = pointer.rightButtonDown();
     this.paintStartTile = null;
     this.paintPreviewTiles = [];
     this.renderer.highlightPaintPreview([]);
@@ -84,10 +95,14 @@ export class MapInputController {
       this.hasDragged = true;
     }
 
-    if (this.isPanning && (pointer.rightButtonDown() || pointer.middleButtonDown())) {
+    if (this.isPanning && pointer.middleButtonDown()) {
       const camera = this.scene.cameras.main;
       camera.scrollX -= deltaX / camera.zoom;
       camera.scrollY -= deltaY / camera.zoom;
+    }
+
+    if (this.isRotating && pointer.rightButtonDown()) {
+      this.handleRotateDrag(pointer);
     }
 
     this.lastPointerX = pointer.x;
@@ -104,6 +119,12 @@ export class MapInputController {
 
     if (this.isPanning) {
       this.isPanning = false;
+      return;
+    }
+
+    if (this.isRotating) {
+      this.isRotating = false;
+      this.rotationTriggered = false;
       return;
     }
 
@@ -151,7 +172,12 @@ export class MapInputController {
   private updateHoveredTile(pointer: Phaser.Input.Pointer): void {
     const camera = this.scene.cameras.main;
     const worldPoint = camera.getWorldPoint(pointer.x, pointer.y);
-    const tileCoordinates = screenToTile(worldPoint, this.renderer.getOrigin(), this.map);
+    const tileCoordinates = screenToTile(
+      worldPoint,
+      this.renderer.getOrigin(),
+      this.map,
+      this.renderer.getOrientation(),
+    );
     const nextTile = tileCoordinates
       ? this.map.getTile(tileCoordinates.x, tileCoordinates.y) ?? null
       : null;
@@ -181,6 +207,30 @@ export class MapInputController {
     useUiStore.getState().setSelectedTile(
       this.selectedTile ? this.createTileSummary(this.selectedTile) : null,
     );
+  }
+
+  private handleRotateDrag(pointer: Phaser.Input.Pointer): void {
+    if (this.rotationTriggered) {
+      return;
+    }
+
+    const deltaX = pointer.x - this.rotateStartX;
+    const deltaY = pointer.y - this.rotateStartY;
+
+    if (
+      Math.abs(deltaX) < ROTATE_DRAG_THRESHOLD_PIXELS ||
+      Math.abs(deltaX) <= Math.abs(deltaY)
+    ) {
+      return;
+    }
+
+    if (deltaX > 0) {
+      useUiStore.getState().rotateMapClockwise();
+    } else {
+      useUiStore.getState().rotateMapCounterClockwise();
+    }
+
+    this.rotationTriggered = true;
   }
 
   private updatePaintPreview(): void {
@@ -319,4 +369,34 @@ export class MapInputController {
 
     return event?.button ?? -1;
   }
+
+  private handleKeyDown(event: KeyboardEvent): void {
+    if (isEditableTarget(event.target)) {
+      return;
+    }
+
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      useUiStore.getState().rotateMapClockwise();
+    }
+
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      useUiStore.getState().rotateMapCounterClockwise();
+    }
+  }
+}
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  const tagName = target.tagName.toLowerCase();
+  return (
+    tagName === "input" ||
+    tagName === "textarea" ||
+    tagName === "select" ||
+    target.isContentEditable
+  );
 }

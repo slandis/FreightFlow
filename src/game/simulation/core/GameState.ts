@@ -58,6 +58,7 @@ export interface BudgetPlan {
   training: number;
   safety: number;
   operationsSupport: number;
+  inventorySupport: number;
   contingency: number;
 }
 

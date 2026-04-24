@@ -3,7 +3,12 @@ import { ISO_TILE_HEIGHT, ISO_TILE_WIDTH } from "../../shared/constants/map";
 import { TileZoneType } from "../../simulation/types/enums";
 import type { WarehouseMap } from "../../simulation/world/WarehouseMap";
 import type { Tile } from "../../simulation/world/Tile";
-import { getIsoTilePolygon, tileToScreen, type IsometricOrigin } from "./isometric";
+import {
+  getIsoTilePolygon,
+  tileToScreen,
+  type IsometricOrigin,
+  type MapOrientation,
+} from "./isometric";
 import { resolveTileTextureKey } from "./storageTileArt";
 
 const tileFillColors: Record<TileZoneType, number> = {
@@ -29,6 +34,7 @@ export class TileRenderer {
     private readonly scene: Phaser.Scene,
     private readonly map: WarehouseMap,
     private readonly origin: IsometricOrigin,
+    private orientation: MapOrientation = 0,
   ) {
     this.baseLayer = scene.add.graphics();
     this.storageTileLayer = scene.add.container();
@@ -84,12 +90,25 @@ export class TileRenderer {
     return this.origin;
   }
 
+  getOrientation(): MapOrientation {
+    return this.orientation;
+  }
+
+  setOrientation(orientation: MapOrientation): void {
+    this.orientation = orientation;
+  }
+
   getWorldBounds(): Phaser.Geom.Rectangle {
     const corners = [
-      tileToScreen({ x: 0, y: 0 }, this.origin),
-      tileToScreen({ x: this.map.width - 1, y: 0 }, this.origin),
-      tileToScreen({ x: 0, y: this.map.height - 1 }, this.origin),
-      tileToScreen({ x: this.map.width - 1, y: this.map.height - 1 }, this.origin),
+      tileToScreen({ x: 0, y: 0 }, this.origin, this.map, this.orientation),
+      tileToScreen({ x: this.map.width - 1, y: 0 }, this.origin, this.map, this.orientation),
+      tileToScreen({ x: 0, y: this.map.height - 1 }, this.origin, this.map, this.orientation),
+      tileToScreen(
+        { x: this.map.width - 1, y: this.map.height - 1 },
+        this.origin,
+        this.map,
+        this.orientation,
+      ),
     ];
 
     const xs = corners.map((corner) => corner.x);
@@ -123,7 +142,7 @@ export class TileRenderer {
     lineColor: number,
     lineAlpha: number,
   ): void {
-    const points = getIsoTilePolygon(tile, this.origin);
+    const points = getIsoTilePolygon(tile, this.origin, this.map, this.orientation);
 
     layer.fillStyle(fillColor, fillAlpha);
     layer.lineStyle(1, lineColor, lineAlpha);
@@ -154,7 +173,7 @@ export class TileRenderer {
       }
 
       activeTileIndexes.add(tileIndex);
-      const center = tileToScreen(tile, this.origin);
+      const center = tileToScreen(tile, this.origin, this.map, this.orientation);
       const imageX = center.x;
       const imageY = center.y + ISO_TILE_HEIGHT / 2;
       const existingImage = this.storageTileImages.get(tileIndex);

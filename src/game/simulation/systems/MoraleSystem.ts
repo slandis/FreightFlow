@@ -1,5 +1,9 @@
 import type { GameState, ScoreDriver } from "../core/GameState";
 import { scaleNegativeScoreImpact } from "../config/difficulty";
+import {
+  getAssignedInventoryTeamHeadcount,
+  getInventorySupportRecommendationForActiveContracts,
+} from "../planning/inventorySupport";
 import { updateScore } from "./ScoreUtils";
 
 export class MoraleSystem {
@@ -12,6 +16,13 @@ export class MoraleSystem {
     ).length;
     const drivers: ScoreDriver[] = [];
     let delta = 0;
+    const inventoryRecommendation = getInventorySupportRecommendationForActiveContracts(state);
+    const inventoryHeadcount = getAssignedInventoryTeamHeadcount(state);
+    const inventoryBudgetTarget = inventoryRecommendation.suggestedBudgetPoints;
+    const inventoryBudgetCoverage =
+      inventoryBudgetTarget > 0
+        ? Math.min(1, state.planning.currentPlan.budget.inventorySupport / inventoryBudgetTarget)
+        : 1;
 
     if (state.labor.modifiers.managementPressure === "healthy") {
       drivers.push({ label: "Management support", impact: 0.08 });
@@ -22,6 +33,29 @@ export class MoraleSystem {
         state.difficultyModeId,
       );
       drivers.push({ label: "Management understaffed", impact });
+      delta += impact;
+    }
+
+    if (inventoryRecommendation.suggestedHeadcount > 0 && inventoryHeadcount < inventoryRecommendation.suggestedHeadcount) {
+      const impact = scaleNegativeScoreImpact(
+        -Math.min(
+          0.45,
+          ((inventoryRecommendation.suggestedHeadcount - inventoryHeadcount) /
+            inventoryRecommendation.suggestedHeadcount) *
+            0.3,
+        ),
+        state.difficultyModeId,
+      );
+      drivers.push({ label: "Inventory team understaffed", impact });
+      delta += impact;
+    }
+
+    if (inventoryRecommendation.suggestedHeadcount > 0 && inventoryBudgetCoverage < 1) {
+      const impact = scaleNegativeScoreImpact(
+        -(1 - inventoryBudgetCoverage) * 0.18,
+        state.difficultyModeId,
+      );
+      drivers.push({ label: "Inventory support underfunded", impact });
       delta += impact;
     }
 

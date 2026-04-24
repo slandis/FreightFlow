@@ -20,21 +20,63 @@ export interface MapDimensions {
   height: number;
 }
 
+export type MapOrientation = 0 | 1 | 2 | 3;
+
+export function rotateTileCoordinates(
+  tile: TileCoordinates,
+  map: MapDimensions,
+  orientation: MapOrientation,
+): TileCoordinates {
+  switch (orientation) {
+    case 1:
+      return { x: map.height - 1 - tile.y, y: tile.x };
+    case 2:
+      return { x: map.width - 1 - tile.x, y: map.height - 1 - tile.y };
+    case 3:
+      return { x: tile.y, y: map.width - 1 - tile.x };
+    default:
+      return tile;
+  }
+}
+
+export function unrotateTileCoordinates(
+  tile: TileCoordinates,
+  map: MapDimensions,
+  orientation: MapOrientation,
+): TileCoordinates {
+  switch (orientation) {
+    case 1:
+      return { x: tile.y, y: map.height - 1 - tile.x };
+    case 2:
+      return { x: map.width - 1 - tile.x, y: map.height - 1 - tile.y };
+    case 3:
+      return { x: map.width - 1 - tile.y, y: tile.x };
+    default:
+      return tile;
+  }
+}
+
 export function tileToScreen(
   tile: TileCoordinates,
   origin: IsometricOrigin,
+  map?: MapDimensions,
+  orientation: MapOrientation = 0,
 ): ScreenCoordinates {
+  const projectedTile = map ? rotateTileCoordinates(tile, map, orientation) : tile;
+
   return {
-    x: origin.x + ((tile.x - tile.y) * ISO_TILE_WIDTH) / 2,
-    y: origin.y + ((tile.x + tile.y) * ISO_TILE_HEIGHT) / 2,
+    x: origin.x + ((projectedTile.x - projectedTile.y) * ISO_TILE_WIDTH) / 2,
+    y: origin.y + ((projectedTile.x + projectedTile.y) * ISO_TILE_HEIGHT) / 2,
   };
 }
 
 export function getIsoTilePolygon(
   tile: TileCoordinates,
   origin: IsometricOrigin,
+  map?: MapDimensions,
+  orientation: MapOrientation = 0,
 ): ScreenCoordinates[] {
-  const center = tileToScreen(tile, origin);
+  const center = tileToScreen(tile, origin, map, orientation);
   const halfWidth = ISO_TILE_WIDTH / 2;
   const halfHeight = ISO_TILE_HEIGHT / 2;
 
@@ -50,6 +92,7 @@ export function screenToTile(
   point: ScreenCoordinates,
   origin: IsometricOrigin,
   map: MapDimensions,
+  orientation: MapOrientation = 0,
 ): TileCoordinates | null {
   const localX = point.x - origin.x;
   const localY = point.y - origin.y;
@@ -71,7 +114,7 @@ export function screenToTile(
         Math.abs(point.y - center.y) / (ISO_TILE_HEIGHT / 2);
 
       if (normalizedDistance <= 1) {
-        return { x, y };
+        return unrotateTileCoordinates({ x, y }, map, orientation);
       }
     }
   }

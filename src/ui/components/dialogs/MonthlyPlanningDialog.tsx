@@ -9,7 +9,10 @@ import { SetContractOfferDecisionCommand } from "../../../game/simulation/comman
 import { getDifficultyModeById } from "../../../game/simulation/config/difficulty";
 import type { BudgetPlan } from "../../../game/simulation/core/GameState";
 import { selectAcceptedContractOfferCount, selectContractOffers } from "../../../game/simulation/selectors/contractSelectors";
-import { selectPlanningState } from "../../../game/simulation/selectors/planningSelectors";
+import {
+  selectPlanningInventorySupportRecommendation,
+  selectPlanningState,
+} from "../../../game/simulation/selectors/planningSelectors";
 import { LaborRole } from "../../../game/simulation/types/enums";
 import { useSimulation, useSimulationState } from "../../hooks/useSimulation";
 import { type PlanningPage, useUiStore } from "../../store/uiStore";
@@ -29,6 +32,7 @@ const budgetLabels: Record<keyof BudgetPlan, string> = {
   training: "Training",
   safety: "Safety",
   operationsSupport: "Operations Support",
+  inventorySupport: "Inventory Support",
   contingency: "Contingency",
 };
 
@@ -37,6 +41,7 @@ const budgetHelp: Record<keyof BudgetPlan, string> = {
   training: "Improves productive labor throughput.",
   safety: "Supports the safety score through the month.",
   operationsSupport: "Reduces support pressure from congestion and understaffed support roles.",
+  inventorySupport: "Supports inventory control operations and inventory administration.",
   contingency: "Reserved spend with no direct operational effect yet.",
 };
 
@@ -46,6 +51,7 @@ const roleLabels: Record<LaborRole, string> = {
   [LaborRole.Storage]: "Inbound Storage",
   [LaborRole.Pick]: "Outbound Picking",
   [LaborRole.Load]: "Outbound Loading",
+  [LaborRole.InventoryTeam]: "Inventory Team",
   [LaborRole.Sanitation]: "Sanitation",
   [LaborRole.Management]: "Management",
 };
@@ -57,6 +63,9 @@ export function MonthlyPlanningDialog() {
   const planning = useSimulationState(selectPlanningState);
   const contractOffers = useSimulationState(selectContractOffers);
   const acceptedOfferCount = useSimulationState(selectAcceptedContractOfferCount);
+  const inventorySupportRecommendation = useSimulationState(
+    selectPlanningInventorySupportRecommendation,
+  );
   const difficultyMode = useSimulationState((state) => getDifficultyModeById(state.difficultyModeId));
   const activePage = useUiStore((state) => state.activePlanningPage);
   const setActivePlanningPage = useUiStore((state) => state.setActivePlanningPage);
@@ -310,6 +319,14 @@ export function MonthlyPlanningDialog() {
                 ["Planned headcount", activePendingPlan.totalHeadcount.toString()],
                 ["Unassigned now", activeSnapshot.unassignedHeadcount.toString()],
                 ["Planned unassigned", getUnassignedPlannedLabor().toString()],
+                [
+                  "Inventory forecast",
+                  `${formatNumber(inventorySupportRecommendation.forecastMonthlyVolumeCubicFeet)} cu ft`,
+                ],
+                [
+                  "Suggested inventory team",
+                  inventorySupportRecommendation.suggestedHeadcount.toString(),
+                ],
                 ["Top bottleneck", activeSnapshot.topBottleneckLabel ?? "None"],
                 ["Pressure", activeSnapshot.topBottleneckPressure ?? "healthy"],
               ]}
@@ -377,7 +394,12 @@ export function MonthlyPlanningDialog() {
                 <article className="budget-control" key={category}>
                   <div>
                     <strong>{budgetLabels[category]}</strong>
-                    <p>{budgetHelp[category]}</p>
+                    <p>
+                      {budgetHelp[category]}
+                      {category === "inventorySupport"
+                        ? ` Suggested: ${inventorySupportRecommendation.suggestedBudgetPoints} pts.`
+                        : ""}
+                    </p>
                   </div>
                   <div className="planning-stepper">
                     <button type="button" onClick={() => updateBudget(category, -1)}>
@@ -401,7 +423,12 @@ export function MonthlyPlanningDialog() {
                 <article className="planning-role" key={roleId}>
                   <div>
                     <strong>{roleLabels[roleId]}</strong>
-                    <p>{getRoleHint(roleId)}</p>
+                    <p>
+                      {getRoleHint(roleId)}
+                      {roleId === LaborRole.InventoryTeam
+                        ? ` Suggested: ${inventorySupportRecommendation.suggestedHeadcount} for ${formatNumber(inventorySupportRecommendation.forecastMonthlyVolumeCubicFeet)} cu ft/month.`
+                        : ""}
+                    </p>
                   </div>
                   <div className="planning-stepper">
                     <button type="button" onClick={() => updatePlannedLabor(roleId, -1)}>
@@ -480,6 +507,8 @@ function getRoleHint(roleId: LaborRole): string {
       return "Picks outbound orders from storage.";
     case LaborRole.Load:
       return "Loads picked freight onto outbound trailers.";
+    case LaborRole.InventoryTeam:
+      return "Supports inventory control, reconciliation, and inventory administration.";
     case LaborRole.Sanitation:
       return "Protects condition and congestion pressure.";
     case LaborRole.Management:

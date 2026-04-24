@@ -8,9 +8,19 @@ const map = { width: MAP_WIDTH, height: MAP_HEIGHT };
 describe("isometric coordinate helpers", () => {
   it("maps tile centers back to their source tile", () => {
     const tile = { x: 17, y: 42 };
-    const screenPoint = tileToScreen(tile, origin);
+    const screenPoint = tileToScreen(tile, origin, map);
 
     expect(screenToTile(screenPoint, origin, map)).toEqual(tile);
+  });
+
+  it("maps tile centers back to their source tile after rotation", () => {
+    const tile = { x: 17, y: 42 };
+
+    for (const orientation of [0, 1, 2, 3] as const) {
+      const screenPoint = tileToScreen(tile, origin, map, orientation);
+
+      expect(screenToTile(screenPoint, origin, map, orientation)).toEqual(tile);
+    }
   });
 
   it("rejects points outside the warehouse map", () => {

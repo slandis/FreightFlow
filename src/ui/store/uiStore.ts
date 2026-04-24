@@ -28,6 +28,8 @@ export type OverlayMode =
   | "queue-pressure"
   | "none";
 
+export type MapOrientation = 0 | 1 | 2 | 3;
+
 export interface MapFocusRequest {
   id: string;
   reason: string;
@@ -60,6 +62,7 @@ interface UiState {
   saveLoadMessage: string | null;
   activePlanningPage: PlanningPage;
   activeOverlayMode: OverlayMode;
+  mapOrientation: MapOrientation;
   mapFocusRequest: MapFocusRequest | null;
   setActiveTool: (tool: ActiveTool) => void;
   setHoveredTile: (tile: TileSummary | null) => void;
@@ -69,6 +72,8 @@ interface UiState {
   setSaveLoadMessage: (message: string | null) => void;
   setActivePlanningPage: (page: PlanningPage) => void;
   setActiveOverlayMode: (mode: OverlayMode) => void;
+  rotateMapClockwise: () => void;
+  rotateMapCounterClockwise: () => void;
   requestMapFocus: (request: Omit<MapFocusRequest, "id">) => void;
   clearMapFocusRequest: (id: string) => void;
 }
@@ -82,6 +87,7 @@ export const useUiStore = create<UiState>((set) => ({
   saveLoadMessage: null,
   activePlanningPage: "forecast",
   activeOverlayMode: "invalid-storage",
+  mapOrientation: 0,
   mapFocusRequest: null,
   setActiveTool: (tool) => set({ activeTool: tool }),
   setHoveredTile: (tile) => set({ hoveredTile: tile }),
@@ -91,6 +97,10 @@ export const useUiStore = create<UiState>((set) => ({
   setSaveLoadMessage: (message) => set({ saveLoadMessage: message }),
   setActivePlanningPage: (page) => set({ activePlanningPage: page }),
   setActiveOverlayMode: (mode) => set({ activeOverlayMode: mode }),
+  rotateMapClockwise: () =>
+    set((state) => ({ mapOrientation: ((state.mapOrientation + 1) % 4) as MapOrientation })),
+  rotateMapCounterClockwise: () =>
+    set((state) => ({ mapOrientation: ((state.mapOrientation + 3) % 4) as MapOrientation })),
   requestMapFocus: (request) =>
     set({
       mapFocusRequest: {

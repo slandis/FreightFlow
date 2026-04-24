@@ -369,3 +369,10 @@ Paused Storage Tile-Art Preservation: Completed
     - Centralized zone-usage recalculation and applied it immediately after map edits so rendered utilization stays aligned with authoritative stored volume even while paused.
     - Added regression coverage for repainting unrelated areas while stored freight already exists in a storage zone.
     - Verification completed: `npm test` passed with 144 tests, and `npm run build` passed. The build still emits the expected Vite chunk-size warning.
+
+Inbound Yard Dwell Tuning: Completed
+    - Added difficulty-configured inbound yard dwell ranges so newly arrived inbound trailers wait a small randomized number of ticks before they can reserve a door.
+    - Set the dwell windows to `Relaxed: 1-3`, `Standard: 2-5`, `Demanding: 3-6`, and `Brutal: 4-8` ticks to make the yard a visible operational buffer without overwhelming dock flow.
+    - Extended inbound trailer state with `readyForDoorAssignmentTick`, updated inbound generation to stamp that value on arrival, and gated switch-driver door assignment on the trailer becoming ready.
+    - Updated config validation and inbound-flow coverage so the new dwell configuration and staged yard -> switching -> unloading sequence are both enforced by tests.
+    - Verification completed: `npm test` passed with 148 tests, and `npm run build` passed. The build still emits the expected Vite chunk-size warning.

@@ -278,6 +278,8 @@ function validateDifficultyModes(value: unknown, errors: string[]): void {
       "forecastAccuracy",
       "demandVolatility",
       "inboundIntervalMultiplier",
+      "inboundYardDwellMinTicks",
+      "inboundYardDwellMaxTicks",
       "inboundVolumeMultiplier",
       "outboundIntervalMultiplier",
       "outboundVolumeMultiplier",
@@ -287,6 +289,16 @@ function validateDifficultyModes(value: unknown, errors: string[]): void {
       if (!isNonNegativeNumber(mode[field])) {
         errors.push(`difficultyModes.${String(mode.id)} has invalid ${field}`);
       }
+    }
+
+    if (
+      isNonNegativeNumber(mode.inboundYardDwellMinTicks) &&
+      isNonNegativeNumber(mode.inboundYardDwellMaxTicks) &&
+      mode.inboundYardDwellMaxTicks < mode.inboundYardDwellMinTicks
+    ) {
+      errors.push(
+        `difficultyModes.${String(mode.id)} has inboundYardDwellMaxTicks below minimum`,
+      );
     }
   }
 }

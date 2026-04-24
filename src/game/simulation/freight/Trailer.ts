@@ -13,6 +13,7 @@ export interface Trailer {
   doorId: string | null;
   freightBatchIds: string[];
   arrivalTick: number;
+  readyForDoorAssignmentTick: number | null;
   doorAssignedTick: number | null;
   unloadStartedTick: number | null;
   completedTick: number | null;

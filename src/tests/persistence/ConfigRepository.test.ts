@@ -38,6 +38,7 @@ const validConfig = {
     { id: "storage", name: "Inbound Storage", baseRate: 1 },
     { id: "pick", name: "Outbound Picking", baseRate: 1 },
     { id: "load", name: "Outbound Loading", baseRate: 1 },
+    { id: "inventory-team", name: "Inventory Team", baseRate: 1 },
     { id: "sanitation", name: "Sanitation", baseRate: 1 },
     { id: "management", name: "Management", baseRate: 1 },
   ],
@@ -50,6 +51,8 @@ const validConfig = {
       forecastAccuracy: 0.9,
       demandVolatility: 0.12,
       inboundIntervalMultiplier: 1.08,
+      inboundYardDwellMinTicks: 1,
+      inboundYardDwellMaxTicks: 3,
       inboundVolumeMultiplier: 0.95,
       outboundIntervalMultiplier: 1.35,
       outboundVolumeMultiplier: 0.92,
@@ -100,5 +103,23 @@ describe("ConfigRepository", () => {
 
     expect(result.success).toBe(false);
     expect(result.errors).toContain("laborRoles is missing management");
+  });
+
+  it("fails when inbound yard dwell max is below min", () => {
+    const result = new ConfigRepository({
+      ...validConfig,
+      difficultyModes: [
+        {
+          ...validConfig.difficultyModes[0],
+          inboundYardDwellMinTicks: 5,
+          inboundYardDwellMaxTicks: 2,
+        },
+      ],
+    }).validateAll();
+
+    expect(result.success).toBe(false);
+    expect(result.errors).toContain(
+      "difficultyModes.relaxed has inboundYardDwellMaxTicks below minimum",
+    );
   });
 });

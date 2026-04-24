@@ -20,6 +20,7 @@ function createYardTrailer(id: string, arrivalTick: number): Trailer {
     doorId: null,
     freightBatchIds: [],
     arrivalTick,
+    readyForDoorAssignmentTick: arrivalTick,
     doorAssignedTick: null,
     unloadStartedTick: null,
     completedTick: null,
@@ -58,6 +59,9 @@ describe("inbound freight flow", () => {
     expect(freightBatches).toHaveLength(1);
     expect(metrics.totalInboundTrailersArrived).toBe(1);
     expect(trailers[0].direction).toBe("inbound");
+    expect(trailers[0].state).toBe("yard");
+    expect(trailers[0].readyForDoorAssignmentTick).toBeGreaterThanOrEqual(62);
+    expect(trailers[0].readyForDoorAssignmentTick).toBeLessThanOrEqual(65);
     expect(trailers[0].freightBatchIds).toEqual([freightBatches[0].id]);
     expect(freightClassIds).toContain(freightBatches[0].freightClassId);
     expect(freightBatches[0].cubicFeet).toBeGreaterThanOrEqual(800);
@@ -73,9 +77,9 @@ describe("inbound freight flow", () => {
     runner.dispatch(new PlaceDoorCommand(12, 0, "inbound"));
 
     freightFlow.trailers = [
-      createYardTrailer("trailer-newer", 20),
-      createYardTrailer("trailer-older", 10),
-      createYardTrailer("trailer-extra", 30),
+      { ...createYardTrailer("trailer-newer", 20), readyForDoorAssignmentTick: 0 },
+      { ...createYardTrailer("trailer-older", 10), readyForDoorAssignmentTick: 0 },
+      { ...createYardTrailer("trailer-extra", 30), readyForDoorAssignmentTick: 0 },
     ];
     freightFlow.doors[1].state = "reserved";
     freightFlow.doors[1].trailerId = "existing";
@@ -205,6 +209,10 @@ describe("inbound freight flow", () => {
     runTicks(runner, 60);
     const trailer = runner.getState().freightFlow.trailers[0];
 
+    expect(trailer.state).toBe("yard");
+    expect(trailer.readyForDoorAssignmentTick).not.toBeNull();
+
+    runTicks(runner, (trailer.readyForDoorAssignmentTick ?? 60) - 60);
     expect(trailer.state).toBe("switching-to-door");
     expect(trailer.remainingSwitchTicks).toBe(8);
 
@@ -222,10 +230,11 @@ describe("inbound freight flow", () => {
 
     runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
 
-    runTicks(runner, 68);
+    runTicks(runner, 60);
     const freightFlow = runner.getState().freightFlow;
     const trailer = freightFlow.trailers[0];
     const batch = freightFlow.freightBatches[0];
+    runUntil(() => trailer.state === "unloading", runner);
     const startingRemainingCubicFeet = trailer.remainingUnloadCubicFeet;
     const unloadRate =
       runner
@@ -252,7 +261,8 @@ describe("inbound freight flow", () => {
     runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
 
     runTicks(runner, 60);
-    expect(runner.getState().freightFlow.queues.switchingTrailers).toBe(1);
+    expect(runner.getState().freightFlow.queues.yardTrailers).toBe(1);
+    runUntil(() => runner.getState().freightFlow.queues.switchingTrailers === 1, runner);
     expect(runner.getState().freightFlow.queues.averageDoorDwellTicks).toBe(0);
 
     runner.tick();
@@ -324,6 +334,23 @@ function runUntilDockFreightExists(
   }
 }
 
+function runUntil(
+  predicate: () => boolean,
+  runner: SimulationRunner,
+  maxTicks: number = 200,
+): void {
+  let safetyCounter = 0;
+
+  while (!predicate() && safetyCounter < maxTicks) {
+    runner.tick();
+    safetyCounter += 1;
+  }
+
+  if (!predicate()) {
+    throw new Error("Expected inbound freight state within allotted ticks");
+  }
+}
+
 function snapshotFirstTrailer(freightFlow: FreightFlowState) {
   const trailer = freightFlow.trailers[0];
   const batch = freightFlow.freightBatches[0];
@@ -333,5 +360,6 @@ function snapshotFirstTrailer(freightFlow: FreightFlowState) {
     batchId: batch.id,
     freightClassId: batch.freightClassId,
     cubicFeet: batch.cubicFeet,
+    readyForDoorAssignmentTick: trailer.readyForDoorAssignmentTick,
   };
 }

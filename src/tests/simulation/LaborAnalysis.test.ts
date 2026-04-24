@@ -32,6 +32,7 @@ function createUnloadTrailer(overrides: Partial<Trailer> = {}): Trailer {
     doorId: "door-001",
     freightBatchIds: ["batch-analysis"],
     arrivalTick: 0,
+    readyForDoorAssignmentTick: 0,
     doorAssignedTick: 0,
     unloadStartedTick: 0,
     completedTick: null,

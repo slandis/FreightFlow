@@ -3,9 +3,11 @@ import type { BudgetPlan } from "../core/GameState";
 import type { FreightFlowState } from "../freight/FreightFlowState";
 import {
   createDefaultBudgetPlan,
+  getInventorySupport,
   getOperationsSupport,
   getTrainingProductivityBonus,
 } from "../planning/BudgetPlan";
+import { getSuggestedInventorySupportHeadcount } from "../planning/inventorySupport";
 import { LaborRole } from "../types/enums";
 import { LaborAnalyticsRecorder } from "./LaborAnalyticsRecorder";
 import type {
@@ -26,6 +28,7 @@ const defaultAssignments: Record<LaborRole, number> = {
   [LaborRole.Storage]: 3,
   [LaborRole.Pick]: 3,
   [LaborRole.Load]: 3,
+  [LaborRole.InventoryTeam]: 0,
   [LaborRole.Sanitation]: 2,
   [LaborRole.Management]: 2,
 };
@@ -137,7 +140,10 @@ export class LaborManager {
     labor.pressure = this.calculatePressureSummary(labor.pools);
   }
 
-  calculateWorkloads(freightFlow: FreightFlowState): Partial<Record<LaborRole, number>> {
+  calculateWorkloads(
+    freightFlow: FreightFlowState,
+    forecastMonthlyVolumeCubicFeet: number = 0,
+  ): Partial<Record<LaborRole, number>> {
     const yardTrailers = freightFlow.trailers.filter(
       (trailer) => trailer.direction === "inbound" && trailer.state === "yard",
     ).length;
@@ -163,6 +169,9 @@ export class LaborManager {
       [LaborRole.Storage]: storageWorkload,
       [LaborRole.Pick]: pickWorkload,
       [LaborRole.Load]: loadWorkload,
+      [LaborRole.InventoryTeam]: getSuggestedInventorySupportHeadcount(
+        forecastMonthlyVolumeCubicFeet,
+      ),
       [LaborRole.Sanitation]: SUPPORT_TARGET_HEADCOUNT,
       [LaborRole.Management]: SUPPORT_TARGET_HEADCOUNT,
     };
@@ -183,6 +192,8 @@ export class LaborManager {
   private calculateModifiers(pools: LaborPool[], budget: BudgetPlan): LaborModifiers {
     const sanitationHeadcount =
       pools.find((pool) => pool.roleId === LaborRole.Sanitation)?.assignedHeadcount ?? 0;
+    const inventoryHeadcount =
+      pools.find((pool) => pool.roleId === LaborRole.InventoryTeam)?.assignedHeadcount ?? 0;
     const managementHeadcount =
       pools.find((pool) => pool.roleId === LaborRole.Management)?.assignedHeadcount ?? 0;
     const sanitationCoverage = sanitationHeadcount / SUPPORT_TARGET_HEADCOUNT;
@@ -193,6 +204,7 @@ export class LaborManager {
         : Math.min(1.1, 0.9 + Math.min(1.5, managementCoverage) * 0.1);
     const trainingProductivityBonus = getTrainingProductivityBonus(budget);
     const operationsSupport = getOperationsSupport(budget);
+    const inventorySupport = getInventorySupport(budget);
     const congestionPenalty =
       sanitationHeadcount >= SUPPORT_TARGET_HEADCOUNT
         ? 0
@@ -220,7 +232,9 @@ export class LaborManager {
       conditionPressure,
       trainingProductivityBonus,
       operationsSupport,
+      inventorySupport,
       sanitationPressure: supportPressure(sanitationHeadcount),
+      inventoryPressure: inventorySupportPressure(inventoryHeadcount),
       managementPressure: supportPressure(managementHeadcount),
     };
   }
@@ -230,7 +244,11 @@ export class LaborManager {
       return pool.assignedHeadcount * pool.baseRate;
     }
 
-    if (pool.roleId === LaborRole.Sanitation || pool.roleId === LaborRole.Management) {
+    if (
+      pool.roleId === LaborRole.InventoryTeam ||
+      pool.roleId === LaborRole.Sanitation ||
+      pool.roleId === LaborRole.Management
+    ) {
       return pool.assignedHeadcount * pool.baseRate;
     }
 
@@ -251,7 +269,11 @@ export class LaborManager {
       return 0;
     }
 
-    if (roleId === LaborRole.Sanitation || roleId === LaborRole.Management) {
+    if (
+      roleId === LaborRole.InventoryTeam ||
+      roleId === LaborRole.Sanitation ||
+      roleId === LaborRole.Management
+    ) {
       return Math.min(2, activeWorkload / Math.max(1, pool.assignedHeadcount));
     }
 
@@ -265,6 +287,10 @@ export class LaborManager {
   private calculatePressure(pool: LaborPool, activeWorkload: number): LaborPressure {
     if (pool.roleId === LaborRole.Sanitation) {
       return supportPressure(pool.assignedHeadcount);
+    }
+
+    if (pool.roleId === LaborRole.InventoryTeam) {
+      return inventorySupportPressure(pool.assignedHeadcount, pool.activeWorkload);
     }
 
     if (pool.roleId === LaborRole.Management) {
@@ -314,7 +340,9 @@ export class LaborManager {
 
     const label = this.getRoleLabel(pool.roleId);
     const supportRole =
-      pool.roleId === LaborRole.Sanitation || pool.roleId === LaborRole.Management;
+      pool.roleId === LaborRole.InventoryTeam ||
+      pool.roleId === LaborRole.Sanitation ||
+      pool.roleId === LaborRole.Management;
 
     return {
       roleId: pool.roleId,
@@ -348,7 +376,8 @@ function createInitialAssignments(totalHeadcount: number): Record<LaborRole, num
 
   const minimumAssignments = roles.reduce(
     (assignments, roleId) => {
-      assignments[roleId] = totalHeadcount >= roles.length ? 1 : 0;
+      assignments[roleId] =
+        totalHeadcount >= roles.length && (baselineAssignments[roleId] ?? 0) > 0 ? 1 : 0;
       return assignments;
     },
     {} as Record<LaborRole, number>,
@@ -411,6 +440,21 @@ function supportPressure(assignedHeadcount: number): LaborPressure {
   }
 
   if (assignedHeadcount < SUPPORT_TARGET_HEADCOUNT) {
+    return "strained";
+  }
+
+  return "healthy";
+}
+
+function inventorySupportPressure(
+  assignedHeadcount: number,
+  targetHeadcount: number = 1,
+): LaborPressure {
+  if (assignedHeadcount <= 0) {
+    return "critical";
+  }
+
+  if (assignedHeadcount < Math.max(1, targetHeadcount)) {
     return "strained";
   }
 

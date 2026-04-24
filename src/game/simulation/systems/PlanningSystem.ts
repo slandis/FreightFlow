@@ -15,6 +15,7 @@ import {
   getBudgetCostPerTick,
   validateBudgetPlan,
 } from "../planning/BudgetPlan";
+import { getActiveForecastMonthlyVolumeCubicFeet } from "../planning/inventorySupport";
 import { GameSpeed } from "../types/enums";
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
@@ -127,7 +128,10 @@ export function applyQueuedMonthlyPlan(
 
   laborManager.recalculate(
     state.labor,
-    laborManager.calculateWorkloads(state.freightFlow),
+    laborManager.calculateWorkloads(
+      state.freightFlow,
+      getActiveForecastMonthlyVolumeCubicFeet(state),
+    ),
     queuedPlan.budget,
   );
 

@@ -1,6 +1,7 @@
 import type { GameState } from "../core/GameState";
 import type { LaborBottleneck, LaborPool, LaborPressure, LaborRoleAnalytics } from "../labor/LaborPool";
 import { CUBIC_FEET_PER_WORKER_TICK } from "../labor/LaborManager";
+import { getSuggestedInventorySupportHeadcount } from "../planning/inventorySupport";
 import { LaborRole } from "../types/enums";
 
 const TICKS_PER_MONTH = 1440 * 30;
@@ -16,6 +17,7 @@ const LABOR_ROLE_ORDER: LaborRole[] = [
   LaborRole.Storage,
   LaborRole.Pick,
   LaborRole.Load,
+  LaborRole.InventoryTeam,
   LaborRole.Sanitation,
   LaborRole.Management,
 ];
@@ -41,6 +43,7 @@ export const LABOR_ROLE_LABELS: Record<LaborRole, string> = {
   [LaborRole.Storage]: "Inbound Storage",
   [LaborRole.Pick]: "Outbound Picking",
   [LaborRole.Load]: "Outbound Loading",
+  [LaborRole.InventoryTeam]: "Inventory Team",
   [LaborRole.Sanitation]: "Sanitation",
   [LaborRole.Management]: "Management",
 };
@@ -338,6 +341,7 @@ export function selectLaborForecastHeadcountChart(state: GameState): LaborForeca
     productiveHeadcount <= 0 ? 0 : Math.ceil(productiveHeadcount / PRODUCTIVE_HEADCOUNT_PER_SANITATION);
   const managementHeadcount =
     productiveHeadcount <= 0 ? 0 : Math.ceil(productiveHeadcount / PRODUCTIVE_HEADCOUNT_PER_MANAGEMENT);
+  const inventoryHeadcount = getSuggestedInventorySupportHeadcount(acceptedForecastCube);
 
   const idealHeadcountByRole = new Map<LaborRole, number>([
     [LaborRole.SwitchDriver, productiveForecast.get(LaborRole.SwitchDriver) ?? 0],
@@ -345,6 +349,7 @@ export function selectLaborForecastHeadcountChart(state: GameState): LaborForeca
     [LaborRole.Storage, productiveForecast.get(LaborRole.Storage) ?? 0],
     [LaborRole.Pick, productiveForecast.get(LaborRole.Pick) ?? 0],
     [LaborRole.Load, productiveForecast.get(LaborRole.Load) ?? 0],
+    [LaborRole.InventoryTeam, inventoryHeadcount],
     [LaborRole.Sanitation, sanitationHeadcount],
     [LaborRole.Management, managementHeadcount],
   ]);

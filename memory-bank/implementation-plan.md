@@ -585,6 +585,7 @@ Prepare the first structured playable build.
 - tune zone capacities
 - tune freight arrival ranges
 - tune basic difficulty mode presets
+- tune inbound yard dwell so trailers do not instantly leave the yard when switch and door capacity are healthy
 - tune outbound order cadence, minimum inventory thresholds, and backlog gating so storage and dock pressure persist longer
 - tune freight revenue rates, recurring labor cost, and operating-cost floor so cash growth requires sustained throughput
 - tune live simulation speed ladder for more readable normal play and faster-but-controlled month cycling
@@ -617,6 +618,7 @@ Recent tuning decisions:
 - live speed ladder: `Slow 4`, `Medium 10`, `Fast 20`
 - Hyper targets a 30-day month in `4` seconds and should pause on monthly-review open
 - monthly review now supports a persistent `skip future monthly reviews` option for players who want uninterrupted play
+- inbound freight should use a small difficulty-scaled yard dwell window so yard pressure is visible before trailers reserve doors
 - outbound demand should require meaningful stored inventory and respect a small active-order cap before spawning more work
 - recurring burn should stay high enough that profitable flow requires sustained, not incidental, throughput
 

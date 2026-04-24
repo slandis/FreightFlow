@@ -3,7 +3,7 @@ import { getDockTileCapacities } from "../../simulation/dock/dockCapacity";
 import type { FreightFlowState } from "../../simulation/freight/FreightFlowState";
 import type { DoorNode } from "../../simulation/world/DoorNode";
 import type { WarehouseMap } from "../../simulation/world/WarehouseMap";
-import { tileToScreen, type IsometricOrigin } from "./isometric";
+import { tileToScreen, type IsometricOrigin, type MapOrientation } from "./isometric";
 
 const doorColors: Record<DoorNode["state"], number> = {
   idle: 0xeef4f2,
@@ -31,6 +31,7 @@ export class DoorRenderer {
     private readonly warehouseMap: WarehouseMap,
     private readonly freightFlow: FreightFlowState,
     private readonly origin: IsometricOrigin,
+    private orientation: MapOrientation = 0,
   ) {
     this.layer = scene.add.graphics();
     this.layer.setDepth(15);
@@ -53,7 +54,7 @@ export class DoorRenderer {
     }
 
     for (const door of this.freightFlow.doors) {
-      const center = tileToScreen(door, this.origin);
+      const center = tileToScreen(door, this.origin, this.warehouseMap, this.orientation);
       const markerY = center.y - 20;
       const dockUsageRatio = dockUsageRatioByDoorId.get(door.id) ?? 0;
 
@@ -76,6 +77,10 @@ export class DoorRenderer {
       this.layer.fillRoundedRect(center.x - 9, markerY - 27, 18, 13, 2);
       this.layer.strokeRoundedRect(center.x - 9, markerY - 27, 18, 13, 2);
     }
+  }
+
+  setOrientation(orientation: MapOrientation): void {
+    this.orientation = orientation;
   }
 
   private getDockCapacityIndicatorColor(dockUsageRatio: number): number {

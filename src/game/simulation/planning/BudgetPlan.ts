@@ -6,6 +6,7 @@ const MAX_MAINTENANCE_SUPPORT = 0.35;
 const MAX_SAFETY_SUPPORT = 0.3;
 const MAX_TRAINING_PRODUCTIVITY_BONUS = 0.15;
 const MAX_OPERATIONS_SUPPORT = 0.16;
+const MAX_INVENTORY_SUPPORT = 0.2;
 
 export function createDefaultBudgetPlan(): BudgetPlan {
   return {
@@ -13,6 +14,7 @@ export function createDefaultBudgetPlan(): BudgetPlan {
     training: 5,
     safety: 5,
     operationsSupport: 5,
+    inventorySupport: 5,
     contingency: 0,
   };
 }
@@ -37,6 +39,7 @@ export function getTotalBudgetPoints(budget: BudgetPlan): number {
     budget.training +
     budget.safety +
     budget.operationsSupport +
+    budget.inventorySupport +
     budget.contingency
   );
 }
@@ -59,4 +62,8 @@ export function getTrainingProductivityBonus(budget: BudgetPlan): number {
 
 export function getOperationsSupport(budget: BudgetPlan): number {
   return Math.min(MAX_OPERATIONS_SUPPORT, budget.operationsSupport * 0.008);
+}
+
+export function getInventorySupport(budget: BudgetPlan): number {
+  return Math.min(MAX_INVENTORY_SUPPORT, budget.inventorySupport * 0.01);
 }

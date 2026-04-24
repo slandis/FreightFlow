@@ -25,6 +25,11 @@
     "baseRate": 1.02
   },
   {
+    "id": "inventory-team",
+    "name": "Inventory Team",
+    "baseRate": 1
+  },
+  {
     "id": "sanitation",
     "name": "Sanitation",
     "baseRate": 1

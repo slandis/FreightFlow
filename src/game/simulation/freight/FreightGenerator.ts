@@ -55,6 +55,10 @@ export class FreightGenerator {
       minimumCubicFeet,
       maximumCubicFeet,
     );
+    const yardDwellTicks = random.nextInt(
+      difficultyMode.inboundYardDwellMinTicks,
+      difficultyMode.inboundYardDwellMaxTicks,
+    );
 
     freightFlow.nextTrailerSequence += 1;
     freightFlow.nextFreightBatchSequence += 1;
@@ -66,6 +70,7 @@ export class FreightGenerator {
       doorId: null,
       freightBatchIds: [freightBatchId],
       arrivalTick: currentTick,
+      readyForDoorAssignmentTick: currentTick + yardDwellTicks,
       doorAssignedTick: null,
       unloadStartedTick: null,
       completedTick: null,

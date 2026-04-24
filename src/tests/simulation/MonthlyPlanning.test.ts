@@ -10,6 +10,7 @@ import { SetContractOfferDecisionCommand } from "../../game/simulation/commands/
 import { SetPlannedTotalHeadcountCommand } from "../../game/simulation/commands/SetPlannedTotalHeadcountCommand";
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
 import type { DomainEvent } from "../../game/simulation/events/DomainEvent";
+import { selectPlanningInventorySupportRecommendation } from "../../game/simulation/selectors/planningSelectors";
 import { LaborRole, GameSpeed, TileZoneType } from "../../game/simulation/types/enums";
 
 const rolloverCalendar = {
@@ -88,6 +89,7 @@ describe("monthly planning", () => {
           training: 1,
           safety: 1,
           operationsSupport: 1,
+          inventorySupport: 1,
           contingency: 1,
         }),
       ).success,
@@ -101,6 +103,7 @@ describe("monthly planning", () => {
       training: 6,
       safety: 7,
       operationsSupport: 4,
+      inventorySupport: 5,
       contingency: 3,
     };
     const result = runner.dispatch(new ApplyBudgetPlanCommand(budget));
@@ -122,6 +125,7 @@ describe("monthly planning", () => {
         training: 0,
         safety: 0,
         operationsSupport: 0,
+        inventorySupport: 0,
         contingency: 0,
       }),
     );
@@ -165,6 +169,7 @@ describe("monthly planning", () => {
       training: 10,
       safety: 9,
       operationsSupport: 8,
+      inventorySupport: 6,
       contingency: 2,
     };
 
@@ -245,6 +250,7 @@ describe("monthly planning", () => {
       training: 0,
       safety: 0,
       operationsSupport: 0,
+      inventorySupport: 0,
       contingency: 0,
     };
     highBudgetRunner.getState().planning.currentPlan.budget = {
@@ -252,6 +258,7 @@ describe("monthly planning", () => {
       training: 20,
       safety: 20,
       operationsSupport: 20,
+      inventorySupport: 20,
       contingency: 5,
     };
     lowBudgetRunner.getState().scores.condition.value = 50;
@@ -274,6 +281,25 @@ describe("monthly planning", () => {
     expect(highBudgetRunner.getState().labor.modifiers.productivityMultiplier).toBeGreaterThan(
       lowBudgetRunner.getState().labor.modifiers.productivityMultiplier,
     );
+  });
+
+  it("recommends inventory support from accepted monthly forecast volume", () => {
+    const runner = createRunnerAtMonthEnd();
+    openPlanning(runner);
+    const offer = runner.getState().contracts.pendingOffers[0];
+
+    expect(offer).toBeTruthy();
+    expect(
+      runner.dispatch(new SetContractOfferDecisionCommand(offer?.id ?? "", "accepted")).success,
+    ).toBe(true);
+
+    const recommendation = selectPlanningInventorySupportRecommendation(runner.getState());
+
+    expect(recommendation.forecastMonthlyVolumeCubicFeet).toBe(
+      offer?.expectedMonthlyThroughputCubicFeet ?? 0,
+    );
+    expect(recommendation.suggestedHeadcount).toBe(1);
+    expect(recommendation.suggestedBudgetPoints).toBe(5);
   });
 
   it("blocks operational mutation commands and speed changes while planning is active", () => {

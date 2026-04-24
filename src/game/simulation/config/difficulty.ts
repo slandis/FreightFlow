@@ -9,6 +9,8 @@ export interface DifficultyModeConfig {
   forecastAccuracy: number;
   demandVolatility: number;
   inboundIntervalMultiplier: number;
+  inboundYardDwellMinTicks: number;
+  inboundYardDwellMaxTicks: number;
   inboundVolumeMultiplier: number;
   outboundIntervalMultiplier: number;
   outboundVolumeMultiplier: number;

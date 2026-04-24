@@ -5,7 +5,12 @@ import { TileZoneType } from "../../simulation/types/enums";
 import type { WarehouseMap } from "../../simulation/world/WarehouseMap";
 import type { Tile } from "../../simulation/world/Tile";
 import type { OverlayMode } from "../../../ui/store/uiStore";
-import { getIsoTilePolygon, tileToScreen, type IsometricOrigin } from "./isometric";
+import {
+  getIsoTilePolygon,
+  tileToScreen,
+  type IsometricOrigin,
+  type MapOrientation,
+} from "./isometric";
 
 const zoneOverlayColors: Partial<Record<TileZoneType, number>> = {
   [TileZoneType.Travel]: 0xe6b655,
@@ -24,6 +29,7 @@ export class ZoneOverlayRenderer {
     private readonly map: WarehouseMap,
     private readonly freightFlow: FreightFlowState,
     private readonly origin: IsometricOrigin,
+    private orientation: MapOrientation = 0,
   ) {
     this.overlayLayer = scene.add.graphics();
     this.overlayLayer.setDepth(10);
@@ -62,6 +68,10 @@ export class ZoneOverlayRenderer {
     }
 
     this.renderInvalidStorage();
+  }
+
+  setOrientation(orientation: MapOrientation): void {
+    this.orientation = orientation;
   }
 
   private renderInvalidStorage(): void {
@@ -121,7 +131,7 @@ export class ZoneOverlayRenderer {
 
   private renderDoorUtilization(): void {
     for (const door of this.freightFlow.doors) {
-      const center = tileToScreen(door, this.origin);
+      const center = tileToScreen(door, this.origin, this.map, this.orientation);
       const color =
         door.state === "idle"
           ? 0x5fbf8f
@@ -159,7 +169,7 @@ export class ZoneOverlayRenderer {
     }
 
     for (const door of this.freightFlow.doors) {
-      const center = tileToScreen(door, this.origin);
+      const center = tileToScreen(door, this.origin, this.map, this.orientation);
       const color = door.state === "idle" ? 0xe6b655 : 0xd96c5f;
 
       this.overlayLayer.lineStyle(2, color, hasPressure ? 0.95 : 0.45);
@@ -174,7 +184,7 @@ export class ZoneOverlayRenderer {
     lineWidth: number,
     lineAlpha: number,
   ): void {
-    const points = getIsoTilePolygon(tile, this.origin);
+    const points = getIsoTilePolygon(tile, this.origin, this.map, this.orientation);
 
     this.overlayLayer.fillStyle(color, fillAlpha);
     this.overlayLayer.beginPath();
@@ -189,7 +199,7 @@ export class ZoneOverlayRenderer {
   }
 
   private drawHatchedTile(tile: Tile, color: number): void {
-    const points = getIsoTilePolygon(tile, this.origin);
+    const points = getIsoTilePolygon(tile, this.origin, this.map, this.orientation);
     const minX = Math.min(...points.map((point) => point.x));
     const maxX = Math.max(...points.map((point) => point.x));
     const minY = Math.min(...points.map((point) => point.y));

@@ -28,6 +28,7 @@ function createYardTrailer(overrides: Partial<Trailer> = {}): Trailer {
     doorId: null,
     freightBatchIds: [],
     arrivalTick: 0,
+    readyForDoorAssignmentTick: 0,
     doorAssignedTick: null,
     unloadStartedTick: null,
     completedTick: null,
@@ -96,7 +97,7 @@ describe("labor pools and queue processing", () => {
 
     expect(summary.totalHeadcount).toBe(12);
     expect(summary.unassignedHeadcount).toBe(0);
-    expect(roles).toHaveLength(7);
+    expect(roles).toHaveLength(8);
     expect(
       roles.reduce((total, role) => total + role.assignedHeadcount, 0),
     ).toBe(12);

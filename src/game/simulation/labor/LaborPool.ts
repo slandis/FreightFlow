@@ -20,7 +20,9 @@ export interface LaborModifiers {
   conditionPressure: number;
   trainingProductivityBonus: number;
   operationsSupport: number;
+  inventorySupport: number;
   sanitationPressure: LaborPressure;
+  inventoryPressure: LaborPressure;
   managementPressure: LaborPressure;
 }
 

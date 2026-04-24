@@ -72,6 +72,7 @@ describe("playtest telemetry", () => {
           training: 4,
           safety: 4,
           operationsSupport: 4,
+          inventorySupport: 4,
           contingency: 2,
         },
       },

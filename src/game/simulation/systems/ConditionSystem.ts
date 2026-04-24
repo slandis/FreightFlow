@@ -1,6 +1,10 @@
 import type { GameState, ScoreDriver } from "../core/GameState";
 import { scaleNegativeScoreImpact } from "../config/difficulty";
 import { getMaintenanceSupport } from "../planning/BudgetPlan";
+import {
+  getAssignedInventoryTeamHeadcount,
+  getInventorySupportRecommendationForActiveContracts,
+} from "../planning/inventorySupport";
 import { updateScore } from "./ScoreUtils";
 
 export class ConditionSystem {
@@ -22,10 +26,46 @@ export class ConditionSystem {
     const drivers: ScoreDriver[] = [];
     let delta = 0;
     const maintenanceSupport = getMaintenanceSupport(state.planning.currentPlan.budget);
+    const inventoryRecommendation = getInventorySupportRecommendationForActiveContracts(state);
+    const inventoryHeadcount = getAssignedInventoryTeamHeadcount(state);
+    const inventoryBudgetTarget = inventoryRecommendation.suggestedBudgetPoints;
+    const inventoryBudgetCoverage =
+      inventoryBudgetTarget > 0
+        ? Math.min(1, state.planning.currentPlan.budget.inventorySupport / inventoryBudgetTarget)
+        : 1;
 
     if (maintenanceSupport > 0) {
       drivers.push({ label: "Maintenance budget", impact: maintenanceSupport });
       delta += maintenanceSupport;
+    }
+
+    if (inventoryRecommendation.suggestedHeadcount > 0 && inventoryHeadcount >= inventoryRecommendation.suggestedHeadcount) {
+      drivers.push({ label: "Inventory team coverage", impact: 0.05 });
+      delta += 0.05;
+    } else if (inventoryRecommendation.suggestedHeadcount > 0) {
+      const impact = scaleNegativeScoreImpact(
+        -Math.min(
+          0.75,
+          ((inventoryRecommendation.suggestedHeadcount - inventoryHeadcount) /
+            inventoryRecommendation.suggestedHeadcount) *
+            0.55,
+        ),
+        state.difficultyModeId,
+      );
+      drivers.push({ label: "Inventory team understaffed", impact });
+      delta += impact;
+    }
+
+    if (inventoryRecommendation.suggestedHeadcount > 0 && inventoryBudgetCoverage >= 1) {
+      drivers.push({ label: "Inventory support budget", impact: 0.04 });
+      delta += 0.04;
+    } else if (inventoryRecommendation.suggestedHeadcount > 0) {
+      const impact = scaleNegativeScoreImpact(
+        -(1 - inventoryBudgetCoverage) * 0.28,
+        state.difficultyModeId,
+      );
+      drivers.push({ label: "Inventory support underfunded", impact });
+      delta += impact;
     }
 
     if (state.labor.modifiers.sanitationPressure === "healthy") {

@@ -14,6 +14,7 @@ function createYardTrailer(id: string): Trailer {
     doorId: null,
     freightBatchIds: [],
     arrivalTick: 0,
+    readyForDoorAssignmentTick: 0,
     doorAssignedTick: null,
     unloadStartedTick: null,
     completedTick: null,

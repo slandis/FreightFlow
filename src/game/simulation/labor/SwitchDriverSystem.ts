@@ -54,7 +54,12 @@ export class SwitchDriverSystem {
       assignedHeadcount -
       freightFlow.trailers.filter((trailer) => trailer.state === "switching-to-door").length;
     const waitingTrailers = freightFlow.trailers
-      .filter((trailer) => trailer.direction === "inbound" && trailer.state === "yard")
+      .filter(
+        (trailer) =>
+          trailer.direction === "inbound" &&
+          trailer.state === "yard" &&
+          currentTick >= (trailer.readyForDoorAssignmentTick ?? trailer.arrivalTick),
+      )
       .sort((first, second) => first.arrivalTick - second.arrivalTick);
 
     for (const trailer of waitingTrailers) {

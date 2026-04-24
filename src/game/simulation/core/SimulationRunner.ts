@@ -27,6 +27,7 @@ import { PickSystem } from "../labor/PickSystem";
 import { StorageSystem } from "../labor/StorageSystem";
 import { SwitchDriverSystem } from "../labor/SwitchDriverSystem";
 import { UnloadSystem } from "../labor/UnloadSystem";
+import { getActiveForecastMonthlyVolumeCubicFeet } from "../planning/inventorySupport";
 import { QueueManager } from "../systems/QueueManager";
 import { AlertSystem } from "../systems/AlertSystem";
 import { ConditionSystem } from "../systems/ConditionSystem";
@@ -242,7 +243,10 @@ export class SimulationRunner {
     );
     this.laborManager.recalculate(
       this.state.labor,
-      this.laborManager.calculateWorkloads(this.state.freightFlow),
+      this.laborManager.calculateWorkloads(
+        this.state.freightFlow,
+        getActiveForecastMonthlyVolumeCubicFeet(this.state),
+      ),
       this.state.planning.currentPlan.budget,
     );
     this.laborAnalyticsRecorder.recordTick(this.state.labor);
@@ -312,7 +316,10 @@ export class SimulationRunner {
     );
     this.laborManager.recalculate(
       this.state.labor,
-      this.laborManager.calculateWorkloads(this.state.freightFlow),
+      this.laborManager.calculateWorkloads(
+        this.state.freightFlow,
+        getActiveForecastMonthlyVolumeCubicFeet(this.state),
+      ),
       this.state.planning.currentPlan.budget,
     );
     this.conditionSystem.update(this.state);

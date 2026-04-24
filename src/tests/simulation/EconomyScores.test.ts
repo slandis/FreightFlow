@@ -73,6 +73,7 @@ function createYardTrailer(overrides: Partial<Trailer> = {}): Trailer {
     doorId: null,
     freightBatchIds: [],
     arrivalTick: 0,
+    readyForDoorAssignmentTick: 0,
     doorAssignedTick: null,
     unloadStartedTick: null,
     completedTick: null,
@@ -168,6 +169,49 @@ describe("core scores and economy", () => {
     expect(runner.getState().scores.condition.value).toBeLessThan(startingCondition);
     expect(runner.getState().scores.condition.drivers.map((driver) => driver.label)).toContain(
       "Sanitation understaffed",
+    );
+  });
+
+  it("condition and morale decline when inventory support is both understaffed and underfunded", () => {
+    const runner = new SimulationRunner();
+    const startingCondition = runner.getState().scores.condition.value;
+    const startingMorale = runner.getState().scores.morale.value;
+
+    runner.getState().contracts.activeContracts.push({
+      id: "inventory-heavy-contract",
+      name: "Inventory Heavy Contract",
+      clientName: "Inventory Heavy Contract",
+      freightClassId: "standard",
+      acceptedMonthKey: "Y1-M1",
+      acceptedTick: 0,
+      acceptedMonthIndex: 1,
+      endMonthIndex: 6,
+      lengthMonths: 6,
+      expectedMonthlyThroughputCubicFeet: 500000,
+      revenuePerCubicFoot: 0.3,
+      targetThroughputCubicFeetPerDay: 16667,
+      minimumServiceLevel: 80,
+      dwellPenaltyThresholdTicks: 1440,
+      dwellPenaltyRatePerCubicFoot: 0.01,
+      difficultyTag: "consistency",
+      operationalChallengeNote: "Inventory-heavy forecast requires support coverage.",
+      health: "stable",
+      serviceLevel: 100,
+      performanceScore: 100,
+      penaltyCostToDate: 0,
+      lastPenaltyTick: null,
+    });
+    runner.dispatch(new AssignLaborCommand(LaborRole.InventoryTeam, 0));
+    runner.getState().planning.currentPlan.budget.inventorySupport = 0;
+    runTicks(runner, 5);
+
+    expect(runner.getState().scores.condition.value).toBeLessThan(startingCondition);
+    expect(runner.getState().scores.morale.value).toBeLessThan(startingMorale);
+    expect(runner.getState().scores.condition.drivers.map((driver) => driver.label)).toContain(
+      "Inventory team understaffed",
+    );
+    expect(runner.getState().scores.morale.drivers.map((driver) => driver.label)).toContain(
+      "Inventory support underfunded",
     );
   });
 

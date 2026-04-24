@@ -451,6 +451,8 @@ function mapRoleToBiasKey(roleId: LaborRole): "switch" | "unload" | "storage" | 
       return "pick";
     case LaborRole.Load:
       return "load";
+    case LaborRole.InventoryTeam:
+      return "storage";
     case LaborRole.Sanitation:
     case LaborRole.Management:
       return "storage";

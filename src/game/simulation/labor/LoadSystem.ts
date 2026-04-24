@@ -48,6 +48,7 @@ export class LoadSystem {
           doorId: door.id,
           freightBatchIds: [...order.freightBatchIds],
           arrivalTick: currentTick,
+          readyForDoorAssignmentTick: null,
           doorAssignedTick: currentTick,
           unloadStartedTick: null,
           completedTick: null,

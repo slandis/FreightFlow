@@ -23,6 +23,7 @@ export enum LaborRole {
   Storage = "storage",
   Pick = "pick",
   Load = "load",
+  InventoryTeam = "inventory-team",
   Sanitation = "sanitation",
   Management = "management",
 }

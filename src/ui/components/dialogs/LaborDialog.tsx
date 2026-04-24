@@ -23,6 +23,7 @@ const roleDescriptions: Record<LaborRole, string> = {
   [LaborRole.Storage]: "Moves dock freight into compatible storage.",
   [LaborRole.Pick]: "Picks outbound orders from stored inventory.",
   [LaborRole.Load]: "Loads picked freight into outbound trailers.",
+  [LaborRole.InventoryTeam]: "Supports inventory control, reconciliation, and inventory administration.",
   [LaborRole.Sanitation]: "Protects cleanliness, condition pressure, and congestion risk.",
   [LaborRole.Management]: "Improves coordination and stabilizes overloaded teams.",
 };
