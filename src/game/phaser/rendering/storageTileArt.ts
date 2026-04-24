@@ -32,22 +32,31 @@ export function resolveTileTextureKey(
 
   const utilizationPercent =
     zone.capacityCubicFeet > 0 ? (zone.usedCubicFeet / zone.capacityCubicFeet) * 100 : 0;
-  const threshold = getHighestThresholdNotExceeding(utilizationPercent);
+  const threshold = getStorageUtilizationThreshold(utilizationPercent);
 
   return `${prefix}_${threshold.toString().padStart(2, "0")}`;
 }
 
-export function getHighestThresholdNotExceeding(utilizationPercent: number): number {
+export function getStorageUtilizationThreshold(utilizationPercent: number): number {
   const normalizedUtilization = Math.max(0, Math.min(100, utilizationPercent));
-  let selectedThreshold: number = UTILIZATION_THRESHOLDS[0];
 
-  for (const threshold of UTILIZATION_THRESHOLDS) {
-    if (normalizedUtilization >= threshold) {
-      selectedThreshold = threshold;
-    }
+  if (normalizedUtilization <= 0) {
+    return 0;
   }
 
-  return selectedThreshold;
+  if (normalizedUtilization < 50) {
+    return 25;
+  }
+
+  if (normalizedUtilization < 75) {
+    return 50;
+  }
+
+  if (normalizedUtilization < 100) {
+    return 75;
+  }
+
+  return 100;
 }
 
 export function getTileArtTextureKeys(): string[] {

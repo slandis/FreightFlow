@@ -40,19 +40,21 @@ describe("inbound freight flow", () => {
     expect(state.warehouseMap.getTile(8, 0)?.isActiveDoor).toBe(false);
   });
 
-  it("does not spawn inbound trailers before tick 60", () => {
+  it("does not spawn inbound trailers before the first eligible contract timer", () => {
     const runner = new SimulationRunner();
+    const firstInboundTick = runner.getState().contracts.activeContracts[0].nextInboundEligibleTick;
 
-    runTicks(runner, 59);
+    runTicks(runner, firstInboundTick - 1);
 
     expect(runner.getState().freightFlow.trailers).toHaveLength(0);
   });
 
-  it("spawns an inbound trailer and freight batch at tick 60", () => {
+  it("spawns an inbound trailer and freight batch when the first contract timer comes due", () => {
     const runner = new SimulationRunner({ seed: 42 });
     const freightClassIds = freightClasses.map((freightClass) => freightClass.id);
+    const firstInboundTick = runner.getState().contracts.activeContracts[0].nextInboundEligibleTick;
 
-    runTicks(runner, 60);
+    runTicks(runner, firstInboundTick);
 
     const { trailers, freightBatches, metrics } = runner.getState().freightFlow;
     expect(trailers).toHaveLength(1);
@@ -60,12 +62,30 @@ describe("inbound freight flow", () => {
     expect(metrics.totalInboundTrailersArrived).toBe(1);
     expect(trailers[0].direction).toBe("inbound");
     expect(trailers[0].state).toBe("yard");
-    expect(trailers[0].readyForDoorAssignmentTick).toBeGreaterThanOrEqual(62);
-    expect(trailers[0].readyForDoorAssignmentTick).toBeLessThanOrEqual(65);
+    expect((trailers[0].readyForDoorAssignmentTick ?? 0) - firstInboundTick).toBeGreaterThanOrEqual(2);
+    expect((trailers[0].readyForDoorAssignmentTick ?? 0) - firstInboundTick).toBeLessThanOrEqual(5);
     expect(trailers[0].freightBatchIds).toEqual([freightBatches[0].id]);
     expect(freightClassIds).toContain(freightBatches[0].freightClassId);
     expect(freightBatches[0].cubicFeet).toBeGreaterThanOrEqual(800);
     expect(freightBatches[0].cubicFeet).toBeLessThanOrEqual(2500);
+  });
+
+  it("spawns at most one inbound trailer when multiple contracts are due on the same tick", () => {
+    const runner = new SimulationRunner({ seed: 9 });
+    const state = runner.getState();
+
+    state.contracts.activeContracts.push({
+      ...state.contracts.activeContracts[0],
+      id: "second-inbound-contract",
+      clientName: "Second Inbound Contract",
+      nextInboundEligibleTick: 1,
+      nextOutboundEligibleTick: 999,
+    });
+    state.contracts.activeContracts[0].nextInboundEligibleTick = 1;
+
+    runner.tick();
+
+    expect(state.freightFlow.trailers).toHaveLength(1);
   });
 
   it("assigns the oldest yard trailers to available doors only", () => {
@@ -206,13 +226,17 @@ describe("inbound freight flow", () => {
 
     runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
 
-    runTicks(runner, 60);
+    runTicks(runner, runner.getState().contracts.activeContracts[0].nextInboundEligibleTick);
     const trailer = runner.getState().freightFlow.trailers[0];
 
     expect(trailer.state).toBe("yard");
     expect(trailer.readyForDoorAssignmentTick).not.toBeNull();
 
-    runTicks(runner, (trailer.readyForDoorAssignmentTick ?? 60) - 60);
+    const delayUntilDoorAssignment =
+      (trailer.readyForDoorAssignmentTick ?? runner.getState().currentTick) -
+      runner.getState().currentTick;
+
+    runTicks(runner, delayUntilDoorAssignment);
     expect(trailer.state).toBe("switching-to-door");
     expect(trailer.remainingSwitchTicks).toBe(8);
 
@@ -230,7 +254,7 @@ describe("inbound freight flow", () => {
 
     runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
 
-    runTicks(runner, 60);
+    runTicks(runner, runner.getState().contracts.activeContracts[0].nextInboundEligibleTick);
     const freightFlow = runner.getState().freightFlow;
     const trailer = freightFlow.trailers[0];
     const batch = freightFlow.freightBatches[0];
@@ -260,7 +284,7 @@ describe("inbound freight flow", () => {
     const runner = new SimulationRunner();
     runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
 
-    runTicks(runner, 60);
+    runTicks(runner, runner.getState().contracts.activeContracts[0].nextInboundEligibleTick);
     expect(runner.getState().freightFlow.queues.yardTrailers).toBe(1);
     runUntil(() => runner.getState().freightFlow.queues.switchingTrailers === 1, runner);
     expect(runner.getState().freightFlow.queues.averageDoorDwellTicks).toBe(0);
@@ -282,9 +306,12 @@ describe("inbound freight flow", () => {
   it("keeps inbound generation deterministic for the same seed", () => {
     const first = new SimulationRunner({ seed: 7 });
     const second = new SimulationRunner({ seed: 7 });
+    const firstInboundTick = first.getState().contracts.activeContracts[0].nextInboundEligibleTick;
+    const secondInboundTick =
+      second.getState().contracts.activeContracts[0].nextInboundEligibleTick;
 
-    runTicks(first, 60);
-    runTicks(second, 60);
+    runTicks(first, firstInboundTick);
+    runTicks(second, secondInboundTick);
 
     expect(snapshotFirstTrailer(first.getState().freightFlow)).toEqual(
       snapshotFirstTrailer(second.getState().freightFlow),
@@ -308,7 +335,7 @@ describe("inbound freight flow", () => {
       }
     });
 
-    runTicks(runner, 60);
+    runTicks(runner, runner.getState().contracts.activeContracts[0].nextInboundEligibleTick);
     runUntilDockFreightExists(runner, runner.getState().freightFlow);
 
     expect(eventTypes).toContain("trailer-arrived");

@@ -10,9 +10,15 @@ import type {
 } from "../core/GameState";
 import { getMonthIndex } from "../core/GameState";
 import type { RandomService } from "../core/RandomService";
+import { getDifficultyModeById } from "../config/difficulty";
 import { LABOR_COST_PER_WORKER_PER_MONTH } from "../labor/laborCost";
 import { LaborRole } from "../types/enums";
 import { createId } from "../types/ids";
+import {
+  createOfferScheduleFields,
+  rollNextInboundEligibleTick,
+  rollNextOutboundEligibleTick,
+} from "./contractScheduling";
 
 const OFFER_COUNT = 4;
 const ROLE_ORDER: LaborRole[] = [
@@ -71,12 +77,14 @@ export function generateMonthlyContractOffers(
       expectedMonthlyThroughputCubicFeet,
       template.difficultyTag,
     );
+    const schedule = createOfferScheduleFields(template.difficultyTag);
 
     offers.push({
       id: createId("contract-offer", state.contracts.nextOfferSequence + offerIndex),
       monthKey,
       clientName: template.clientName,
       freightClassId: freightClass.id,
+      ...schedule,
       lengthMonths,
       expectedMonthlyThroughputCubicFeet,
       expectedWeeklyThroughputCubicFeet: Math.round(expectedMonthlyThroughputCubicFeet / 4),
@@ -100,7 +108,10 @@ export function generateMonthlyContractOffers(
   return offers;
 }
 
-export function activateAcceptedContractOffers(state: GameState): void {
+export function activateAcceptedContractOffers(
+  state: GameState,
+  random: RandomService,
+): void {
   const acceptedOffers = state.contracts.pendingOffers.filter(
     (offer) => offer.decision === "accepted",
   );
@@ -111,6 +122,7 @@ export function activateAcceptedContractOffers(state: GameState): void {
   }
 
   const acceptedMonthIndex = getMonthIndex(state.calendar);
+  const difficultyMode = getDifficultyModeById(state.difficultyModeId);
 
   for (const offer of acceptedOffers) {
     const activeContract: ActiveContract = {
@@ -118,6 +130,12 @@ export function activateAcceptedContractOffers(state: GameState): void {
       name: `${offer.clientName} ${getFreightClassName(offer.freightClassId)}`,
       clientName: offer.clientName,
       freightClassId: offer.freightClassId,
+      inboundIntervalMinTicks: offer.inboundIntervalMinTicks,
+      inboundIntervalMaxTicks: offer.inboundIntervalMaxTicks,
+      outboundIntervalMinTicks: offer.outboundIntervalMinTicks,
+      outboundIntervalMaxTicks: offer.outboundIntervalMaxTicks,
+      nextInboundEligibleTick: 0,
+      nextOutboundEligibleTick: 0,
       acceptedMonthKey: offer.monthKey,
       acceptedTick: state.currentTick,
       acceptedMonthIndex,
@@ -140,6 +158,18 @@ export function activateAcceptedContractOffers(state: GameState): void {
       penaltyCostToDate: 0,
       lastPenaltyTick: null,
     };
+    activeContract.nextInboundEligibleTick = rollNextInboundEligibleTick(
+      state.currentTick,
+      activeContract,
+      difficultyMode,
+      random,
+    );
+    activeContract.nextOutboundEligibleTick = rollNextOutboundEligibleTick(
+      state.currentTick,
+      activeContract,
+      difficultyMode,
+      random,
+    );
 
     state.contracts.nextActiveContractSequence += 1;
     state.contracts.activeContracts.push(activeContract);

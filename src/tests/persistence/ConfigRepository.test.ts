@@ -9,6 +9,10 @@ const validConfig = {
       clientName: "Atlas Grocery Network",
       freightClassId: "standard",
       difficultyTag: "capacity",
+      inboundIntervalMinTicks: 60,
+      inboundIntervalMaxTicks: 120,
+      outboundIntervalMinTicks: 180,
+      outboundIntervalMaxTicks: 300,
       minMonthlyCubicFeet: 180000,
       maxMonthlyCubicFeet: 280000,
       throughputMultiplier: 1.36,
@@ -120,6 +124,23 @@ describe("ConfigRepository", () => {
     expect(result.success).toBe(false);
     expect(result.errors).toContain(
       "difficultyModes.relaxed has inboundYardDwellMaxTicks below minimum",
+    );
+  });
+
+  it("fails when contract timing max is below min", () => {
+    const result = new ConfigRepository({
+      ...validConfig,
+      contracts: [
+        Object.assign({}, validConfig.contracts[0], {
+          inboundIntervalMinTicks: 90,
+          inboundIntervalMaxTicks: 40,
+        }),
+      ],
+    }).validateAll();
+
+    expect(result.success).toBe(false);
+    expect(result.errors).toContain(
+      "contracts.atlas-grocery-network has inboundIntervalMaxTicks below minimum",
     );
   });
 });

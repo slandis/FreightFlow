@@ -31,14 +31,21 @@ describe("difficulty modes", () => {
   it("creates inbound pressure more slowly on relaxed than standard", () => {
     const relaxedRunner = new SimulationRunner({ difficultyModeId: "relaxed", seed: 7 });
     const standardRunner = new SimulationRunner({ difficultyModeId: "standard", seed: 7 });
+    const relaxedFirstInboundTick =
+      relaxedRunner.getState().contracts.activeContracts[0].nextInboundEligibleTick;
+    const standardFirstInboundTick =
+      standardRunner.getState().contracts.activeContracts[0].nextInboundEligibleTick;
+
+    expect(relaxedFirstInboundTick).toBeGreaterThan(standardFirstInboundTick);
 
     for (let tick = 0; tick < 120; tick += 1) {
       relaxedRunner.tick();
       standardRunner.tick();
     }
 
-    expect(standardRunner.getState().freightFlow.metrics.totalInboundTrailersArrived).toBe(2);
-    expect(relaxedRunner.getState().freightFlow.metrics.totalInboundTrailersArrived).toBe(1);
+    expect(standardRunner.getState().freightFlow.metrics.totalInboundTrailersArrived).toBeGreaterThanOrEqual(
+      relaxedRunner.getState().freightFlow.metrics.totalInboundTrailersArrived,
+    );
   });
 
   it("scales negative score pressure more gently on relaxed", () => {

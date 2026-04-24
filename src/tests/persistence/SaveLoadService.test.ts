@@ -93,6 +93,8 @@ describe("SaveLoadService", () => {
     expect(state.freightFlow.doors.some((door) => door.x === 4 && door.mode === "inbound")).toBe(
       true,
     );
+    expect(state.contracts.activeContracts[0].nextInboundEligibleTick).toBeGreaterThan(0);
+    expect(state.contracts.activeContracts[0].nextOutboundEligibleTick).toBeGreaterThan(0);
 
     expect(() => runner.tick()).not.toThrow();
   });
@@ -177,8 +179,9 @@ describe("SaveLoadService", () => {
   it("round-trips an active freight lifecycle and can continue ticking", () => {
     const runner = new SimulationRunner({ seed: 10 });
     const { service } = createService(runner);
+    const firstInboundTick = runner.getState().contracts.activeContracts[0].nextInboundEligibleTick;
 
-    for (let tick = 0; tick < 70; tick += 1) {
+    for (let tick = 0; tick < firstInboundTick; tick += 1) {
       runner.tick();
     }
 

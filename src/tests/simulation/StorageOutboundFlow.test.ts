@@ -246,8 +246,10 @@ describe("storage and outbound freight flow", () => {
 
   it("does not generate outbound orders without stored inventory", () => {
     const runner = new SimulationRunner();
+    const firstOutboundTick =
+      runner.getState().contracts.activeContracts[0].nextOutboundEligibleTick;
 
-    runTicks(runner, 60);
+    runTicks(runner, firstOutboundTick);
 
     expect(runner.getState().freightFlow.outboundOrders).toHaveLength(0);
   });
@@ -302,9 +304,11 @@ describe("storage and outbound freight flow", () => {
         storedTick: 1,
       }),
     );
+    first.getState().contracts.activeContracts[0].nextOutboundEligibleTick = 2;
+    second.getState().contracts.activeContracts[0].nextOutboundEligibleTick = 2;
 
-    runTicks(first, 72);
-    runTicks(second, 72);
+    runTicks(first, 2);
+    runTicks(second, 2);
 
     const firstOrder = first.getState().freightFlow.outboundOrders[0];
     const secondOrder = second.getState().freightFlow.outboundOrders[0];
@@ -313,6 +317,74 @@ describe("storage and outbound freight flow", () => {
     expect(firstOrder.requestedCubicFeet).toBeGreaterThanOrEqual(285);
     expect(firstOrder.freightClassId).toBe("standard");
     expect(firstOrder.requestedCubicFeet).toBe(secondOrder.requestedCubicFeet);
+  });
+
+  it("spawns at most one outbound order when multiple contracts are due on the same tick", () => {
+    const runner = new SimulationRunner({ seed: 21 });
+    const state = runner.getState();
+
+    state.contracts.activeContracts.push({
+      ...state.contracts.activeContracts[0],
+      id: "secondary-outbound-contract",
+      clientName: "Secondary Outbound Contract",
+      freightClassId: "standard",
+      nextInboundEligibleTick: 999,
+      nextOutboundEligibleTick: 2,
+    });
+    state.contracts.activeContracts[0].nextOutboundEligibleTick = 2;
+    state.freightFlow.freightBatches.push(
+      createBatch({
+        id: "baseline-storage-batch-1",
+        state: "in-storage",
+        storageZoneId: "standard-storage-001",
+        storedTick: 1,
+        cubicFeet: 1000,
+      }),
+      createBatch({
+        id: "baseline-storage-batch-2",
+        trailerId: "baseline-trailer-2",
+        state: "in-storage",
+        storageZoneId: "standard-storage-001",
+        storedTick: 1,
+        cubicFeet: 1000,
+      }),
+      createBatch({
+        id: "secondary-storage-batch-1",
+        trailerId: "secondary-trailer-1",
+        contractId: "secondary-outbound-contract",
+        state: "in-storage",
+        storageZoneId: "standard-storage-001",
+        storedTick: 1,
+        cubicFeet: 1000,
+      }),
+      createBatch({
+        id: "secondary-storage-batch-2",
+        trailerId: "secondary-trailer-2",
+        contractId: "secondary-outbound-contract",
+        state: "in-storage",
+        storageZoneId: "standard-storage-001",
+        storedTick: 1,
+        cubicFeet: 1000,
+      }),
+    );
+
+    runTicks(runner, 2);
+
+    expect(state.freightFlow.outboundOrders).toHaveLength(1);
+  });
+
+  it("retries due outbound contracts later instead of creating impossible work", () => {
+    const runner = new SimulationRunner({ seed: 22 });
+    const contract = runner.getState().contracts.activeContracts[0];
+    const originalRetryTick = contract.nextOutboundEligibleTick;
+
+    contract.nextOutboundEligibleTick = 2;
+
+    runTicks(runner, 2);
+
+    expect(runner.getState().freightFlow.outboundOrders).toHaveLength(0);
+    expect(contract.nextOutboundEligibleTick).toBeGreaterThan(2);
+    expect(contract.nextOutboundEligibleTick).not.toBe(originalRetryTick);
   });
 
   it("blocks open orders when matching inventory is unavailable", () => {
@@ -414,8 +486,9 @@ describe("storage and outbound freight flow", () => {
     expect(state.freightFlow.freightBatches[0].state).toBe("in-storage");
     expect(state.freightFlow.freightBatches[1].state).toBe("in-storage");
     expect(state.freightFlow.freightBatches[2].state).toBe("in-storage");
+    state.contracts.activeContracts[0].nextOutboundEligibleTick = state.currentTick + 2;
 
-    runTicks(runner, 67);
+    runTicks(runner, 2);
     expect(state.freightFlow.outboundOrders).toHaveLength(1);
 
     runUntilShipmentCompletes(runner);

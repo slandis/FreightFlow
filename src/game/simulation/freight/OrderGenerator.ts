@@ -1,16 +1,21 @@
+import type { ActiveContract } from "../core/GameState";
 import type { DifficultyModeConfig } from "../config/difficulty";
 import type { RandomService } from "../core/RandomService";
 import { applyDemandVolatility } from "../config/difficulty";
+import {
+  rollNextOutboundEligibleTick,
+  rollOutboundRetryTick,
+} from "../contracts/contractScheduling";
 import type { DomainEvent } from "../events/DomainEvent";
 import { createId } from "../types/ids";
 import type { FreightFlowState } from "./FreightFlowState";
 
-const BASE_OUTBOUND_ORDER_INTERVAL_TICKS = 60;
 const BASE_MIN_ORDER_CUBIC_FEET = 300;
 const BASE_MAX_ORDER_CUBIC_FEET = 900;
 const ORDER_DUE_TICKS = 720;
 const MIN_AVAILABLE_INVENTORY_CUBIC_FEET = 1800;
 const MAX_ACTIVE_OUTBOUND_ORDERS = 3;
+const OUTBOUND_EVALUATION_INTERVAL_TICKS = 2;
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
 
@@ -21,17 +26,21 @@ export class OrderGenerator {
     random: RandomService,
     createEvent: EventFactory,
     difficultyMode: DifficultyModeConfig,
+    activeContracts: ActiveContract[] = [],
   ): DomainEvent[] {
-    const interval = Math.max(
-      1,
-      Math.round(BASE_OUTBOUND_ORDER_INTERVAL_TICKS * difficultyMode.outboundIntervalMultiplier),
-    );
+    if (currentTick === 0) {
+      return [];
+    }
 
-    if (currentTick === 0 || currentTick % interval !== 0) {
+    if (currentTick % OUTBOUND_EVALUATION_INTERVAL_TICKS !== 0) {
       return [];
     }
 
     if (getActiveOutboundOrderCount(freightFlow) >= MAX_ACTIVE_OUTBOUND_ORDERS) {
+      return [];
+    }
+
+    if (!hasDueOutboundContract(activeContracts, currentTick)) {
       return [];
     }
 
@@ -42,19 +51,27 @@ export class OrderGenerator {
     );
 
     if (totalAvailableInventory < MIN_AVAILABLE_INVENTORY_CUBIC_FEET) {
+      retryDueOutboundContracts(activeContracts, currentTick, random);
       return [];
     }
-
-    const inventoryKeys = Object.entries(availableInventory).filter(
-      ([, cubicFeet]) => cubicFeet > 0,
+    const selected = selectNextOutboundContract(
+      activeContracts,
+      currentTick,
+      availableInventory,
+      random,
     );
 
-    if (inventoryKeys.length === 0) {
+    if (!selected) {
       return [];
     }
 
-    const [inventoryKey] = inventoryKeys[random.nextInt(0, inventoryKeys.length - 1)];
-    const [contractId, freightClassId] = inventoryKey.split("::");
+    const { contract, contractId, freightClassId, availableCubicFeet } = selected;
+    contract.nextOutboundEligibleTick = rollNextOutboundEligibleTick(
+      currentTick,
+      contract,
+      difficultyMode,
+      random,
+    );
     const minimumCubicFeet = Math.max(
       1,
       Math.round(BASE_MIN_ORDER_CUBIC_FEET * difficultyMode.outboundVolumeMultiplier),
@@ -71,7 +88,7 @@ export class OrderGenerator {
         minimumCubicFeet,
         maximumCubicFeet,
       ),
-      availableInventory[inventoryKey],
+      availableCubicFeet,
     );
     const orderId = createId("outbound-order", freightFlow.nextOutboundOrderSequence);
 
@@ -79,7 +96,7 @@ export class OrderGenerator {
     freightFlow.metrics.totalOutboundOrdersCreated += 1;
     freightFlow.outboundOrders.push({
       id: orderId,
-      contractId: contractId === "none" ? null : contractId,
+      contractId,
       freightClassId,
       requestedCubicFeet,
       fulfilledCubicFeet: 0,
@@ -107,6 +124,71 @@ export class OrderGenerator {
   }
 }
 
+function selectNextOutboundContract(
+  activeContracts: ActiveContract[],
+  currentTick: number,
+  availableInventory: Record<string, number>,
+  random: RandomService,
+): {
+  contract: ActiveContract;
+  contractId: string;
+  freightClassId: string;
+  availableCubicFeet: number;
+} | null {
+  let selectedContract:
+    | {
+        contract: ActiveContract;
+        contractId: string;
+        freightClassId: string;
+        availableCubicFeet: number;
+        dueTick: number;
+      }
+    | null = null;
+
+  for (const contract of activeContracts) {
+    if (contract.nextOutboundEligibleTick > currentTick) {
+      continue;
+    }
+
+    const matchingInventory = getAvailableInventoryEntryForContract(contract, availableInventory);
+    const inventoryKey = matchingInventory?.[0] ?? null;
+    const contractAvailableCubicFeet = matchingInventory?.[1] ?? 0;
+
+    if (contractAvailableCubicFeet <= 0 || !inventoryKey) {
+      contract.nextOutboundEligibleTick = rollOutboundRetryTick(currentTick, random);
+      continue;
+    }
+
+    const [candidateContractId, candidateFreightClassId] = inventoryKey.split("::");
+
+    if (
+      !selectedContract ||
+      contract.nextOutboundEligibleTick < selectedContract.dueTick ||
+      (contract.nextOutboundEligibleTick === selectedContract.dueTick &&
+        candidateContractId.localeCompare(selectedContract.contractId) < 0)
+    ) {
+      selectedContract = {
+        contract,
+        contractId: candidateContractId,
+        freightClassId: candidateFreightClassId,
+        availableCubicFeet: contractAvailableCubicFeet,
+        dueTick: contract.nextOutboundEligibleTick,
+      };
+    }
+  }
+
+  if (!selectedContract) {
+    return null;
+  }
+
+  return {
+    contract: selectedContract.contract,
+    contractId: selectedContract.contractId,
+    freightClassId: selectedContract.freightClassId,
+    availableCubicFeet: selectedContract.availableCubicFeet,
+  };
+}
+
 function getActiveOutboundOrderCount(freightFlow: FreightFlowState): number {
   return freightFlow.outboundOrders.filter((order) => order.state !== "complete").length;
 }
@@ -126,4 +208,54 @@ function getAvailableInventoryByContractAndFreightClass(
   }
 
   return inventory;
+}
+
+function getAvailableInventoryEntryForContract(
+  contract: ActiveContract,
+  availableInventory: Record<string, number>,
+): [string, number] | null {
+  if (contract.freightClassId) {
+    const key = `${contract.id}::${contract.freightClassId}`;
+    const cubicFeet = availableInventory[key] ?? 0;
+    return cubicFeet > 0 ? [key, cubicFeet] : null;
+  }
+
+  let bestMatch: [string, number] | null = null;
+
+  for (const [key, cubicFeet] of Object.entries(availableInventory)) {
+    if (cubicFeet <= 0 || !key.startsWith(`${contract.id}::`)) {
+      continue;
+    }
+
+    if (!bestMatch || key.localeCompare(bestMatch[0]) < 0) {
+      bestMatch = [key, cubicFeet];
+    }
+  }
+
+  return bestMatch;
+}
+
+function hasDueOutboundContract(
+  activeContracts: ActiveContract[],
+  currentTick: number,
+): boolean {
+  for (const contract of activeContracts) {
+    if (contract.nextOutboundEligibleTick <= currentTick) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function retryDueOutboundContracts(
+  activeContracts: ActiveContract[],
+  currentTick: number,
+  random: RandomService,
+): void {
+  for (const contract of activeContracts) {
+    if (contract.nextOutboundEligibleTick <= currentTick) {
+      contract.nextOutboundEligibleTick = rollOutboundRetryTick(currentTick, random);
+    }
+  }
 }

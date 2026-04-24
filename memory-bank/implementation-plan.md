@@ -853,6 +853,27 @@ These steps establish the first meaningful vertical slice and create momentum qu
 
 ---
 
+## 24A. Contract Cadence Follow-Up Notes
+
+Recent freight-flow tuning added a contract-aware timing layer for inbound and outbound generation.
+
+Implementation direction now assumes:
+- active contracts can carry their own inbound and outbound cadence bands
+- inbound and outbound demand can be scheduled per contract instead of only through one global warehouse timer
+- the first pass should stay conservative, with one inbound spawn max per tick globally and one outbound spawn max per tick globally
+- save/load must preserve or normalize contract scheduler state so cadence remains stable after load
+- outbound cadence tuning should happen at the contract-band layer before introducing broader structural changes to pick/load/storage systems
+
+Performance guidance for this layer:
+- avoid per-tick allocation-heavy contract sorting where a single-pass earliest-due scan is sufficient
+- avoid outbound inventory scans when no contract is due
+- keep retry logic bounded and cheap so contracts that miss inventory do not create continuous hot-path churn
+- if cadence logic becomes visible in frame time again, prefer lightweight evaluation throttles before revisiting broader simulation architecture
+
+This keeps contract identity stronger without turning freight generation into the primary source of UI hitching or simulation instability.
+
+---
+
 ## 25. Summary
 
 This implementation plan is designed to move the project from architecture and design into a practical build sequence.

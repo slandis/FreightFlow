@@ -167,6 +167,10 @@ export interface ContractOffer {
   monthKey: string;
   clientName: string;
   freightClassId: string;
+  inboundIntervalMinTicks: number;
+  inboundIntervalMaxTicks: number;
+  outboundIntervalMinTicks: number;
+  outboundIntervalMaxTicks: number;
   lengthMonths: number;
   expectedMonthlyThroughputCubicFeet: number;
   expectedWeeklyThroughputCubicFeet: number;
@@ -189,6 +193,12 @@ export interface ActiveContract {
   name: string;
   clientName: string;
   freightClassId: string | null;
+  inboundIntervalMinTicks: number;
+  inboundIntervalMaxTicks: number;
+  outboundIntervalMinTicks: number;
+  outboundIntervalMaxTicks: number;
+  nextInboundEligibleTick: number;
+  nextOutboundEligibleTick: number;
   acceptedMonthKey: string;
   acceptedTick: number;
   acceptedMonthIndex: number;
@@ -292,6 +302,12 @@ export function createInitialContractState(): ContractState {
         name: "Baseline General Freight",
         clientName: "General Freight Network",
         freightClassId: null,
+        inboundIntervalMinTicks: 70,
+        inboundIntervalMaxTicks: 120,
+        outboundIntervalMinTicks: 180,
+        outboundIntervalMaxTicks: 300,
+        nextInboundEligibleTick: 0,
+        nextOutboundEligibleTick: 0,
         acceptedMonthKey: "Y1-M1",
         acceptedTick: 0,
         acceptedMonthIndex: 1,

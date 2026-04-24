@@ -6,8 +6,8 @@ import type { FreightFlowState } from "./FreightFlowState";
 import type { RandomService } from "../core/RandomService";
 import { createId } from "../types/ids";
 import { applyDemandVolatility } from "../config/difficulty";
+import { rollNextInboundEligibleTick } from "../contracts/contractScheduling";
 
-const BASE_INBOUND_SPAWN_INTERVAL_TICKS = 60;
 const BASE_MIN_INBOUND_CUBIC_FEET = 800;
 const BASE_MAX_INBOUND_CUBIC_FEET = 2500;
 
@@ -22,18 +22,18 @@ export class FreightGenerator {
     difficultyMode: DifficultyModeConfig,
     activeContracts: ActiveContract[] = [],
   ): DomainEvent[] {
-    const interval = Math.max(
-      1,
-      Math.round(BASE_INBOUND_SPAWN_INTERVAL_TICKS * difficultyMode.inboundIntervalMultiplier),
-    );
+    if (currentTick === 0) {
+      return [];
+    }
 
-    if (currentTick === 0 || currentTick % interval !== 0) {
+    const contract = getEarliestDueInboundContract(activeContracts, currentTick);
+
+    if (!contract) {
       return [];
     }
 
     const trailerId = createId("trailer", freightFlow.nextTrailerSequence);
     const freightBatchId = createId("freight-batch", freightFlow.nextFreightBatchSequence);
-    const contract = selectInboundContract(activeContracts, random);
     const freightClass =
       contract?.freightClassId
         ? freightClasses.find((candidateClass) => candidateClass.id === contract.freightClassId) ??
@@ -58,6 +58,12 @@ export class FreightGenerator {
     const yardDwellTicks = random.nextInt(
       difficultyMode.inboundYardDwellMinTicks,
       difficultyMode.inboundYardDwellMaxTicks,
+    );
+    contract.nextInboundEligibleTick = rollNextInboundEligibleTick(
+      currentTick,
+      contract,
+      difficultyMode,
+      random,
     );
 
     freightFlow.nextTrailerSequence += 1;
@@ -110,27 +116,26 @@ export class FreightGenerator {
   }
 }
 
-function selectInboundContract(
+function getEarliestDueInboundContract(
   activeContracts: ActiveContract[],
-  random: RandomService,
+  currentTick: number,
 ): ActiveContract | null {
-  if (activeContracts.length === 0) {
-    return null;
-  }
-
-  const totalWeight = activeContracts.reduce(
-    (total, contract) => total + Math.max(1, contract.expectedMonthlyThroughputCubicFeet),
-    0,
-  );
-  let cursor = random.next() * totalWeight;
+  let earliestDueContract: ActiveContract | null = null;
 
   for (const contract of activeContracts) {
-    cursor -= Math.max(1, contract.expectedMonthlyThroughputCubicFeet);
+    if (contract.nextInboundEligibleTick > currentTick) {
+      continue;
+    }
 
-    if (cursor <= 0) {
-      return contract;
+    if (
+      !earliestDueContract ||
+      contract.nextInboundEligibleTick < earliestDueContract.nextInboundEligibleTick ||
+      (contract.nextInboundEligibleTick === earliestDueContract.nextInboundEligibleTick &&
+        contract.id.localeCompare(earliestDueContract.id) < 0)
+    ) {
+      earliestDueContract = contract;
     }
   }
 
-  return activeContracts[activeContracts.length - 1] ?? null;
+  return earliestDueContract;
 }

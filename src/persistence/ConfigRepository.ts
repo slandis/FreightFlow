@@ -145,6 +145,34 @@ function validateContracts(
       errors.push(`contracts.${String(contract.id)} has invalid minimumServiceLevelModifier`);
     }
 
+    for (const [minField, maxField] of [
+      ["inboundIntervalMinTicks", "inboundIntervalMaxTicks"],
+      ["outboundIntervalMinTicks", "outboundIntervalMaxTicks"],
+    ] as const) {
+      const minValue = contract[minField];
+      const maxValue = contract[maxField];
+
+      if (minValue === undefined && maxValue === undefined) {
+        continue;
+      }
+
+      if (!isNonNegativeNumber(minValue) || minValue <= 0) {
+        errors.push(`contracts.${String(contract.id)} has invalid ${minField}`);
+      }
+
+      if (!isNonNegativeNumber(maxValue) || maxValue <= 0) {
+        errors.push(`contracts.${String(contract.id)} has invalid ${maxField}`);
+      }
+
+      if (
+        isNonNegativeNumber(minValue) &&
+        isNonNegativeNumber(maxValue) &&
+        maxValue < minValue
+      ) {
+        errors.push(`contracts.${String(contract.id)} has ${maxField} below minimum`);
+      }
+    }
+
     if (
       !Array.isArray(contract.lengthMonthsOptions) ||
       contract.lengthMonthsOptions.length === 0 ||

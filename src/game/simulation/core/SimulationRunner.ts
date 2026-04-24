@@ -31,6 +31,7 @@ import { getActiveForecastMonthlyVolumeCubicFeet } from "../planning/inventorySu
 import { QueueManager } from "../systems/QueueManager";
 import { AlertSystem } from "../systems/AlertSystem";
 import { ConditionSystem } from "../systems/ConditionSystem";
+import { normalizeActiveContractSchedules } from "../contracts/contractScheduling";
 import { ContractSystem } from "../systems/ContractSystem";
 import { FinanceSystem } from "../systems/FinanceSystem";
 import { KPIService } from "../systems/KPIService";
@@ -133,6 +134,7 @@ export class SimulationRunner {
       alerts: createInitialAlertState(),
       planning: createInitialPlanningState(calendar, labor),
     };
+    normalizeActiveContractSchedules(this.state, difficultyMode, this.random);
 
     this.commandBus = new CommandBus({
       state: this.state,
@@ -197,6 +199,11 @@ export class SimulationRunner {
   replaceState(nextState: GameState): void {
     Object.assign(this.state, nextState);
     this.clock.restore(nextState.currentTick, nextState.calendar);
+    normalizeActiveContractSchedules(
+      this.state,
+      getDifficultyModeById(this.state.difficultyModeId),
+      this.random,
+    );
     this.notifyStateChanged();
   }
 
@@ -236,7 +243,11 @@ export class SimulationRunner {
   private tickInternal(notifyAfterTick: boolean): void {
     this.state.currentTick = this.clock.advance();
     this.state.calendar = this.clock.getCalendar();
-    const queuedPlanEvents = applyQueuedMonthlyPlan(this.state, (type) => this.createEvent(type));
+    const queuedPlanEvents = applyQueuedMonthlyPlan(
+      this.state,
+      this.random,
+      (type) => this.createEvent(type),
+    );
     const difficultyMode = getDifficultyModeById(this.state.difficultyModeId);
     const planningEvents = this.planningSystem.update(this.state, this.random, (type) =>
       this.createEvent(type),
@@ -292,6 +303,7 @@ export class SimulationRunner {
         this.random,
         (type) => this.createEvent(type),
         difficultyMode,
+        this.state.contracts.activeContracts,
       ),
       ...this.pickSystem.process(
         this.state.freightFlow,

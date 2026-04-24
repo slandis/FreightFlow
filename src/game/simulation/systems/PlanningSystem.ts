@@ -114,6 +114,7 @@ export function openMonthlyPlanning(
 
 export function applyQueuedMonthlyPlan(
   state: GameState,
+  random: RandomService,
   createEvent: EventFactory,
 ): DomainEvent[] {
   const queuedPlan = state.planning.queuedPlan;
@@ -145,7 +146,7 @@ export function applyQueuedMonthlyPlan(
     queuedPlan.budget,
   );
 
-  activateAcceptedContractOffers(state);
+  activateAcceptedContractOffers(state, random);
 
   state.planning.currentPlan = {
     monthKey: queuedPlan.monthKey,

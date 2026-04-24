@@ -384,3 +384,13 @@ Scenario Saves, Load Refresh, and Travel Distance: Completed
     - Added a first-pass travel-distance throughput factor for storage and picking using conservative multipliers derived from storage-zone travel distance rather than explicit worker path simulation.
     - Added regression coverage for scenario payload validity/reset behavior, visible relaxed-scenario layout seeding, loaded-state renderer refresh, and distance-based storage/pick throughput differences.
     - Verification completed: `npm test` passed with 154 tests, and `npm run build` passed. The build still emits the expected Vite chunk-size warning.
+
+Contract Scheduler, Outbound Retune, and Performance Patch: Completed
+    - Replaced the old fixed global inbound/outbound cadence with contract-aware scheduler state so active contracts can carry their own inbound and outbound interval bands plus next-eligible ticks.
+    - Added conservative first-pass per-contract scheduling rules with one inbound spawn max per tick globally and one outbound spawn max per tick globally.
+    - Seeded new contract timing fields during monthly offer generation and contract activation, and normalized missing scheduler data on startup/load so older saves and baseline contracts remain valid.
+    - Refactored inbound and outbound generation to scan due contracts deterministically, reroll successful contracts forward, and retry due outbound contracts later instead of forcing impossible blocked work.
+    - Tuned outbound cadence faster than the first scheduler baseline by lowering the contract outbound timing bands and shortening the outbound retry window so storage floors turn over sooner.
+    - Patched the first scheduler rollout for runtime smoothness by removing allocation-heavy inbound contract sorting, simplifying outbound due-contract selection, and throttling outbound evaluation to every 2 ticks.
+    - Updated cadence-sensitive simulation, persistence, config, and difficulty coverage for contract timing fields, one-spawn-per-tick behavior, retry handling, and the new outbound timing expectations.
+    - Verification completed: `npm test` passed with 159 tests, and `npm run build` passed. The build still emits the expected Vite chunk-size warning.
