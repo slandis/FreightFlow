@@ -7,9 +7,7 @@ import type { RandomService } from "../core/RandomService";
 import { createId } from "../types/ids";
 import { applyDemandVolatility } from "../config/difficulty";
 import { rollNextInboundEligibleTick } from "../contracts/contractScheduling";
-
-const BASE_MIN_INBOUND_CUBIC_FEET = 800;
-const BASE_MAX_INBOUND_CUBIC_FEET = 2500;
+import { getInboundCubeBandForContract } from "../contracts/contractVolume";
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
 
@@ -39,14 +37,9 @@ export class FreightGenerator {
         ? freightClasses.find((candidateClass) => candidateClass.id === contract.freightClassId) ??
           freightClasses[random.nextInt(0, freightClasses.length - 1)]
         : freightClasses[random.nextInt(0, freightClasses.length - 1)];
-    const minimumCubicFeet = Math.max(
-      1,
-      Math.round(BASE_MIN_INBOUND_CUBIC_FEET * difficultyMode.inboundVolumeMultiplier),
-    );
-    const maximumCubicFeet = Math.max(
-      minimumCubicFeet,
-      Math.round(BASE_MAX_INBOUND_CUBIC_FEET * difficultyMode.inboundVolumeMultiplier),
-    );
+    const inboundCubeBand = getInboundCubeBandForContract(contract, difficultyMode);
+    const minimumCubicFeet = inboundCubeBand.minCubicFeet;
+    const maximumCubicFeet = inboundCubeBand.maxCubicFeet;
     const baseCubicFeet = random.nextInt(minimumCubicFeet, maximumCubicFeet);
     const cubicFeet = applyDemandVolatility(
       baseCubicFeet,

@@ -47,6 +47,8 @@ export class RemoveDoorCommand implements Command<"remove-door"> {
       tile.isActiveDoor = false;
     }
 
+    context.state.warehouseMap.rebuildZones();
+
     const event = {
       ...context.createEvent("door-removed"),
       doorId: door.id,

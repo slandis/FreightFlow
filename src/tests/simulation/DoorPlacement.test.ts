@@ -160,4 +160,32 @@ describe("door placement", () => {
     expect(placedDoor?.trailerId).toBe("trailer-waiting");
     expect(freightFlow.trailers[0].doorId).toBe(placedDoor?.id);
   });
+
+  it("revalidates adjacent stage areas after door placement and removal", () => {
+    const runner = new SimulationRunner();
+
+    paintStageNearDoor(runner, 4);
+
+    let stageZone = runner
+      .getState()
+      .warehouseMap.zones.find((zone) => zone.zoneType === TileZoneType.Stage);
+    expect(stageZone?.validForStorage).toBe(false);
+    expect(stageZone?.invalidReason).toBe("No door access");
+
+    runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+
+    stageZone = runner
+      .getState()
+      .warehouseMap.zones.find((zone) => zone.zoneType === TileZoneType.Stage);
+    expect(stageZone?.validForStorage).toBe(true);
+    expect(stageZone?.invalidReason).toBeNull();
+
+    runner.dispatch(new RemoveDoorCommand(4, 0));
+
+    stageZone = runner
+      .getState()
+      .warehouseMap.zones.find((zone) => zone.zoneType === TileZoneType.Stage);
+    expect(stageZone?.validForStorage).toBe(false);
+    expect(stageZone?.invalidReason).toBe("No door access");
+  });
 });

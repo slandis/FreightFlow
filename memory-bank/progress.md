@@ -390,10 +390,11 @@ Contract Scheduler, Outbound Retune, and Performance Patch: Completed
     - Added conservative first-pass per-contract scheduling rules with one inbound spawn max per tick globally and one outbound spawn max per tick globally.
     - Seeded new contract timing fields during monthly offer generation and contract activation, and normalized missing scheduler data on startup/load so older saves and baseline contracts remain valid.
     - Refactored inbound and outbound generation to scan due contracts deterministically, reroll successful contracts forward, and retry due outbound contracts later instead of forcing impossible blocked work.
+    - Replaced the shared inbound trailer cube roll with contract-derived inbound volume bands built from each active contract's expected monthly throughput, inbound cadence, difficulty multiplier, and demand volatility.
     - Tuned outbound cadence faster than the first scheduler baseline by lowering the contract outbound timing bands and shortening the outbound retry window so storage floors turn over sooner.
     - Patched the first scheduler rollout for runtime smoothness by removing allocation-heavy inbound contract sorting, simplifying outbound due-contract selection, and throttling outbound evaluation to every 2 ticks.
-    - Updated cadence-sensitive simulation, persistence, config, and difficulty coverage for contract timing fields, one-spawn-per-tick behavior, retry handling, and the new outbound timing expectations.
-    - Verification completed: `npm test` passed with 159 tests, and `npm run build` passed. The build still emits the expected Vite chunk-size warning.
+    - Updated cadence-sensitive simulation, persistence, config, helper, and difficulty coverage for contract timing fields, contract-derived inbound cube bands, one-spawn-per-tick behavior, retry handling, and the new outbound timing expectations.
+    - Verification completed: `npm test` passed with 169 tests, and `npm run build` passed. The build still emits the expected Vite chunk-size warning.
 
 Stage Zone and Explicit Door-Side Staging: Completed
     - Added `Stage` as a first-class painted zone type with dedicated build cost, capacity config, left-panel tool entry, overlay/tile color treatment, and `stage_tile_*` Phaser asset loading.

@@ -65,6 +65,7 @@ export class PlaceDoorCommand implements Command<"place-door"> {
       trailerId: null,
       state: "idle",
     });
+    context.state.warehouseMap.rebuildZones();
 
     const event = {
       ...context.createEvent("door-placed"),

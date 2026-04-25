@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import freightClasses from "../../data/config/freightClasses.json";
 import { PaintZoneCommand } from "../../game/simulation/commands/PaintZoneCommand";
 import { PlaceDoorCommand } from "../../game/simulation/commands/PlaceDoorCommand";
+import { getDifficultyModeById } from "../../game/simulation/config/difficulty";
 import { SimulationRunner } from "../../game/simulation/core/SimulationRunner";
+import { getInboundCubeBandForContract } from "../../game/simulation/contracts/contractVolume";
 import type { FreightFlowState } from "../../game/simulation/freight/FreightFlowState";
 import { TileZoneType } from "../../game/simulation/types/enums";
 import type { Trailer } from "../../game/simulation/freight/Trailer";
@@ -63,7 +65,12 @@ describe("inbound freight flow", () => {
   it("spawns an inbound trailer and freight batch when the first contract timer comes due", () => {
     const runner = new SimulationRunner({ seed: 42 });
     const freightClassIds = freightClasses.map((freightClass) => freightClass.id);
-    const firstInboundTick = runner.getState().contracts.activeContracts[0].nextInboundEligibleTick;
+    const activeContract = runner.getState().contracts.activeContracts[0];
+    const firstInboundTick = activeContract.nextInboundEligibleTick;
+    const inboundCubeBand = getInboundCubeBandForContract(
+      activeContract,
+      getDifficultyModeById(runner.getState().difficultyModeId),
+    );
 
     runTicks(runner, firstInboundTick);
 
@@ -77,8 +84,8 @@ describe("inbound freight flow", () => {
     expect((trailers[0].readyForDoorAssignmentTick ?? 0) - firstInboundTick).toBeLessThanOrEqual(5);
     expect(trailers[0].freightBatchIds).toEqual([freightBatches[0].id]);
     expect(freightClassIds).toContain(freightBatches[0].freightClassId);
-    expect(freightBatches[0].cubicFeet).toBeGreaterThanOrEqual(800);
-    expect(freightBatches[0].cubicFeet).toBeLessThanOrEqual(2500);
+    expect(freightBatches[0].cubicFeet).toBeGreaterThanOrEqual(inboundCubeBand.minCubicFeet);
+    expect(freightBatches[0].cubicFeet).toBeLessThanOrEqual(inboundCubeBand.maxCubicFeet);
   });
 
   it("spawns at most one inbound trailer when multiple contracts are due on the same tick", () => {

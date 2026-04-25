@@ -864,6 +864,7 @@ Recent freight-flow tuning added a contract-aware timing layer for inbound and o
 Implementation direction now assumes:
 - active contracts can carry their own inbound and outbound cadence bands
 - inbound and outbound demand can be scheduled per contract instead of only through one global warehouse timer
+- inbound trailer cubic feet can be derived from each contract's expected monthly throughput and cadence instead of one shared global cube band
 - the first pass should stay conservative, with one inbound spawn max per tick globally and one outbound spawn max per tick globally
 - save/load must preserve or normalize contract scheduler state so cadence remains stable after load
 - outbound cadence tuning should happen at the contract-band layer before introducing broader structural changes to pick/load/storage systems
