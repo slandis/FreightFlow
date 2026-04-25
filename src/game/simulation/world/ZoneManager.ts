@@ -133,6 +133,14 @@ export class ZoneManager {
       }
 
       if (isStageZoneType(tile.zoneType)) {
+        if (travelTiles.length > 0) {
+          tile.nearestTravelDistance = Math.min(
+            ...travelTiles.map((travelTile) =>
+              manhattanDistance(tile.x, tile.y, travelTile.x, travelTile.y),
+            ),
+          );
+        }
+
         if (activeDoorTiles.length > 0) {
           tile.nearestDoorDistance = Math.min(
             ...activeDoorTiles.map((doorTile) =>

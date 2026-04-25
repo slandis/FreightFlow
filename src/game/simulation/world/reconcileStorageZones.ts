@@ -1,4 +1,5 @@
 import type { GameState } from "../core/GameState";
+import type { Trailer } from "../freight/Trailer";
 import type { Zone } from "./Zone";
 import { recalculateZoneUsage } from "./zoneUsage";
 
@@ -9,22 +10,55 @@ export function reconcileStorageZonesAfterMapEdit(
   const previousZonesById = new Map(previousZones.map((zone) => [zone.id, zone]));
 
   for (const batch of state.freightFlow.freightBatches) {
-    if ((batch.state !== "in-storage" && batch.state !== "storing") || !batch.storageZoneId) {
+    if ((batch.state === "in-storage" || batch.state === "storing") && batch.storageZoneId) {
+      batch.storageZoneId = remapZoneId(
+        batch.storageZoneId,
+        previousZonesById,
+        state.warehouseMap.zones,
+      );
+    }
+
+    if (
+      (batch.state === "in-stage" || batch.state === "picked" || batch.state === "loading") &&
+      batch.stageZoneId
+    ) {
+      batch.stageZoneId = remapZoneId(
+        batch.stageZoneId,
+        previousZonesById,
+        state.warehouseMap.zones,
+      );
+    }
+  }
+
+  for (const trailer of state.freightFlow.trailers) {
+    if (!shouldRemapTrailerStageZone(trailer) || !trailer.stageZoneId) {
       continue;
     }
 
-    const previousZone = previousZonesById.get(batch.storageZoneId);
-
-    if (!previousZone) {
-      continue;
-    }
-
-    const remappedZone = findBestZoneMatch(previousZone, state.warehouseMap.zones);
-
-    batch.storageZoneId = remappedZone?.id ?? null;
+    trailer.stageZoneId = remapZoneId(
+      trailer.stageZoneId,
+      previousZonesById,
+      state.warehouseMap.zones,
+    );
   }
 
   recalculateZoneUsage(state.freightFlow, state.warehouseMap);
+}
+
+function remapZoneId(
+  zoneId: string,
+  previousZonesById: Map<string, Zone>,
+  nextZones: Zone[],
+): string | null {
+  const previousZone = previousZonesById.get(zoneId);
+
+  if (!previousZone) {
+    return null;
+  }
+
+  const remappedZone = findBestZoneMatch(previousZone, nextZones);
+
+  return remappedZone?.id ?? null;
 }
 
 function findBestZoneMatch(previousZone: Zone, nextZones: Zone[]): Zone | null {
@@ -53,4 +87,13 @@ function findBestZoneMatch(previousZone: Zone, nextZones: Zone[]): Zone | null {
     });
 
   return candidates[0]?.zone ?? null;
+}
+
+function shouldRemapTrailerStageZone(trailer: Trailer): boolean {
+  return (
+    trailer.state === "switching-to-door" ||
+    trailer.state === "at-door" ||
+    trailer.state === "unloading" ||
+    trailer.state === "loading"
+  );
 }

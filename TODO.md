@@ -15,3 +15,4 @@
     * Optimized picking/storing (interleaving) and access to Flex role
     * Travel analysis / Improved travel paths
     * Racking (enables higher storage density for small freight)
+ 

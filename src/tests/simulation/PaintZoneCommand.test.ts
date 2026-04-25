@@ -131,6 +131,22 @@ describe("PaintZoneCommand", () => {
     expect(zone?.invalidReason).toBeNull();
   });
 
+  it("tracks nearest travel distance for stage tiles", () => {
+    const runner = new SimulationRunner();
+
+    runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    runner.dispatch(new PaintZoneCommand(4, 1, TileZoneType.Stage));
+    runner.dispatch(new PaintZoneCommand(6, 2, TileZoneType.Travel));
+
+    const tile = runner.getState().warehouseMap.getTile(4, 1);
+    const zone = runner
+      .getState()
+      .warehouseMap.zones.find((candidateZone) => candidateZone.id === tile?.zoneId);
+
+    expect(tile?.nearestTravelDistance).toBe(3);
+    expect(zone?.nearestTravelDistance).toBe(3);
+  });
+
   it("aggregates contiguous same-type zones and separates different types", () => {
     const runner = new SimulationRunner();
     const map = runner.getState().warehouseMap;
@@ -280,5 +296,78 @@ describe("PaintZoneCommand", () => {
     expect(storageZone?.usedCubicFeet).toBe(900);
     expect(storageZone?.capacityCubicFeet).toBe(1100);
     expect(state.freightFlow.freightBatches[0].storageZoneId).toBe(storageZone?.id);
+  });
+
+  it("clears stale stage assignments when a stage area is repainted away", () => {
+    const runner = new SimulationRunner();
+    const state = runner.getState();
+
+    runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    runner.dispatch(new PaintZoneCommand(4, 1, TileZoneType.Stage));
+    const initialStageZone = state.warehouseMap.zones.find(
+      (zone) => zone.zoneType === TileZoneType.Stage,
+    );
+
+    state.freightFlow.freightBatches.push({
+      id: "stage-batch-test",
+      trailerId: "trailer-stage-test",
+      contractId: "baseline-general-freight",
+      freightClassId: "standard",
+      cubicFeet: 900,
+      state: "in-stage",
+      createdTick: 0,
+      unloadedTick: 0,
+      storageZoneId: null,
+      stageZoneId: initialStageZone?.id ?? null,
+      outboundOrderId: null,
+      storedTick: null,
+      remainingStorageCubicFeet: null,
+      pickedTick: null,
+      loadedTick: null,
+      dockTileIndex: null,
+    });
+
+    runner.dispatch(new PaintZoneCommand(4, 1, TileZoneType.Travel));
+
+    expect(state.freightFlow.freightBatches[0].stageZoneId).toBeNull();
+  });
+
+  it("remaps stage assignments when a stage area is expanded", () => {
+    const runner = new SimulationRunner();
+    const state = runner.getState();
+
+    runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
+    runner.dispatch(new PaintZoneCommand(4, 1, TileZoneType.Stage));
+    const initialStageZone = state.warehouseMap.zones.find(
+      (zone) => zone.zoneType === TileZoneType.Stage,
+    );
+
+    state.freightFlow.freightBatches.push({
+      id: "stage-batch-remap-test",
+      trailerId: "trailer-stage-remap-test",
+      contractId: "baseline-general-freight",
+      freightClassId: "standard",
+      cubicFeet: 900,
+      state: "in-stage",
+      createdTick: 0,
+      unloadedTick: 0,
+      storageZoneId: null,
+      stageZoneId: initialStageZone?.id ?? null,
+      outboundOrderId: null,
+      storedTick: null,
+      remainingStorageCubicFeet: null,
+      pickedTick: null,
+      loadedTick: null,
+      dockTileIndex: null,
+    });
+
+    runner.dispatch(new PaintZoneCommand(5, 1, TileZoneType.Stage));
+
+    const remappedStageZone = state.warehouseMap.zones.find(
+      (zone) => zone.zoneType === TileZoneType.Stage,
+    );
+
+    expect(state.freightFlow.freightBatches[0].stageZoneId).toBe(remappedStageZone?.id ?? null);
+    expect(remappedStageZone?.tileIndexes).toHaveLength(2);
   });
 });

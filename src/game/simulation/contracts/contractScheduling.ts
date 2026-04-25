@@ -16,32 +16,32 @@ const timingBandsByDifficultyTag: Record<ContractDifficultyTag, ContractTimingBa
   capacity: {
     inboundMinTicks: 60,
     inboundMaxTicks: 120,
-    outboundMinTicks: 140,
-    outboundMaxTicks: 240,
+    outboundMinTicks: 120,
+    outboundMaxTicks: 205,
   },
   speed: {
     inboundMinTicks: 45,
     inboundMaxTicks: 110,
-    outboundMinTicks: 90,
-    outboundMaxTicks: 180,
+    outboundMinTicks: 75,
+    outboundMaxTicks: 155,
   },
   specialization: {
     inboundMinTicks: 90,
     inboundMaxTicks: 150,
-    outboundMinTicks: 150,
-    outboundMaxTicks: 250,
+    outboundMinTicks: 130,
+    outboundMaxTicks: 215,
   },
   margin: {
     inboundMinTicks: 90,
     inboundMaxTicks: 150,
-    outboundMinTicks: 150,
-    outboundMaxTicks: 250,
+    outboundMinTicks: 130,
+    outboundMaxTicks: 215,
   },
   consistency: {
     inboundMinTicks: 75,
     inboundMaxTicks: 135,
-    outboundMinTicks: 120,
-    outboundMaxTicks: 220,
+    outboundMinTicks: 100,
+    outboundMaxTicks: 185,
   },
 };
 

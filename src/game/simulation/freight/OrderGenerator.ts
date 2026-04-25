@@ -13,8 +13,8 @@ import type { FreightFlowState } from "./FreightFlowState";
 const BASE_MIN_ORDER_CUBIC_FEET = 300;
 const BASE_MAX_ORDER_CUBIC_FEET = 900;
 const ORDER_DUE_TICKS = 720;
-const MIN_AVAILABLE_INVENTORY_CUBIC_FEET = 1800;
-const MAX_ACTIVE_OUTBOUND_ORDERS = 3;
+const MIN_AVAILABLE_INVENTORY_CUBIC_FEET = 1200;
+const MAX_ACTIVE_OUTBOUND_ORDERS = 5;
 const OUTBOUND_EVALUATION_INTERVAL_TICKS = 2;
 
 type EventFactory = <TType extends string>(type: TType) => DomainEvent<TType>;
