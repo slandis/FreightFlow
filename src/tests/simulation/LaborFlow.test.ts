@@ -223,7 +223,7 @@ describe("labor pools and queue processing", () => {
     paintStandardStorage(runner);
     runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
     const stageZoneId = paintStageNearDoor(runner, 4);
-    runner.dispatch(new PaintZoneCommand(4, 2, TileZoneType.Travel));
+    runner.dispatch(new PaintZoneCommand(4, 3, TileZoneType.Travel));
     state.freightFlow.freightBatches.push(createBatch({ stageZoneId }));
 
     runTicks(runner, 5);
@@ -240,8 +240,8 @@ describe("labor pools and queue processing", () => {
     farRunner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
     const nearStageZoneId = paintStageNearDoor(nearRunner, 4);
     const farStageZoneId = paintStageNearDoor(farRunner, 4);
-    nearRunner.dispatch(new PaintZoneCommand(4, 2, TileZoneType.Travel));
-    farRunner.dispatch(new PaintZoneCommand(4, 2, TileZoneType.Travel));
+    nearRunner.dispatch(new PaintZoneCommand(4, 3, TileZoneType.Travel));
+    farRunner.dispatch(new PaintZoneCommand(4, 3, TileZoneType.Travel));
     paintStandardStorageAtDistance(nearRunner, 5, 5, 6, 5);
     paintStandardStorageAtDistance(farRunner, 5, 5, 7, 5);
 

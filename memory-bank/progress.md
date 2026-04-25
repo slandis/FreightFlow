@@ -406,3 +406,10 @@ Stage Zone and Explicit Door-Side Staging: Completed
     - Updated queue handling, HUD/tutorial copy, door-removal protection, and Stage-related selectors so blocked freight and near-door pressure are described through Stage rather than hidden dock capacity, including explicit reporting when a Stage area has no travel access.
     - Added and updated coverage for inbound assignment, unloading, outbound loading, stage-backed door removal, isolated-stage putaway blocking, and Stage-aware end-to-end freight movement while preserving full-suite regression coverage.
     - Verification completed: `npm test` passed with 163 tests, and `npm run build` passed. The build still emits the expected Vite chunk-size warning.
+
+Paint Restriction Rules: Completed
+    - Added authoritative paint/edit restrictions so any assigned area with live utilization above `0` can no longer be repainted or erased while freight is present.
+    - Required both `Travel` and `Stage` tiles to be erased back to `Unassigned` before they can be reassigned to any other zone type, preventing direct overwrite of access and staging surfaces.
+    - Applied the new restrictions consistently to both single-tile and area paint commands, with whole-command failure and no capital spend when any selected tile violates the rules.
+    - Updated paint, storage-flow, and labor-flow regression coverage so test setups add travel adjacent to Stage instead of repainting over it, and removed the now-invalid occupied-Stage repaint expectation.
+    - Verification completed: `npm test` passed with 173 tests, and `npm run build` passed. The build still emits the expected Vite chunk-size warning.

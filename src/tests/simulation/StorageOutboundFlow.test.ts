@@ -82,7 +82,7 @@ describe("storage and outbound freight flow", () => {
     paintStandardStorage(runner);
     runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
     const stageZoneId = paintStageNearDoor(runner, 4);
-    runner.dispatch(new PaintZoneCommand(4, 2, TileZoneType.Travel));
+    runner.dispatch(new PaintZoneCommand(4, 3, TileZoneType.Travel));
     state.freightFlow.freightBatches.push(createBatch({ stageZoneId }));
 
     runTicks(runner, 5);
@@ -177,7 +177,7 @@ describe("storage and outbound freight flow", () => {
     paintStandardStorage(runner);
     runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
     const stageZoneId = paintStageNearDoor(runner, 4);
-    runner.dispatch(new PaintZoneCommand(4, 2, TileZoneType.Travel));
+    runner.dispatch(new PaintZoneCommand(4, 3, TileZoneType.Travel));
     state.freightFlow.freightBatches.push(createBatch({ cubicFeet: 900, stageZoneId }));
 
     const needs = selectDockStorageNeeds(state);
@@ -230,7 +230,7 @@ describe("storage and outbound freight flow", () => {
     paintStandardStorage(runner);
     runner.dispatch(new PlaceDoorCommand(4, 0, "inbound"));
     const stageZoneId = paintStageNearDoor(runner, 4);
-    runner.dispatch(new PaintZoneCommand(4, 2, TileZoneType.Travel));
+    runner.dispatch(new PaintZoneCommand(4, 3, TileZoneType.Travel));
     state.freightFlow.freightBatches.push(createBatch({ stageZoneId }));
 
     runTicks(runner, 5);
@@ -517,7 +517,7 @@ describe("storage and outbound freight flow", () => {
 
     runner.dispatch(new PlaceDoorCommand(4, 0, "flex"));
     const stageZoneId = paintStageNearDoor(runner, 4);
-    runner.dispatch(new PaintZoneCommand(4, 2, TileZoneType.Travel));
+    runner.dispatch(new PaintZoneCommand(4, 3, TileZoneType.Travel));
     paintStandardStorage(runner);
     runner.dispatch(new PaintZoneCommand(8, 4, TileZoneType.Travel));
     runner.dispatch(new PaintZoneCommand(8, 5, TileZoneType.StandardStorage));
@@ -540,7 +540,7 @@ describe("storage and outbound freight flow", () => {
       }),
     );
 
-    runTicks(runner, 10);
+    runTicks(runner, 20);
     expect(state.freightFlow.freightBatches[0].state).toBe("in-storage");
     expect(state.freightFlow.freightBatches[1].state).toBe("in-storage");
     expect(state.freightFlow.freightBatches[2].state).toBe("in-storage");

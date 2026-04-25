@@ -235,7 +235,7 @@ function getAvailableTemplates(
     }
 
     const compatibleCapacity = getCompatibleStorageCapacity(state, freightClass);
-    const capacityBound = Math.max(90000, compatibleCapacity * 6);
+    const capacityBound = Math.max(250000, compatibleCapacity * 6);
 
     return Math.min(template.maxMonthlyCubicFeet, capacityBound) >= template.minMonthlyCubicFeet;
   });
@@ -285,7 +285,7 @@ function calculateOfferThroughput(
     0,
   );
   const compatibleCapacity = getCompatibleStorageCapacity(state, freightClass);
-  const capacityBound = Math.max(90000, compatibleCapacity * 6);
+  const capacityBound = Math.max(250000, compatibleCapacity * 6);
   const portfolioAnchor = currentPortfolioMonthly <= 0 ? 180000 : currentPortfolioMonthly * 0.38;
   const difficultyMultiplier = getDifficultyThroughputMultiplier(template.difficultyTag);
   const variance = 0.88 + random.next() * 0.26;
@@ -505,11 +505,11 @@ function getDifficultyThroughputMultiplier(difficultyTag: ContractDifficultyTag)
 }
 
 function getVolumeBand(template: ContractTemplateConfig): "light" | "medium" | "heavy" {
-  if (template.maxMonthlyCubicFeet < 110000) {
+  if (template.maxMonthlyCubicFeet < 350000) {
     return "light";
   }
 
-  if (template.maxMonthlyCubicFeet < 210000) {
+  if (template.maxMonthlyCubicFeet < 650000) {
     return "medium";
   }
 

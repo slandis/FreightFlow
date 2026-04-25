@@ -5,7 +5,9 @@ import {
   trySpendCapitalCost,
 } from "../economy/buildCosts";
 import { reconcileStorageZonesAfterMapEdit } from "../world/reconcileStorageZones";
+import { getPaintRestrictionError } from "../world/paintRestrictions";
 import { isStorageZoneType } from "../world/ZoneManager";
+import { recalculateZoneUsage } from "../world/zoneUsage";
 import type { Command, CommandContext } from "./Command";
 import { commandFailed, commandSucceeded } from "./Command";
 
@@ -29,6 +31,16 @@ export class PaintZoneCommand implements Command<"paint-zone"> {
 
     if (this.zoneType === TileZoneType.Dock) {
       return commandFailed("Dock zones are reserved for protected edge tiles");
+    }
+
+    recalculateZoneUsage(context.state.freightFlow, context.state.warehouseMap);
+
+    const tile = context.state.warehouseMap.getTile(this.x, this.y);
+    const restrictionError =
+      tile && getPaintRestrictionError(context.state, tile, this.zoneType);
+
+    if (restrictionError) {
+      return commandFailed(restrictionError);
     }
 
     const estimate = estimatePaintSelectionCost(

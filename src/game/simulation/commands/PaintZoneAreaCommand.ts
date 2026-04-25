@@ -5,7 +5,9 @@ import {
   trySpendCapitalCost,
 } from "../economy/buildCosts";
 import { reconcileStorageZonesAfterMapEdit } from "../world/reconcileStorageZones";
+import { getPaintRestrictionError } from "../world/paintRestrictions";
 import { isStorageZoneType } from "../world/ZoneManager";
+import { recalculateZoneUsage } from "../world/zoneUsage";
 import type { Command, CommandContext } from "./Command";
 import { commandFailed, commandSucceeded } from "./Command";
 
@@ -32,6 +34,22 @@ export class PaintZoneAreaCommand implements Command<"paint-zone-area"> {
 
     if (this.tiles.length === 0) {
       return commandSucceeded();
+    }
+
+    recalculateZoneUsage(context.state.freightFlow, context.state.warehouseMap);
+
+    for (const coordinates of this.tiles) {
+      const tile = context.state.warehouseMap.getTile(coordinates.x, coordinates.y);
+
+      if (!tile) {
+        continue;
+      }
+
+      const restrictionError = getPaintRestrictionError(context.state, tile, this.zoneType);
+
+      if (restrictionError) {
+        return commandFailed(restrictionError);
+      }
     }
 
     const estimate = estimatePaintSelectionCost(

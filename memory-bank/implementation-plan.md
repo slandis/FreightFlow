@@ -901,6 +901,7 @@ Completed implementation notes:
 - `Stage` now ships as a first-class zone type with `$80` per-tile build cost, dedicated tile-art loading, overlay support, and left-panel paint tooling
 - Stage validity is calculated at the contiguous-area level from direct door contact, while long-term storage validity still uses travel proximity
 - Stage-to-storage putaway now also requires the source Stage area to touch travel, so freight cannot leave an isolated near-door staging area without floor access
+- paint restrictions now block editing any assigned area with `usedCubicFeet > 0`, and both `Travel` and `Stage` must be erased before they can be reassigned to another zone type
 - dock-capacity helpers now summarize Stage-zone capacity and reservations instead of abstract door-adjacent tile capacity
 - inbound switch assignment requires both a usable inbound-capable door and nearby valid Stage capacity before a trailer can reserve that door
 - unloaded freight now enters `in-stage`, then storage labor moves it from Stage into long-term storage
